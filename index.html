@@ -56,7 +56,15 @@
             
             <div class="row mt-5">
                 <div class="col-12">
-                    <h3 class="mb-3">Classifica Completa</h3>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="mb-0">Classifica Completa</h3>
+                        <div class="ranking-sort-container">
+                            <select id="ranking-sort" class="form-select form-select-sm" onchange="app.updateRankingSortOrder(this.value)">
+                                <option value="points">Ordina per Punti</option>
+                                <option value="performance">Ordina per Performance</option>
+                            </select>
+                        </div>
+                    </div>
                     <div id="full-ranking" class="card">
                         <div class="card-body">
                             <div id="ranking-table">

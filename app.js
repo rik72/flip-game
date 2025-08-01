@@ -5,6 +5,7 @@ class HallOfFameApp {
         this.games = this.loadFromStorage('games') || [];
         this.matches = this.loadFromStorage('matches') || [];
         this.allAvatarOptions = []; // Store all avatar options for filtering
+        this.currentSortOrder = 'points'; // Default sorting by points
         this.init();
     }
 
@@ -85,6 +86,11 @@ class HallOfFameApp {
             case 'podium':
                 this.displayPodium();
                 this.displayFullRanking();
+                // Update the sort selector to reflect current sort order
+                const sortSelector = document.getElementById('ranking-sort');
+                if (sortSelector) {
+                    sortSelector.value = this.currentSortOrder;
+                }
                 break;
             case 'players':
                 this.displayPlayers();
@@ -316,17 +322,27 @@ class HallOfFameApp {
             return;
         }
         
-        container.innerHTML = this.players.map(player => `
+        container.innerHTML = this.players.map(player => {
+            const stats = this.calculatePlayerStats(player.id);
+            return `
             <div class="col-md-6 col-lg-4">
                 <div class="player-card">
-                    <div class="d-flex justify-content-center mb-3">
-                        ${this.createAvatar(player.avatar || '😊', 'avatar-large').outerHTML}
+                    <div class="player-card-stats">
+                        <div class="player-points">
+                            <div class="fs-4 fw-bold text-primary">${stats.totalPoints}</div>
+                            <small class="text-muted">${stats.totalPoints === 1 ? 'punto' : 'punti'}</small>
+                        </div>
+                        <div class="player-avatar-center">
+                            ${this.createAvatar(player.avatar || '😊', 'avatar-large').outerHTML}
+                        </div>
+                        <div class="player-performance">
+                            <div class="performance-value ${this.getPerformanceClass(stats.performance)}" title="Performance: Percentuale dei punti sul massimo possibile (2 × partite giocate)" data-bs-toggle="tooltip" data-bs-placement="top">${stats.performance}%</div>
+                        </div>
                     </div>
-                    <h5 class="mb-2">${player.name}</h5>
+                    <h5 class="mb-2 mt-3">${player.name}</h5>
                     <div class="text-muted small">
-                        <div>Punti: <strong>${this.calculatePlayerStats(player.id).totalPoints}</strong></div>
-                        <div>Partite: <strong>${this.calculatePlayerStats(player.id).gamesPlayed}</strong></div>
-                        <div><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${this.calculatePlayerStats(player.id).wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">👤 ${this.calculatePlayerStats(player.id).participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${this.calculatePlayerStats(player.id).lasts}</span></div>
+                        <div>Partite: <strong>${stats.gamesPlayed}</strong></div>
+                        <div><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${stats.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">👤 ${stats.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${stats.lasts}</span></div>
                     </div>
                     <div class="mt-3">
                         <button class="btn btn-sm btn-primary me-2" onclick="app.showEditPlayerModal(${player.id})">
@@ -338,7 +354,8 @@ class HallOfFameApp {
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
         
         // Inizializza i tooltip di Bootstrap
         this.initializeTooltips();
@@ -858,6 +875,20 @@ class HallOfFameApp {
         return position === 'winner' ? 'bg-warning' : position === 'participant' ? 'bg-primary' : 'bg-secondary';
     }
 
+    getPerformanceClass(performance) {
+        if (performance >= 80) return 'performance-excellent';
+        if (performance >= 60) return 'performance-good';
+        if (performance >= 40) return 'performance-average';
+        if (performance >= 20) return 'performance-poor';
+        return 'performance-very-poor';
+    }
+
+    updateRankingSortOrder(sortBy) {
+        this.currentSortOrder = sortBy;
+        this.displayPodium();
+        this.displayFullRanking();
+    }
+
     // Sort participants by position first (winner, participant, last), then by name
     sortParticipantsByRank(participants) {
         const positionOrder = {
@@ -906,30 +937,43 @@ class HallOfFameApp {
             }
         });
         
+        // Calcola la performance come percentuale dei punti sul massimo possibile (2 * partite giocate)
+        const maxPossiblePoints = playerMatches.length * 2;
+        const performance = maxPossiblePoints > 0 ? Math.round((totalPoints / maxPossiblePoints) * 100) : 0;
+        
         return {
             totalPoints,
             gamesPlayed: playerMatches.length,
             wins,
             participants,
-            lasts
+            lasts,
+            performance
         };
     }
 
-    getRanking() {
+    getRanking(sortBy = 'points') {
         return this.players.map(player => ({
             ...player,
             ...this.calculatePlayerStats(player.id)
         })).sort((a, b) => {
-            // Sort by total points (descending), then by wins (descending), then by games played (ascending)
-            if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-            if (b.wins !== a.wins) return b.wins - a.wins;
-            return a.gamesPlayed - b.gamesPlayed;
+            if (sortBy === 'performance') {
+                // Sort by performance (descending), then by total points (descending), then by wins (descending)
+                if (b.performance !== a.performance) return b.performance - a.performance;
+                if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return a.gamesPlayed - b.gamesPlayed;
+            } else {
+                // Sort by total points (descending), then by wins (descending), then by games played (ascending)
+                if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return a.gamesPlayed - b.gamesPlayed;
+            }
         });
     }
 
     displayPodium() {
         const container = document.getElementById('podium-container');
-        const ranking = this.getRanking();
+        const ranking = this.getRanking(this.currentSortOrder);
         
         if (ranking.length === 0) {
             container.innerHTML = `
@@ -985,7 +1029,7 @@ class HallOfFameApp {
 
     displayFullRanking() {
         const container = document.getElementById('ranking-table');
-        const ranking = this.getRanking();
+        const ranking = this.getRanking(this.currentSortOrder);
         
         if (ranking.length === 0) {
             container.innerHTML = '<p class="text-center text-muted">Nessun giocatore in classifica</p>';
@@ -999,12 +1043,15 @@ class HallOfFameApp {
                     ${this.createAvatar(player.avatar || '😊').outerHTML}
                     <div>
                         <div class="fw-bold">${player.name}</div>
-                        <small class="text-muted">${player.gamesPlayed} partite • <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">👤 ${player.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span></small>
+                        <small class="text-muted">${player.gamesPlayed} partite<br><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">👤 ${player.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span></small>
                     </div>
                 </div>
                 <div class="ranking-stats">
                     <div class="fs-4 fw-bold text-primary">${player.totalPoints}</div>
                     <small class="text-muted">${player.totalPoints === 1 ? 'punto' : 'punti'}</small>
+                </div>
+                <div class="ranking-performance">
+                    <div class="performance-value ${this.getPerformanceClass(player.performance)}" title="Performance: Percentuale dei punti sul massimo possibile (2 × partite giocate)" data-bs-toggle="tooltip" data-bs-placement="top">${player.performance}%</div>
                 </div>
             </div>
         `).join('');
@@ -1188,4 +1235,8 @@ function addMatch() {
 
 function saveMatch() {
     app.saveMatch();
+}
+
+function updateRankingSortOrder(sortBy) {
+    app.updateRankingSortOrder(sortBy);
 } 

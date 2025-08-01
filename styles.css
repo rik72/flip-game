@@ -257,6 +257,37 @@ body {
     transform: translateY(-5px);
 }
 
+.player-card-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    gap: 15px;
+}
+
+.player-points {
+    text-align: center;
+    min-width: 80px;
+}
+
+.player-avatar-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.player-performance {
+    min-width: 80px;
+    display: flex;
+    justify-content: center;
+}
+
+.player-performance .performance-value {
+    font-size: 1.1rem;
+    padding: 8px 12px;
+}
+
 /* ===== GAME CARDS ===== */
 .game-card {
     background: rgba(255, 255, 255, 0.95);
@@ -354,6 +385,30 @@ body {
     overflow: hidden;
 }
 
+.ranking-sort-container {
+    min-width: 200px;
+}
+
+.ranking-sort-container .form-select {
+    border-radius: 20px;
+    border: 2px solid #e5e7eb;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.ranking-sort-container .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.ranking-sort-container .form-select:hover {
+    border-color: var(--secondary-color);
+}
+
 .ranking-row {
     display: flex;
     align-items: center;
@@ -391,6 +446,55 @@ body {
 .ranking-stats {
     text-align: right;
     min-width: 100px;
+}
+
+.ranking-performance {
+    text-align: center;
+    min-width: 80px;
+    margin-left: 20px;
+}
+
+.performance-value {
+    font-size: 1.25rem;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.performance-excellent {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: white;
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+}
+
+.performance-good {
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+    color: white;
+    box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);
+}
+
+.performance-average {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.performance-poor {
+    background: linear-gradient(135deg, #ea580c, #fb923c);
+    color: white;
+    box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
+}
+
+.performance-very-poor {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    color: white;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+.performance-value:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== MODALS ===== */
@@ -445,6 +549,58 @@ body {
     
     .avatar-podium {
         font-size: 2.5rem;
+    }
+    
+    .ranking-row {
+        flex-wrap: wrap;
+        padding: 15px;
+    }
+    
+    .ranking-position {
+        width: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .ranking-performance {
+        margin-left: 0;
+        margin-top: 10px;
+        flex-basis: 100%;
+        order: 3;
+    }
+    
+    .performance-value {
+        font-size: 1rem;
+        padding: 6px 10px;
+    }
+    
+    .player-card-stats {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .player-points, 
+    .player-performance {
+        min-width: auto;
+    }
+    
+    .player-performance     .performance-value {
+        font-size: 1rem;
+        padding: 6px 10px;
+    }
+    
+    .ranking-sort-container {
+        min-width: auto;
+        margin-top: 10px;
+    }
+    
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    .ranking-sort-container .form-select {
+        font-size: 0.8rem;
     }
 }
 
