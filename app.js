@@ -329,8 +329,7 @@ class HallOfFameApp {
                 <div class="player-card">
                     <div class="player-card-stats">
                         <div class="player-points">
-                            <div class="fs-4 fw-bold text-primary">${stats.totalPoints}</div>
-                            <small class="text-muted">${stats.totalPoints === 1 ? 'punto' : 'punti'}</small>
+                            <div class="fs-4 fw-bold text-primary">${stats.totalPoints}<span class="points-unit">pt</span></div>
                         </div>
                         <div class="player-avatar-center">
                             ${this.createAvatar(player.avatar || '😊', 'avatar-large').outerHTML}
@@ -1017,7 +1016,7 @@ class HallOfFameApp {
             // Score
             const scoreDiv = document.createElement('div');
             scoreDiv.className = 'podium-score';
-            scoreDiv.textContent = `${player.totalPoints} ${player.totalPoints === 1 ? 'punto' : 'punti'}`;
+            scoreDiv.innerHTML = `${player.totalPoints}<span class="points-unit">pt</span>`;
             stepDiv.appendChild(scoreDiv);
             
             podiumDiv.appendChild(stepDiv);
@@ -1047,8 +1046,7 @@ class HallOfFameApp {
                     </div>
                 </div>
                 <div class="ranking-stats">
-                    <div class="fs-4 fw-bold text-primary">${player.totalPoints}</div>
-                    <small class="text-muted">${player.totalPoints === 1 ? 'punto' : 'punti'}</small>
+                    <div class="fs-4 fw-bold text-primary">${player.totalPoints}<span class="points-unit">pt</span></div>
                 </div>
                 <div class="ranking-performance">
                     <div class="performance-value ${this.getPerformanceClass(player.performance)}" title="Performance: Percentuale dei punti sul massimo possibile (2 × partite giocate)" data-bs-toggle="tooltip" data-bs-placement="top">${player.performance}%</div>

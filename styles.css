@@ -206,9 +206,18 @@ body {
 }
 
 .podium-score {
-    font-size: 0.9rem;
-    color: #6b7280;
+    font-size: 1.1rem;
+    color: #374151;
     margin-top: 5px;
+    font-weight: bold;
+}
+
+/* ===== POINTS UNIT STYLING ===== */
+.points-unit {
+    font-size: 0.7em; /* Relative to parent font size */
+    color: #6b7280;
+    font-weight: normal;
+    margin-left: 2px;
 }
 
 /* ===== BUTTONS ===== */
@@ -549,6 +558,10 @@ body {
     
     .avatar-podium {
         font-size: 2.5rem;
+    }
+    
+    .podium-score {
+        font-size: 1rem;
     }
     
     .ranking-row {
