@@ -91,6 +91,59 @@ body {
     font-size: 3rem;
 }
 
+/* ===== AVATAR FILTER & SELECTOR ===== */
+#avatar-filter {
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+#avatar-filter:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+#player-avatar {
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    font-family: inherit;
+    max-height: 120px;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+    padding: 8px;
+}
+
+#player-avatar:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+#player-avatar option {
+    padding: 8px 12px;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+#player-avatar option:hover,
+#player-avatar option:checked {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+#avatar-preview {
+    padding: 15px;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 15px;
+    border: 2px dashed rgba(59, 130, 246, 0.2);
+    transition: all 0.3s ease;
+}
+
+.avatar-selector-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 0px;
+    margin: -10px 0;
+}
+
 /* ===== PODIUM DESIGN ===== */
 .podium {
     display: flex;

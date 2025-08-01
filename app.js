@@ -4,6 +4,7 @@ class HallOfFameApp {
         this.players = this.loadFromStorage('players') || [];
         this.games = this.loadFromStorage('games') || [];
         this.matches = this.loadFromStorage('matches') || [];
+        this.allAvatarOptions = []; // Store all avatar options for filtering
         this.init();
     }
 
@@ -19,6 +20,7 @@ class HallOfFameApp {
 
     // ===== INITIALIZATION =====
     init() {
+        this.initializeAvatarOptions();
         this.setupEventListeners();
         this.updateAvatarPreview();
         this.showSection('podium');
@@ -28,6 +30,16 @@ class HallOfFameApp {
     setupEventListeners() {
         // Avatar preview updates
         document.getElementById('player-avatar').addEventListener('change', () => this.updateAvatarPreview());
+        
+        // Avatar filter functionality
+        document.getElementById('avatar-filter').addEventListener('input', (e) => this.filterAvatars(e.target.value));
+        document.getElementById('avatar-filter').addEventListener('focus', () => this.showFilteredAvatars());
+        
+        // Clear filter when modal is hidden
+        document.getElementById('addPlayerModal').addEventListener('hidden.bs.modal', () => {
+            document.getElementById('avatar-filter').value = '';
+            this.populateAvatarSelect(this.allAvatarOptions);
+        });
     }
 
     setTodayDate() {
@@ -95,11 +107,86 @@ class HallOfFameApp {
         preview.textContent = emoji;
     }
 
+    // ===== AVATAR FILTERING SYSTEM =====
+    initializeAvatarOptions() {
+        const avatarSelect = document.getElementById('player-avatar');
+        
+        // Get all existing options from the HTML
+        this.allAvatarOptions = Array.from(avatarSelect.options).map(option => ({
+            value: option.value,
+            text: option.textContent
+        }));
+        
+        // Store the original selected value
+        const originalValue = avatarSelect.value || '😊';
+        
+        // Set up the initial display
+        this.populateAvatarSelect(this.allAvatarOptions);
+        avatarSelect.value = originalValue;
+    }
+
+    populateAvatarSelect(options) {
+        const avatarSelect = document.getElementById('player-avatar');
+        const currentValue = avatarSelect.value;
+        
+        // Clear existing options
+        avatarSelect.innerHTML = '';
+        
+        // Add filtered options
+        options.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.text;
+            avatarSelect.appendChild(optionElement);
+        });
+        
+        // Restore selection if the value still exists in filtered options
+        if (options.some(opt => opt.value === currentValue)) {
+            avatarSelect.value = currentValue;
+        } else if (options.length > 0) {
+            // If current value doesn't exist in filtered options, select the first one
+            avatarSelect.value = options[0].value;
+            this.updateAvatarPreview();
+        }
+    }
+
+    filterAvatars(filterText) {
+        const normalizedFilter = filterText.toLowerCase().trim();
+        
+        if (normalizedFilter === '') {
+            // Show all options when filter is empty
+            this.populateAvatarSelect(this.allAvatarOptions);
+        } else {
+            // Filter options based on text content
+            const filteredOptions = this.allAvatarOptions.filter(option => 
+                option.text.toLowerCase().includes(normalizedFilter)
+            );
+            this.populateAvatarSelect(filteredOptions);
+            
+            // Auto-select first result if available and nothing is currently selected
+            const avatarSelect = document.getElementById('player-avatar');
+            if (filteredOptions.length > 0 && !avatarSelect.value) {
+                avatarSelect.value = filteredOptions[0].value;
+                this.updateAvatarPreview();
+            }
+        }
+    }
+
+    showFilteredAvatars() {
+        // Ensure the select shows the current filter when focused
+        const filterText = document.getElementById('avatar-filter').value;
+        this.filterAvatars(filterText);
+    }
+
     // ===== PLAYER MANAGEMENT =====
     showAddPlayerModal() {
         // Reset form for adding new player
         document.getElementById('player-edit-id').value = '';
         document.getElementById('player-name').value = '';
+        
+        // Reset avatar filter
+        document.getElementById('avatar-filter').value = '';
+        this.populateAvatarSelect(this.allAvatarOptions);
         document.getElementById('player-avatar').value = '😊';
         
         // Update modal title and button
@@ -147,6 +234,10 @@ class HallOfFameApp {
         // Populate form with existing data
         document.getElementById('player-edit-id').value = playerId;
         document.getElementById('player-name').value = player.name;
+        
+        // Reset avatar filter and set player's avatar
+        document.getElementById('avatar-filter').value = '';
+        this.populateAvatarSelect(this.allAvatarOptions);
         document.getElementById('player-avatar').value = player.avatar || '😊';
         
         // Update modal title and button

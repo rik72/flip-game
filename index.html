@@ -130,7 +130,12 @@
                         </div>
                         <div class="mb-3">
                             <label for="player-avatar" class="form-label">Avatar</label>
-                            <select class="form-select" id="player-avatar">
+                            <div class="avatar-selector-container">
+                                <div class="mb-2">
+                                    <input type="text" class="form-control" id="avatar-filter" placeholder="Filtra avatar... (es: 'gatto', 'felice', 'cibo')" autocomplete="off">
+                                    <div class="form-text">Digita per filtrare la lista degli avatar</div>
+                                </div>
+                                <select class="form-select" id="player-avatar" size="8">
                                 <!-- Faces & Emotions -->
                                 <option value="😊">😊 Sorridente</option>
                                 <option value="😎">😎 Cool</option>
@@ -159,21 +164,21 @@
                                 <option value="🤠">🤠 Cowboy</option>
                                 
                                 <!-- People -->
-                                <!-- Bambini -->
-                                <option value="👶">👶 Bambino</option>
-                                <option value="👶🏻">👶🏻 Bambino Chiaro</option>
-                                <option value="👶🏼">👶🏼 Bambino Medio-Chiaro</option>
-                                <option value="👶🏽">👶🏽 Bambino Medio</option>
-                                <option value="👶🏾">👶🏾 Bambino Medio-Scuro</option>
-                                <option value="👶🏿">👶🏿 Bambino Scuro</option>
+                                <!-- Bimbi -->
+                                <option value="👶">👶 Bimbo</option>
+                                <option value="👶🏻">👶🏻 Bimbo Chiaro</option>
+                                <option value="👶🏼">👶🏼 Bimbo Medio-Chiaro</option>
+                                <option value="👶🏽">👶🏽 Bimbo Medio</option>
+                                <option value="👶🏾">👶🏾 Bimbo Medio-Scuro</option>
+                                <option value="👶🏿">👶🏿 Bimbo Scuro</option>
                                 
-                                <!-- Bambine -->
-                                <option value="👧">👧 Bambina</option>
-                                <option value="👧🏻">👧🏻 Bambina Chiara</option>
-                                <option value="👧🏼">👧🏼 Bambina Medio-Chiara</option>
-                                <option value="👧🏽">👧🏽 Bambina Media</option>
-                                <option value="👧🏾">👧🏾 Bambina Medio-Scura</option>
-                                <option value="👧🏿">👧🏿 Bambina Scura</option>
+                                <!-- Bimbe -->
+                                <option value="👧">👧 Bimba</option>
+                                <option value="👧🏻">👧🏻 Bimba Chiara</option>
+                                <option value="👧🏼">👧🏼 Bimba Medio-Chiara</option>
+                                <option value="👧🏽">👧🏽 Bimba Media</option>
+                                <option value="👧🏾">👧🏾 Bimba Medio-Scura</option>
+                                <option value="👧🏿">👧🏿 Bimba Scura</option>
                                 
                                 <!-- Bambini -->
                                 <option value="👦">👦 Bambino</option>
@@ -191,6 +196,46 @@
                                 <option value="👩🏾">👩🏾 Donna Medio-Scura</option>
                                 <option value="👩🏿">👩🏿 Donna Scura</option>
                                 
+                                <!-- Donne bionde -->
+                                <option value="👱‍♀️">👱‍♀️ Donna Bionda</option>
+                                <option value="👱🏻‍♀️">👱🏻‍♀️ Donna Bionda Chiara</option>
+                                <option value="👱🏼‍♀️">👱🏼‍♀️ Donna Bionda Medio-Chiara</option>
+                                <option value="👱🏽‍♀️">👱🏽‍♀️ Donna Bionda Media</option>
+                                <option value="👱🏾‍♀️">👱🏾‍♀️ Donna Bionda Medio-Scura</option>
+                                <option value="👱🏿‍♀️">👱🏿‍♀️ Donna Bionda Scura</option>
+                                
+                                <!-- Donne con capelli ricci -->
+                                <option value="👩‍🦱">👩‍🦱 Donna Riccia</option>
+                                <option value="👩🏻‍🦱">👩🏻‍🦱 Donna Riccia Chiara</option>
+                                <option value="👩🏼‍🦱">👩🏼‍🦱 Donna Riccia Medio-Chiara</option>
+                                <option value="👩🏽‍🦱">👩🏽‍🦱 Donna Riccia Media</option>
+                                <option value="👩🏾‍🦱">👩🏾‍🦱 Donna Riccia Medio-Scura</option>
+                                <option value="👩🏿‍🦱">👩🏿‍🦱 Donna Riccia Scura</option>
+                                
+                                <!-- Donne con capelli rossi -->
+                                <option value="👩‍🦰">👩‍🦰 Donna Rossa</option>
+                                <option value="👩🏻‍🦰">👩🏻‍🦰 Donna Rossa Chiara</option>
+                                <option value="👩🏼‍🦰">👩🏼‍🦰 Donna Rossa Medio-Chiara</option>
+                                <option value="👩🏽‍🦰">👩🏽‍🦰 Donna Rossa Media</option>
+                                <option value="👩🏾‍🦰">👩🏾‍🦰 Donna Rossa Medio-Scura</option>
+                                <option value="👩🏿‍🦰">👩🏿‍🦰 Donna Rossa Scura</option>
+                                
+                                <!-- Donne con capelli bianchi -->
+                                <option value="👩‍🦳">👩‍🦳 Donna Bianca</option>
+                                <option value="👩🏻‍🦳">👩🏻‍🦳 Donna Bianca Chiara</option>
+                                <option value="👩🏼‍🦳">👩🏼‍🦳 Donna Bianca Medio-Chiara</option>
+                                <option value="👩🏽‍🦳">👩🏽‍🦳 Donna Bianca Media</option>
+                                <option value="👩🏾‍🦳">👩🏾‍🦳 Donna Bianca Medio-Scura</option>
+                                <option value="👩🏿‍🦳">👩🏿‍🦳 Donna Bianca Scura</option>
+                                
+                                <!-- Donne calve -->
+                                <option value="👩‍🦲">👩‍🦲 Donna Calva</option>
+                                <option value="👩🏻‍🦲">👩🏻‍🦲 Donna Calva Chiara</option>
+                                <option value="👩🏼‍🦲">👩🏼‍🦲 Donna Calva Medio-Chiara</option>
+                                <option value="👩🏽‍🦲">👩🏽‍🦲 Donna Calva Media</option>
+                                <option value="👩🏾‍🦲">👩🏾‍🦲 Donna Calva Medio-Scura</option>
+                                <option value="👩🏿‍🦲">👩🏿‍🦲 Donna Calva Scura</option>
+                                
                                 <!-- Uomini -->
                                 <option value="👨">👨 Uomo</option>
                                 <option value="👨🏻">👨🏻 Uomo Chiaro</option>
@@ -198,6 +243,46 @@
                                 <option value="👨🏽">👨🏽 Uomo Medio</option>
                                 <option value="👨🏾">👨🏾 Uomo Medio-Scuro</option>
                                 <option value="👨🏿">👨🏿 Uomo Scuro</option>
+                                
+                                <!-- Uomini biondi -->
+                                <option value="👱‍♂️">👱‍♂️ Uomo Biondo</option>
+                                <option value="👱🏻‍♂️">👱🏻‍♂️ Uomo Biondo Chiaro</option>
+                                <option value="👱🏼‍♂️">👱🏼‍♂️ Uomo Biondo Medio-Chiaro</option>
+                                <option value="👱🏽‍♂️">👱🏽‍♂️ Uomo Biondo Medio</option>
+                                <option value="👱🏾‍♂️">👱🏾‍♂️ Uomo Biondo Medio-Scuro</option>
+                                <option value="👱🏿‍♂️">👱🏿‍♂️ Uomo Biondo Scuro</option>
+                                
+                                <!-- Uomini con capelli ricci -->
+                                <option value="👨‍🦱">👨‍🦱 Uomo Riccio</option>
+                                <option value="👨🏻‍🦱">👨🏻‍🦱 Uomo Riccio Chiaro</option>
+                                <option value="👨🏼‍🦱">👨🏼‍🦱 Uomo Riccio Medio-Chiaro</option>
+                                <option value="👨🏽‍🦱">👨🏽‍🦱 Uomo Riccio Medio</option>
+                                <option value="👨🏾‍🦱">👨🏾‍🦱 Uomo Riccio Medio-Scuro</option>
+                                <option value="👨🏿‍🦱">👨🏿‍🦱 Uomo Riccio Scuro</option>
+                                
+                                <!-- Uomini con capelli rossi -->
+                                <option value="👨‍🦰">👨‍🦰 Uomo Rosso</option>
+                                <option value="👨🏻‍🦰">👨🏻‍🦰 Uomo Rosso Chiaro</option>
+                                <option value="👨🏼‍🦰">👨🏼‍🦰 Uomo Rosso Medio-Chiaro</option>
+                                <option value="👨🏽‍🦰">👨🏽‍🦰 Uomo Rosso Medio</option>
+                                <option value="👨🏾‍🦰">👨🏾‍🦰 Uomo Rosso Medio-Scuro</option>
+                                <option value="👨🏿‍🦰">👨🏿‍🦰 Uomo Rosso Scuro</option>
+                                
+                                <!-- Uomini con capelli bianchi -->
+                                <option value="👨‍🦳">👨‍🦳 Uomo Bianco</option>
+                                <option value="👨🏻‍🦳">👨🏻‍🦳 Uomo Bianco Chiaro</option>
+                                <option value="👨🏼‍🦳">👨🏼‍🦳 Uomo Bianco Medio-Chiaro</option>
+                                <option value="👨🏽‍🦳">👨🏽‍🦳 Uomo Bianco Medio</option>
+                                <option value="👨🏾‍🦳">👨🏾‍🦳 Uomo Bianco Medio-Scuro</option>
+                                <option value="👨🏿‍🦳">👨🏿‍🦳 Uomo Bianco Scuro</option>
+                                
+                                <!-- Uomini calvi -->
+                                <option value="👨‍🦲">👨‍🦲 Uomo Calvo</option>
+                                <option value="👨🏻‍🦲">👨🏻‍🦲 Uomo Calvo Chiaro</option>
+                                <option value="👨🏼‍🦲">👨🏼‍🦲 Uomo Calvo Medio-Chiaro</option>
+                                <option value="👨🏽‍🦲">👨🏽‍🦲 Uomo Calvo Medio</option>
+                                <option value="👨🏾‍🦲">👨🏾‍🦲 Uomo Calvo Medio-Scuro</option>
+                                <option value="👨🏿‍🦲">👨🏿‍🦲 Uomo Calvo Scuro</option>
                                 
                                 <!-- Nonne -->
                                 <option value="👵">👵 Nonna</option>
@@ -214,86 +299,6 @@
                                 <option value="👴🏽">👴🏽 Nonno Medio</option>
                                 <option value="👴🏾">👴🏾 Nonno Medio-Scuro</option>
                                 <option value="👴🏿">👴🏿 Nonno Scuro</option>
-                                
-                                <!-- Donne con capelli ricci -->
-                                <option value="👩‍🦱">👩‍🦱 Donna Riccia</option>
-                                <option value="👩🏻‍🦱">👩🏻‍🦱 Donna Riccia Chiara</option>
-                                <option value="👩🏼‍🦱">👩🏼‍🦱 Donna Riccia Medio-Chiara</option>
-                                <option value="👩🏽‍🦱">👩🏽‍🦱 Donna Riccia Media</option>
-                                <option value="👩🏾‍🦱">👩🏾‍🦱 Donna Riccia Medio-Scura</option>
-                                <option value="👩🏿‍🦱">👩🏿‍🦱 Donna Riccia Scura</option>
-                                
-                                <!-- Uomini con capelli ricci -->
-                                <option value="👨‍🦱">👨‍🦱 Uomo Riccio</option>
-                                <option value="👨🏻‍🦱">👨🏻‍🦱 Uomo Riccio Chiaro</option>
-                                <option value="👨🏼‍🦱">👨🏼‍🦱 Uomo Riccio Medio-Chiaro</option>
-                                <option value="👨🏽‍🦱">👨🏽‍🦱 Uomo Riccio Medio</option>
-                                <option value="👨🏾‍🦱">👨🏾‍🦱 Uomo Riccio Medio-Scuro</option>
-                                <option value="👨🏿‍🦱">👨🏿‍🦱 Uomo Riccio Scuro</option>
-                                
-                                <!-- Donne con capelli rossi -->
-                                <option value="👩‍🦰">👩‍🦰 Donna Rossa</option>
-                                <option value="👩🏻‍🦰">👩🏻‍🦰 Donna Rossa Chiara</option>
-                                <option value="👩🏼‍🦰">👩🏼‍🦰 Donna Rossa Medio-Chiara</option>
-                                <option value="👩🏽‍🦰">👩🏽‍🦰 Donna Rossa Media</option>
-                                <option value="👩🏾‍🦰">👩🏾‍🦰 Donna Rossa Medio-Scura</option>
-                                <option value="👩🏿‍🦰">👩🏿‍🦰 Donna Rossa Scura</option>
-                                
-                                <!-- Uomini con capelli rossi -->
-                                <option value="👨‍🦰">👨‍🦰 Uomo Rosso</option>
-                                <option value="👨🏻‍🦰">👨🏻‍🦰 Uomo Rosso Chiaro</option>
-                                <option value="👨🏼‍🦰">👨🏼‍🦰 Uomo Rosso Medio-Chiaro</option>
-                                <option value="👨🏽‍🦰">👨🏽‍🦰 Uomo Rosso Medio</option>
-                                <option value="👨🏾‍🦰">👨🏾‍🦰 Uomo Rosso Medio-Scuro</option>
-                                <option value="👨🏿‍🦰">👨🏿‍🦰 Uomo Rosso Scuro</option>
-                                
-                                <!-- Donne calve -->
-                                <option value="👩‍🦲">👩‍🦲 Donna Calva</option>
-                                <option value="👩🏻‍🦲">👩🏻‍🦲 Donna Calva Chiara</option>
-                                <option value="👩🏼‍🦲">👩🏼‍🦲 Donna Calva Medio-Chiara</option>
-                                <option value="👩🏽‍🦲">👩🏽‍🦲 Donna Calva Media</option>
-                                <option value="👩🏾‍🦲">👩🏾‍🦲 Donna Calva Medio-Scura</option>
-                                <option value="👩🏿‍🦲">👩🏿‍🦲 Donna Calva Scura</option>
-                                
-                                <!-- Uomini calvi -->
-                                <option value="👨‍🦲">👨‍🦲 Uomo Calvo</option>
-                                <option value="👨🏻‍🦲">👨🏻‍🦲 Uomo Calvo Chiaro</option>
-                                <option value="👨🏼‍🦲">👨🏼‍🦲 Uomo Calvo Medio-Chiaro</option>
-                                <option value="👨🏽‍🦲">👨🏽‍🦲 Uomo Calvo Medio</option>
-                                <option value="👨🏾‍🦲">👨🏾‍🦲 Uomo Calvo Medio-Scuro</option>
-                                <option value="👨🏿‍🦲">👨🏿‍🦲 Uomo Calvo Scuro</option>
-                                
-                                <!-- Donne con capelli bianchi -->
-                                <option value="👩‍🦳">👩‍🦳 Donna Bianca</option>
-                                <option value="👩🏻‍🦳">👩🏻‍🦳 Donna Bianca Chiara</option>
-                                <option value="👩🏼‍🦳">👩🏼‍🦳 Donna Bianca Medio-Chiara</option>
-                                <option value="👩🏽‍🦳">👩🏽‍🦳 Donna Bianca Media</option>
-                                <option value="👩🏾‍🦳">👩🏾‍🦳 Donna Bianca Medio-Scura</option>
-                                <option value="👩🏿‍🦳">👩🏿‍🦳 Donna Bianca Scura</option>
-                                
-                                <!-- Uomini con capelli bianchi -->
-                                <option value="👨‍🦳">👨‍🦳 Uomo Bianco</option>
-                                <option value="👨🏻‍🦳">👨🏻‍🦳 Uomo Bianco Chiaro</option>
-                                <option value="👨🏼‍🦳">👨🏼‍🦳 Uomo Bianco Medio-Chiaro</option>
-                                <option value="👨🏽‍🦳">👨🏽‍🦳 Uomo Bianco Medio</option>
-                                <option value="👨🏾‍🦳">👨🏾‍🦳 Uomo Bianco Medio-Scuro</option>
-                                <option value="👨🏿‍🦳">👨🏿‍🦳 Uomo Bianco Scuro</option>
-                                
-                                <!-- Donne bionde -->
-                                <option value="👱‍♀️">👱‍♀️ Donna Bionda</option>
-                                <option value="👱🏻‍♀️">👱🏻‍♀️ Donna Bionda Chiara</option>
-                                <option value="👱🏼‍♀️">👱🏼‍♀️ Donna Bionda Medio-Chiara</option>
-                                <option value="👱🏽‍♀️">👱🏽‍♀️ Donna Bionda Media</option>
-                                <option value="👱🏾‍♀️">👱🏾‍♀️ Donna Bionda Medio-Scura</option>
-                                <option value="👱🏿‍♀️">👱🏿‍♀️ Donna Bionda Scura</option>
-                                
-                                <!-- Uomini biondi -->
-                                <option value="👱‍♂️">👱‍♂️ Uomo Biondo</option>
-                                <option value="👱🏻‍♂️">👱🏻‍♂️ Uomo Biondo Chiaro</option>
-                                <option value="👱🏼‍♂️">👱🏼‍♂️ Uomo Biondo Medio-Chiaro</option>
-                                <option value="👱🏽‍♂️">👱🏽‍♂️ Uomo Biondo Medio</option>
-                                <option value="👱🏾‍♂️">👱🏾‍♂️ Uomo Biondo Medio-Scuro</option>
-                                <option value="👱🏿‍♂️">👱🏿‍♂️ Uomo Biondo Scuro</option>
                                 
                                 <!-- Professions -->
                                 <option value="👮‍♀️">👮‍♀️ Poliziotta</option>
@@ -546,9 +551,10 @@
                                 <option value="🤍">🤍 Cuore Bianco</option>
                                 <option value="🤎">🤎 Cuore Marrone</option>
                             </select>
-                            <div class="mt-3 text-center">
-                                <div id="avatar-preview" style="font-size: 4rem;">
-                                    😊
+                                <div class="mt-3 text-center">
+                                    <div id="avatar-preview" style="font-size: 4rem;">
+                                        😊
+                                    </div>
                                 </div>
                             </div>
                         </div>
