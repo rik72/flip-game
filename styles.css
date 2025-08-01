@@ -362,6 +362,10 @@ body {
     transition: background-color 0.3s ease;
 }
 
+.ranking-row:last-child {
+    border-bottom: none;
+}
+
 .ranking-row:hover {
     background-color: rgba(59, 130, 246, 0.1);
 }

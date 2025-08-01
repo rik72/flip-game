@@ -47,6 +47,14 @@ class HallOfFameApp {
         document.getElementById('match-date').value = today;
     }
 
+    initializeTooltips() {
+        // Inizializza tutti i tooltip di Bootstrap presenti nella pagina
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+
     // ===== NAVIGATION =====
     showSection(sectionName, clickedElement = null) {
         // Hide all sections
@@ -316,9 +324,9 @@ class HallOfFameApp {
                     </div>
                     <h5 class="mb-2">${player.name}</h5>
                     <div class="text-muted small">
-                        <div>Punti Totali: <strong>${this.calculatePlayerStats(player.id).totalPoints}</strong></div>
+                        <div>Punti: <strong>${this.calculatePlayerStats(player.id).totalPoints}</strong></div>
                         <div>Partite: <strong>${this.calculatePlayerStats(player.id).gamesPlayed}</strong></div>
-                        <div>Vittorie: <strong>${this.calculatePlayerStats(player.id).wins}</strong></div>
+                        <div><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${this.calculatePlayerStats(player.id).wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">👤 ${this.calculatePlayerStats(player.id).participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${this.calculatePlayerStats(player.id).lasts}</span></div>
                     </div>
                     <div class="mt-3">
                         <button class="btn btn-sm btn-primary me-2" onclick="app.showEditPlayerModal(${player.id})">
@@ -331,6 +339,9 @@ class HallOfFameApp {
                 </div>
             </div>
         `).join('');
+        
+        // Inizializza i tooltip di Bootstrap
+        this.initializeTooltips();
     }
 
     // ===== GAME MANAGEMENT =====
@@ -543,8 +554,8 @@ class HallOfFameApp {
                     <select class="form-select" required>
                         <option value="">Posizione...</option>
                         <option value="winner">🏆 Vincitore (2 punti)</option>
-                        <option value="participant">👤 Partecipante (1 punto)</option>
-                        <option value="last">😞 Ultimo (0 punti)</option>
+                        <option value="participant">👤 Piazzamento (1 punto)</option>
+                        <option value="last">😞 Ultimo posto (0 punti)</option>
                     </select>
                 </div>
                 <div class="col-2">
@@ -679,8 +690,8 @@ class HallOfFameApp {
                     <select class="form-select" required>
                         <option value="">Posizione...</option>
                         <option value="winner" ${selectedPosition === 'winner' ? 'selected' : ''}>🏆 Vincitore (2 punti)</option>
-                        <option value="participant" ${selectedPosition === 'participant' ? 'selected' : ''}>👤 Partecipante (1 punto)</option>
-                        <option value="last" ${selectedPosition === 'last' ? 'selected' : ''}>😞 Ultimo (0 punti)</option>
+                        <option value="participant" ${selectedPosition === 'participant' ? 'selected' : ''}>👤 Piazzamento (1 punto)</option>
+                        <option value="last" ${selectedPosition === 'last' ? 'selected' : ''}>😞 Ultimo posto (0 punti)</option>
                     </select>
                 </div>
                 <div class="col-2">
@@ -837,8 +848,8 @@ class HallOfFameApp {
     getPositionLabel(position) {
         const labels = {
             winner: '🏆 Vincitore',
-            participant: '👤 Partecipante', 
-            last: '😞 Ultimo'
+            participant: '👤 Piazzamento', 
+            last: '😞 Ultimo posto'
         };
         return labels[position] || position;
     }
@@ -878,18 +889,29 @@ class HallOfFameApp {
         
         let totalPoints = 0;
         let wins = 0;
+        let participants = 0;
+        let lasts = 0;
         
         playerMatches.forEach(match => {
             const participation = match.participants.find(p => p.playerId === playerId);
             const points = this.getPointsForPosition(participation.position);
             totalPoints += points;
-            if (participation.position === 'winner') wins++;
+            
+            if (participation.position === 'winner') {
+                wins++;
+            } else if (participation.position === 'participant') {
+                participants++;
+            } else if (participation.position === 'last') {
+                lasts++;
+            }
         });
         
         return {
             totalPoints,
             gamesPlayed: playerMatches.length,
-            wins
+            wins,
+            participants,
+            lasts
         };
     }
 
@@ -977,7 +999,7 @@ class HallOfFameApp {
                     ${this.createAvatar(player.avatar || '😊').outerHTML}
                     <div>
                         <div class="fw-bold">${player.name}</div>
-                        <small class="text-muted">${player.gamesPlayed} partite • ${player.wins} vittorie</small>
+                        <small class="text-muted">${player.gamesPlayed} partite • <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">👤 ${player.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span></small>
                     </div>
                 </div>
                 <div class="ranking-stats">
@@ -986,6 +1008,9 @@ class HallOfFameApp {
                 </div>
             </div>
         `).join('');
+        
+        // Inizializza i tooltip di Bootstrap
+        this.initializeTooltips();
     }
 
     // ===== BACKUP/RESTORE FUNCTIONALITY =====

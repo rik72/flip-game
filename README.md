@@ -8,8 +8,8 @@ Una web app per amici e famiglie che permette di mantenere una classifica aperta
 
 ### 🎮 Sistema di Punteggio Semplice
 - **Vincitore**: 2 punti (primo classificato o primi in caso di parità)
-- **Partecipante**: 1 punto (secondo, terzo, etc.)
-- **Ultimo**: 0 punti
+- **Piazzamento**: 1 punto (secondo, terzo, etc.)
+- **Ultimo posto**: 0 punti
 
 ### 👥 Gestione Giocatori
 - Aggiungi giocatori con avatar personalizzabili
