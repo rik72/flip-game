@@ -896,6 +896,129 @@ class HallOfFameApp {
             </div>
         `).join('');
     }
+
+    // ===== BACKUP/RESTORE FUNCTIONALITY =====
+    exportData() {
+        try {
+            // Collect all Hall of Fame data from localStorage
+            const data = {
+                players: this.players,
+                games: this.games,
+                matches: this.matches,
+                exportDate: new Date().toISOString(),
+                version: "1.0"
+            };
+
+            // Create ZIP file
+            const zip = new JSZip();
+            zip.file("halloffame-backup.json", JSON.stringify(data, null, 2));
+
+            // Generate ZIP and trigger download
+            zip.generateAsync({ type: "blob" }).then(content => {
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `hall-of-fame-backup-${new Date().toISOString().split('T')[0]}.hof`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('Backup esportato con successo!');
+            }).catch(error => {
+                console.error('Errore durante l\'esportazione:', error);
+                alert('Errore durante l\'esportazione del backup.');
+            });
+
+        } catch (error) {
+            console.error('Errore durante l\'esportazione:', error);
+            alert('Errore durante l\'esportazione del backup.');
+        }
+    }
+
+    showImportModal() {
+        // Reset file input
+        document.getElementById('backup-file').value = '';
+        new bootstrap.Modal(document.getElementById('importModal')).show();
+    }
+
+    importData() {
+        const fileInput = document.getElementById('backup-file');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Seleziona un file di backup (.hof)');
+            return;
+        }
+
+        if (!file.name.endsWith('.hof')) {
+            alert('Il file selezionato non è un file di backup valido (.hof)');
+            return;
+        }
+
+        try {
+            // Read and process ZIP file
+            JSZip.loadAsync(file).then(zip => {
+                const jsonFile = zip.file("halloffame-backup.json");
+                
+                if (!jsonFile) {
+                    throw new Error('File di backup non valido: manca il file JSON');
+                }
+
+                return jsonFile.async("string");
+            }).then(jsonContent => {
+                // Parse JSON data
+                const data = JSON.parse(jsonContent);
+
+                // Validate data structure
+                if (!data.players || !data.games || !data.matches) {
+                    throw new Error('File di backup non valido: struttura dati mancante');
+                }
+
+                // Validate data arrays
+                if (!Array.isArray(data.players) || !Array.isArray(data.games) || !Array.isArray(data.matches)) {
+                    throw new Error('File di backup non valido: formato dati non corretto');
+                }
+
+                // Confirm import with user
+                const playerCount = data.players.length;
+                const gameCount = data.games.length;
+                const matchCount = data.matches.length;
+                const exportDate = data.exportDate ? new Date(data.exportDate).toLocaleDateString('it-IT') : 'Data sconosciuta';
+
+                const confirmMessage = `Confermi l'importazione del backup del ${exportDate}?\n\nDati nel backup:\n- ${playerCount} giocatori\n- ${gameCount} giochi\n- ${matchCount} partite\n\nTutti i dati attuali verranno sostituiti.`;
+
+                if (confirm(confirmMessage)) {
+                    // Import data
+                    this.players = data.players;
+                    this.games = data.games;
+                    this.matches = data.matches;
+
+                    // Save to localStorage
+                    this.saveToStorage('players', this.players);
+                    this.saveToStorage('games', this.games);
+                    this.saveToStorage('matches', this.matches);
+
+                    // Refresh current section
+                    const currentSection = document.querySelector('.section[style="display: block;"]')?.id.replace('-section', '') || 'podium';
+                    this.showSection(currentSection);
+
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+
+                    alert('Backup importato con successo!');
+                }
+
+            }).catch(error => {
+                console.error('Errore durante l\'importazione:', error);
+                alert('Errore durante l\'importazione del backup: ' + error.message);
+            });
+
+        } catch (error) {
+            console.error('Errore durante l\'importazione:', error);
+            alert('Errore durante l\'importazione del backup: ' + error.message);
+        }
+    }
 }
 
 // ===== GLOBAL FUNCTIONS =====
