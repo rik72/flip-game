@@ -667,19 +667,24 @@
 
     <!-- Sticky Footer with Backup Dropdown -->
     <div class="sticky-footer">
-        <div class="backup-dropdown dropdown">
-            <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-cloud"></i>
-                Backup
+        <div class="footer-actions">
+            <a href="https://github.com/rik72/hall-of-fame" target="_blank" rel="noopener noreferrer" class="github-link" title="View on GitHub">
+                <i class="bi bi-github"></i>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="#" onclick="app.exportData()">
-                    <i class="bi bi-download me-2"></i>Esporta Backup (.hof)
-                </a></li>
-                <li><a class="dropdown-item" href="#" onclick="app.showImportModal()">
-                    <i class="bi bi-upload me-2"></i>Importa Backup
-                </a></li>
-            </ul>
+            <div class="backup-dropdown dropdown">
+                <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-cloud"></i>
+                    Backup
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="app.exportData()">
+                        <i class="bi bi-download me-2"></i>Esporta Backup (.hof)
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="app.showImportModal()">
+                        <i class="bi bi-upload me-2"></i>Importa Backup
+                    </a></li>
+                </ul>
+            </div>
         </div>
     </div>
 
