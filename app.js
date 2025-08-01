@@ -506,11 +506,14 @@ class HallOfFameApp {
             return;
         }
         
+        // Sort participants by position first, then by name
+        const sortedParticipants = this.sortParticipantsByRank(participants);
+        
         const match = {
             id: Date.now(),
             gameId,
             date,
-            participants
+            participants: sortedParticipants
         };
         
         this.matches.push(match);
@@ -653,12 +656,15 @@ class HallOfFameApp {
         const matchIndex = this.matches.findIndex(m => m.id === editId);
         if (matchIndex === -1) return;
         
+        // Sort participants by position first, then by name
+        const sortedParticipants = this.sortParticipantsByRank(participants);
+        
         // Update match data
         this.matches[matchIndex] = {
             ...this.matches[matchIndex],
             gameId,
             date,
-            participants
+            participants: sortedParticipants
         };
         
         this.saveToStorage('matches', this.matches);
@@ -679,51 +685,58 @@ class HallOfFameApp {
         const container = document.getElementById('matches-list');
         
         if (this.matches.length === 0) {
-            container.innerHTML = '<div class="text-center"><p class="text-muted">Nessuna partita registrata. Inizia registrando le prime partite!</p></div>';
+            container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Nessuna partita registrata. Inizia registrando le prime partite!</p></div>';
             return;
         }
         
         // Sort matches by date (newest first)
         const sortedMatches = [...this.matches].sort((a, b) => new Date(b.date) - new Date(a.date));
         
-        container.innerHTML = sortedMatches.map(match => {
+        container.innerHTML = `<div class="row">${sortedMatches.map(match => {
             const game = this.games.find(g => g.id === match.gameId);
             return `
-                <div class="match-item">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h5 class="mb-1">${game ? game.name : 'Gioco eliminato'}</h5>
-                            <small class="text-muted">${new Date(match.date).toLocaleDateString('it-IT')}</small>
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="match-card">
+                        <div class="match-header d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1">${game ? game.name : 'Gioco eliminato'}</h5>
+                                <small class="text-muted">${new Date(match.date).toLocaleDateString('it-IT')}</small>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="app.showEditMatchModal(${match.id})">
+                                        <i class="bi bi-pencil me-2"></i>Modifica
+                                    </a></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="app.deleteMatch(${match.id})">
+                                        <i class="bi bi-trash me-2"></i>Elimina
+                                    </a></li>
+                                </ul>
+                            </div>
                         </div>
-                        <button class="btn btn-sm btn-primary me-2" onclick="app.showEditMatchModal(${match.id})">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="app.deleteMatch(${match.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                    <div class="participants">
-                        ${match.participants.map(p => {
-                            const player = this.players.find(pl => pl.id === p.playerId);
-                            const points = this.getPointsForPosition(p.position);
-                            return `
-                                <div class="participant-row">
-                                    <div class="d-flex align-items-center">
-                                        ${player ? this.createAvatar(player.avatar || '😊').outerHTML : ''}
-                                        <span class="ms-2">${player ? player.name : 'Giocatore eliminato'}</span>
-                                    </div>
-                                    <div class="text-end">
+                        <div class="participants">
+                            ${match.participants.map(p => {
+                                const player = this.players.find(pl => pl.id === p.playerId);
+                                const points = this.getPointsForPosition(p.position);
+                                return `
+                                    <div class="participant-item">
+                                        <div class="d-flex align-items-center">
+                                            ${player ? this.createAvatar(player.avatar || '😊').outerHTML : ''}
+                                            <span class="ms-2 flex-grow-1">${player ? player.name : 'Giocatore eliminato'}</span>
+                                        </div>
                                         <span class="badge ${this.getPositionBadgeClass(p.position)}">
                                             ${this.getPositionLabel(p.position)} (+${points} pt)
                                         </span>
                                     </div>
-                                </div>
-                            `;
-                        }).join('')}
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
                 </div>
             `;
-        }).join('');
+        }).join('')}</div>`;
     }
 
     getPointsForPosition(position) {
@@ -741,6 +754,29 @@ class HallOfFameApp {
 
     getPositionBadgeClass(position) {
         return position === 'winner' ? 'bg-warning' : position === 'participant' ? 'bg-primary' : 'bg-secondary';
+    }
+
+    // Sort participants by position first (winner, participant, last), then by name
+    sortParticipantsByRank(participants) {
+        const positionOrder = {
+            'winner': 1,
+            'participant': 2,
+            'last': 3
+        };
+        
+        return participants.sort((a, b) => {
+            // First sort by position
+            const positionDiff = positionOrder[a.position] - positionOrder[b.position];
+            if (positionDiff !== 0) return positionDiff;
+            
+            // Then sort by player name
+            const playerA = this.players.find(p => p.id === a.playerId);
+            const playerB = this.players.find(p => p.id === b.playerId);
+            const nameA = playerA ? playerA.name : 'Giocatore eliminato';
+            const nameB = playerB ? playerB.name : 'Giocatore eliminato';
+            
+            return nameA.localeCompare(nameB, 'it', { sensitivity: 'base' });
+        });
     }
 
     // ===== RANKING SYSTEM =====
