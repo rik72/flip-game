@@ -806,7 +806,7 @@ class HallOfFameApp {
                             </div>
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-three-dots"></i>
+                                    Azioni
                                 </button>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="#" onclick="app.showEditMatchModal(${match.id})">
@@ -973,7 +973,7 @@ class HallOfFameApp {
             // Score
             const scoreDiv = document.createElement('div');
             scoreDiv.className = 'podium-score';
-            scoreDiv.textContent = `${player.totalPoints} punti`;
+            scoreDiv.textContent = `${player.totalPoints} ${player.totalPoints === 1 ? 'punto' : 'punti'}`;
             stepDiv.appendChild(scoreDiv);
             
             podiumDiv.appendChild(stepDiv);
@@ -1004,7 +1004,7 @@ class HallOfFameApp {
                 </div>
                 <div class="ranking-stats">
                     <div class="fs-4 fw-bold text-primary">${player.totalPoints}</div>
-                    <small class="text-muted">punti</small>
+                    <small class="text-muted">${player.totalPoints === 1 ? 'punto' : 'punti'}</small>
                 </div>
             </div>
         `).join('');
