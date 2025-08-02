@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "validate": "node validate-compliance.js",
-    "serve": "python3 -m http.server 8080",
+    "serve": "python3 -m http.server 8088",
     "check-compliance": "node validate-compliance.js && echo '✅ Code is compliant with Hall of Fame standards'",
     "start": "npm run check-compliance && npm run serve"
   },

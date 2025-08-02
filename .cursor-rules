@@ -11,14 +11,14 @@ Before ANY code modification, you MUST read and follow:
 
 This project uses STRICT modular architecture:
 ```
-CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → HallOfFameApp
+constants.js → utils.js → modal-manager.js → html-builder.js → display-manager.js → hall-of-fame.js → app-bridge.js
 ```
 
 ## ZERO TOLERANCE RULES
 
 ### ❌ NEVER DO:
 - Duplicate any code, messages, or HTML templates
-- Hardcode text strings outside CONSTANTS.MESSAGES
+- Hardcode text strings outside constants.js/CONSTANTS.MESSAGES
 - Create manual modal setup - use ModalManager.setupModal()
 - Write inline HTML templates - use HtmlBuilder methods
 - Handle empty states manually - use DisplayManager.renderEmptyState()
@@ -26,7 +26,7 @@ CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → Hall
 
 ### ✅ ALWAYS DO:
 - Check if functionality exists in Utils/HtmlBuilder/DisplayManager first
-- Add new messages to CONSTANTS.MESSAGES with placeholders
+- Add new messages to constants.js/CONSTANTS.MESSAGES with placeholders
 - Use existing utility classes for ALL operations
 - Follow established patterns exactly
 - Maintain zero duplications policy
@@ -67,7 +67,7 @@ Before suggesting any code:
 2. ✓ Am I using the correct utility class?
 3. ✓ Is this following established patterns?
 4. ✓ Will this maintain zero duplications?
-5. ✓ Is text properly centralized in CONSTANTS?
+5. ✓ Is text properly centralized in constants.js?
 
 ## ENFORCEMENT
 

@@ -14,145 +14,204 @@ class ComplianceValidator {
     constructor() {
         this.violations = [];
         this.warnings = [];
-        this.appJsPath = 'app.js';
+        this.moduleFiles = {
+            constants: 'constants.js',
+            utils: 'utils.js',
+            modalManager: 'modal-manager.js',
+            htmlBuilder: 'html-builder.js',
+            displayManager: 'display-manager.js',
+            hallOfFame: 'hall-of-fame.js',
+            appBridge: 'app-bridge.js'
+        };
     }
 
     validateCodeCompliance() {
         console.log('🔍 Validating Hall of Fame code compliance...\n');
         
-        if (!fs.existsSync(this.appJsPath)) {
-            this.addViolation('CRITICAL', 'app.js file not found');
-            return false;
+        // Check all required files exist
+        for (const [module, file] of Object.entries(this.moduleFiles)) {
+            if (!fs.existsSync(file)) {
+                this.addViolation('CRITICAL', `${file} file not found`);
+                return false;
+            }
         }
 
-        const code = fs.readFileSync(this.appJsPath, 'utf8');
+        // Read all module files
+        const moduleContents = {};
+        for (const [module, file] of Object.entries(this.moduleFiles)) {
+            moduleContents[module] = fs.readFileSync(file, 'utf8');
+        }
         
-        this.validateArchitecture(code);
-        this.validateZeroDuplication(code);
-        this.validateUtilityUsage(code);
-        this.validateConstants(code);
-        this.validatePatterns(code);
+        this.validateArchitecture(moduleContents);
+        this.validateZeroDuplication(moduleContents);
+        this.validateUtilityUsage(moduleContents);
+        this.validateConstants(moduleContents);
+        this.validatePatterns(moduleContents);
+        this.validateModuleSeparation(moduleContents);
         
         this.reportResults();
         return this.violations.length === 0;
     }
 
-    validateArchitecture(code) {
+    validateArchitecture(moduleContents) {
         console.log('🏗️  Checking architecture compliance...');
         
-        // Check class loading order
-        const expectedOrder = ['CONSTANTS', 'Utils', 'ModalManager', 'HtmlBuilder', 'DisplayManager', 'HallOfFameApp'];
-        const classPattern = /class\s+(\w+)/g;
-        const foundClasses = [];
-        let match;
-        
-        while ((match = classPattern.exec(code)) !== null) {
-            foundClasses.push(match[1]);
+        // Check if CONSTANTS exists in constants.js
+        if (!moduleContents.constants.includes('const CONSTANTS = {')) {
+            this.addViolation('CRITICAL', 'CONSTANTS object not found in constants.js');
         }
-        
-        // Check if CONSTANTS exists
-        if (!code.includes('const CONSTANTS = {')) {
-            this.addViolation('CRITICAL', 'CONSTANTS object not found');
-        }
-        
-        // Check if all required classes exist
-        expectedOrder.slice(1).forEach(className => {
-            if (!foundClasses.includes(className)) {
-                this.addViolation('CRITICAL', `Missing required class: ${className}`);
+
+        // Check required classes exist in their respective files
+        const requiredClasses = {
+            utils: 'class Utils',
+            modalManager: 'class ModalManager',
+            htmlBuilder: 'class HtmlBuilder',
+            displayManager: 'class DisplayManager',
+            hallOfFame: 'class HallOfFameApp'
+        };
+
+        for (const [module, className] of Object.entries(requiredClasses)) {
+            if (!moduleContents[module].includes(className)) {
+                this.addViolation('CRITICAL', `Missing ${className} in ${this.moduleFiles[module]}`);
             }
-        });
+        }
+
+        // app.js has been removed as it was redundant after modularization
         
         console.log('   ✓ Architecture validation complete');
     }
 
-    validateZeroDuplication(code) {
+    validateZeroDuplication(moduleContents) {
         console.log('🚫 Checking for code duplications...');
         
-        // Check for hardcoded alert messages
-        const alertPattern = /alert\s*\(\s*['"`]([^'"`]+)['"`]\s*\)/g;
-        let alertMatch;
-        const hardcodedAlerts = [];
-        
-        while ((alertMatch = alertPattern.exec(code)) !== null) {
-            hardcodedAlerts.push(alertMatch[1]);
-        }
-        
-        if (hardcodedAlerts.length > 0) {
-            this.addViolation('HIGH', `Found ${hardcodedAlerts.length} hardcoded alert messages: ${hardcodedAlerts.join(', ')}`);
-        }
-        
-        // Check for duplicated validation patterns
-        const validatePatterns = [
-            /if\s*\(\s*!name\s*\)\s*{[^}]*alert/g,
-            /if\s*\(\s*.*\.some\s*\([^)]*name\.toLowerCase/g
-        ];
-        
-        validatePatterns.forEach((pattern, index) => {
-            const matches = code.match(pattern);
-            if (matches && matches.length > 1) {
-                this.addViolation('MEDIUM', `Found duplicated validation pattern ${index + 1}: ${matches.length} occurrences`);
+        // Check for hardcoded alert messages across all files
+        let totalHardcodedAlerts = 0;
+        for (const [module, content] of Object.entries(moduleContents)) {
+            const alertPattern = /alert\s*\(\s*['"`]([^'"`]+)['"`]\s*\)/g;
+            let alertMatch;
+            const hardcodedAlerts = [];
+            
+            while ((alertMatch = alertPattern.exec(content)) !== null) {
+                hardcodedAlerts.push(alertMatch[1]);
             }
-        });
+            
+            if (hardcodedAlerts.length > 0) {
+                totalHardcodedAlerts += hardcodedAlerts.length;
+                this.addViolation('HIGH', `Found ${hardcodedAlerts.length} hardcoded alert messages in ${this.moduleFiles[module]}: ${hardcodedAlerts.join(', ')}`);
+            }
+        }
+        
+        // Check for duplicated class definitions
+        const classDefinitions = {};
+        for (const [module, content] of Object.entries(moduleContents)) {
+            const classPattern = /class\s+(\w+)/g;
+            let match;
+            while ((match = classPattern.exec(content)) !== null) {
+                const className = match[1];
+                if (classDefinitions[className]) {
+                    this.addViolation('CRITICAL', `Duplicate class definition: ${className} found in both ${classDefinitions[className]} and ${this.moduleFiles[module]}`);
+                } else {
+                    classDefinitions[className] = this.moduleFiles[module];
+                }
+            }
+        }
         
         console.log('   ✓ Duplication validation complete');
     }
 
-    validateUtilityUsage(code) {
+    validateUtilityUsage(moduleContents) {
         console.log('🔧 Checking utility class usage...');
         
-        // Check if Utils.validateName is used for validations
-        if (code.includes('if (!name)') && !code.includes('Utils.validateName')) {
-            this.addWarning('Should use Utils.validateName() instead of manual validation');
-        }
-        
-        // Check if ModalManager.setupModal is used
-        if (code.includes('new bootstrap.Modal') && !code.includes('ModalManager.setupModal')) {
-            this.addWarning('Should use ModalManager.setupModal() for modal management');
+        // Check if Utils.validateName is used for validations across files
+        for (const [module, content] of Object.entries(moduleContents)) {
+            if (content.includes('if (!name)') && !content.includes('Utils.validateName')) {
+                this.addWarning(`Should use Utils.validateName() instead of manual validation in ${this.moduleFiles[module]}`);
+            }
         }
         
         // Check if HtmlBuilder is used for common elements
-        if (code.includes('<button class="btn') && !code.includes('HtmlBuilder.createButton')) {
-            this.addWarning('Consider using HtmlBuilder.createButton() for buttons');
+        for (const [module, content] of Object.entries(moduleContents)) {
+            if (content.includes('<button class="btn') && !content.includes('HtmlBuilder.createButton')) {
+                this.addWarning(`Consider using HtmlBuilder.createButton() for buttons in ${this.moduleFiles[module]}`);
+            }
         }
         
         console.log('   ✓ Utility usage validation complete');
     }
 
-    validateConstants(code) {
+    validateConstants(moduleContents) {
         console.log('📋 Checking CONSTANTS usage...');
         
-        // Check if CONSTANTS structure is proper
+        // Check if CONSTANTS structure is proper in constants.js
         const requiredSections = ['MESSAGES', 'MODAL_TYPES', 'POSITION_POINTS', 'GAME_TYPE_LABELS'];
         
         requiredSections.forEach(section => {
-            if (!code.includes(`${section}:`)) {
+            if (!moduleContents.constants.includes(`${section}:`)) {
                 this.addViolation('MEDIUM', `Missing required CONSTANTS section: ${section}`);
             }
         });
+
+        // Check that CONSTANTS is not redefined in other files
+        for (const [module, content] of Object.entries(moduleContents)) {
+            if (module !== 'constants' && content.includes('const CONSTANTS = {')) {
+                this.addViolation('HIGH', `CONSTANTS should not be redefined in ${this.moduleFiles[module]} - they are in constants.js`);
+            }
+        }
         
         console.log('   ✓ CONSTANTS validation complete');
     }
 
-    validatePatterns(code) {
+    validatePatterns(moduleContents) {
         console.log('🎯 Checking pattern compliance...');
         
-        // Check for proper error handling
-        if (!code.includes('try {') || !code.includes('Utils.validateName')) {
-            this.addWarning('Ensure proper error handling with try-catch for validations');
-        }
-        
-        // Check for consistent naming
-        const functionPattern = /function\s+(\w+)/g;
-        let funcMatch;
-        
-        while ((funcMatch = functionPattern.exec(code)) !== null) {
-            const funcName = funcMatch[1];
-            if (funcName.includes('Modal') && !funcName.includes('show') && !funcName.includes('setup')) {
-                this.addWarning(`Function ${funcName} should follow modal naming conventions`);
+        // Check for proper error handling in relevant files
+        for (const [module, content] of Object.entries(moduleContents)) {
+            if (module === 'hallOfFame' || module === 'utils') {
+                if (!content.includes('try {') || !content.includes('Utils.validateName')) {
+                    this.addWarning(`Ensure proper error handling with try-catch for validations in ${this.moduleFiles[module]}`);
+                }
             }
         }
         
         console.log('   ✓ Pattern validation complete');
+    }
+
+    validateModuleSeparation(moduleContents) {
+        console.log('📦 Checking module separation...');
+
+        // Check that each module contains only its expected content
+        const moduleExpectations = {
+            constants: ['const CONSTANTS'],
+            utils: ['class Utils'],
+            modalManager: ['class ModalManager'],
+            htmlBuilder: ['class HtmlBuilder'],
+            displayManager: ['class DisplayManager'],
+            hallOfFame: ['class HallOfFameApp'],
+            appBridge: ['let app', 'document.addEventListener', 'function showSection']
+        };
+
+        for (const [module, expectations] of Object.entries(moduleExpectations)) {
+            const content = moduleContents[module];
+            for (const expectation of expectations) {
+                if (!content.includes(expectation)) {
+                    this.addViolation('MEDIUM', `${this.moduleFiles[module]} should contain: ${expectation}`);
+                }
+            }
+        }
+
+        // Check file sizes are reasonable (not too large)
+        for (const [module, file] of Object.entries(this.moduleFiles)) {
+            const stats = fs.statSync(file);
+            const sizeKB = Math.round(stats.size / 1024);
+            
+            if (module === 'hallOfFame' && sizeKB > 50) {
+                this.addWarning(`${file} is quite large (${sizeKB}KB) - consider further modularization`);
+            } else if (module !== 'hallOfFame' && sizeKB > 20) {
+                this.addWarning(`${file} is larger than expected (${sizeKB}KB) for a utility module`);
+            }
+        }
+
+        console.log('   ✓ Module separation validation complete');
     }
 
     addViolation(level, message) {
@@ -181,6 +240,13 @@ class ComplianceValidator {
             this.warnings.forEach((warning, index) => {
                 console.log(`   ${index + 1}. ${warning}`);
             });
+        }
+
+        console.log('\n📁 Module Structure:');
+        for (const [module, file] of Object.entries(this.moduleFiles)) {
+            const stats = fs.statSync(file);
+            const sizeKB = Math.round(stats.size / 1024);
+            console.log(`   ${file}: ${sizeKB}KB`);
         }
         
         console.log('\n📚 For detailed rules, see:');

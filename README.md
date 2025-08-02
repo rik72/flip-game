@@ -16,7 +16,13 @@ Un'applicazione web per gestire classifiche di giochi familiari con sistema di p
 ```
 halloffame/
 ├── index.html                 # Interfaccia utente principale
-├── app.js                     # Logica applicazione modulare
+├── constants.js               # Costanti e configurazioni centrali
+├── utils.js                   # Funzioni di utilità e validazioni
+├── modal-manager.js           # Gestione modali standardizzata
+├── html-builder.js            # Generazione HTML riutilizzabile
+├── display-manager.js         # Pattern di visualizzazione comuni
+├── hall-of-fame.js            # Logica business (classe HallOfFameApp)
+├── app-bridge.js              # Funzioni globali e inizializzazione
 ├── styles.css                 # Stili CSS consolidati  
 ├── README.md                  # Documentazione progetto
 ├── CODE_INSTRUCTIONS.md       # Istruzioni tecniche dettagliate
@@ -28,16 +34,17 @@ halloffame/
 
 ### **Struttura Modulare:**
 ```javascript
-CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → HallOfFameApp
+constants.js → utils.js → modal-manager.js → html-builder.js → display-manager.js → hall-of-fame.js → app-bridge.js
 ```
 
-**Classi Principali:**
-- **`CONSTANTS`**: Configurazioni centrali e messaggi
-- **`Utils`**: Funzioni di utilità (validazioni, modali)  
-- **`ModalManager`**: Gestione unificata modali add/edit
-- **`HtmlBuilder`**: Generazione HTML standardizzata
-- **`DisplayManager`**: Pattern comuni di visualizzazione
-- **`HallOfFameApp`**: Logica business principale
+**File e Moduli Principali:**
+- **`constants.js`**: Configurazioni centrali e messaggi
+- **`utils.js`**: Funzioni di utilità (validazioni, modali)  
+- **`modal-manager.js`**: Gestione unificata modali add/edit
+- **`html-builder.js`**: Generazione HTML standardizzata
+- **`display-manager.js`**: Pattern comuni di visualizzazione
+- **`hall-of-fame.js`**: Logica business principale (solo classe HallOfFameApp)
+- **`app-bridge.js`**: Funzioni globali e inizializzazione app
 
 ## 🤖 Sistema di Compliance Automatico per AI
 
@@ -89,11 +96,11 @@ npm install
 npm start
 
 # Oppure solo il server web
-python3 -m http.server 8080
+python3 -m http.server 8088
 ```
 
 ### **Utilizzo**
-1. Apri `index.html` nel browser o vai su `http://localhost:8080`
+1. Apri `index.html` nel browser o vai su `http://localhost:8088`
 2. Aggiungi giocatori dalla sezione "Giocatori"
 3. Aggiungi giochi dalla sezione "Giochi"
 4. Registra partite dalla sezione "Partite"
@@ -116,7 +123,7 @@ python3 -m http.server 8080
 ### **Per Sviluppatori**
 1. **Leggi** `CODE_INSTRUCTIONS.md` per l'architettura completa
 2. **Segui** `.ai-development-rules.md` per standard di sviluppo
-3. **Usa sempre** le utility classes esistenti (zero duplicazioni!)
+3. **Usa sempre** i moduli utility esistenti (zero duplicazioni!)
 4. **Testa** le modifiche con `npm run validate`
 
 ### **Per AI Assistant**
@@ -127,16 +134,16 @@ python3 -m http.server 8080
 
 ### **Aggiunta Nuove Funzionalità**
 ```javascript
-// 1. Aggiungi configurazioni in CONSTANTS
+// 1. Aggiungi configurazioni in constants.js
 CONSTANTS.MESSAGES.NEW_FEATURE = 'Messaggio per nuova feature';
 
-// 2. Usa utility functions esistenti
-Utils.validateName(name, items, id, 'entity');
-ModalManager.setupModal('entity', false);
-HtmlBuilder.createButton('Azione', 'btn-primary', callback);
+// 2. Usa utility modules esistenti
+Utils.validateName(name, items, id, 'entity');           // da utils.js
+ModalManager.setupModal('entity', false);                // da modal-manager.js
+HtmlBuilder.createButton('Azione', 'btn-primary', callback); // da html-builder.js
 
 // 3. Segui i pattern consolidati
-DisplayManager.renderEmptyState(container, message);
+DisplayManager.renderEmptyState(container, message);     // da display-manager.js
 
 // 4. Valida compliance
 npm run validate
@@ -194,8 +201,8 @@ Performance = (Punti Totali / (Partite × 2)) × 100
 
 ### **Standard di Qualità**
 - ✅ Zero duplicazioni nel codice
-- ✅ Uso obbligatorio delle utility classes
-- ✅ Messaggi centralizzati in CONSTANTS
+- ✅ Uso obbligatorio dei moduli utility
+- ✅ Messaggi centralizzati in constants.js
 - ✅ Rispetto dell'architettura modulare
 - ✅ Validazione compliance automatica
 

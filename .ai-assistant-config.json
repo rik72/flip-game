@@ -10,12 +10,13 @@
     "architecture": {
       "type": "modular",
       "loading_order": [
-        "CONSTANTS",
-        "Utils", 
-        "ModalManager",
-        "HtmlBuilder",
-        "DisplayManager",
-        "HallOfFameApp"
+        "constants.js",
+        "utils.js", 
+        "modal-manager.js",
+        "html-builder.js",
+        "display-manager.js",
+        "hall-of-fame.js",
+        "app-bridge.js"
       ],
       "zero_tolerance": [
         "code_duplication",
@@ -62,7 +63,7 @@
     "setup_modal": "ModalManager.setupModal('entity', isEdit, data)",
     "create_button": "HtmlBuilder.createButton(text, class, callback, icon)",
     "empty_state": "DisplayManager.renderEmptyState(container, message)",
-    "new_message": "CONSTANTS.MESSAGES.NEW_MSG = 'Text with {placeholder}'"
+    "new_message": "Add to constants.js: CONSTANTS.MESSAGES.NEW_MSG = 'Text with {placeholder}'"
   },
   "escalation": {
     "uncertain": "study existing patterns",
