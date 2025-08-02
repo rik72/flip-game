@@ -1,3 +1,256 @@
+// ===== CONSTANTS =====
+const CONSTANTS = {
+    MESSAGES: {
+        EMPTY_NAME: 'Inserisci il nome del {type}',
+        DUPLICATE_NAME: 'Esiste già un {type} con questo nome',
+        CONFIRM_DELETE_PLAYER: 'Sei sicuro di voler eliminare questo giocatore? Tutte le sue partite verranno rimosse.',
+        CONFIRM_DELETE_GAME: 'Sei sicuro di voler eliminare questo gioco? Tutte le partite associate verranno rimosse.',
+        CONFIRM_DELETE_MATCH: 'Sei sicuro di voler eliminare questa partita?',
+        MIN_PLAYERS_FOR_MATCH: 'Aggiungi almeno 2 giocatori prima di registrare una partita',
+        MIN_GAMES_FOR_MATCH: 'Aggiungi almeno un gioco prima di registrare una partita',
+        SELECT_GAME: 'Seleziona un gioco',
+        SELECT_DATE: 'Seleziona una data',
+        COMPLETE_PARTICIPANTS: 'Completa tutti i dati dei partecipanti',
+        NO_DUPLICATE_PLAYERS: 'Un giocatore non può partecipare due volte alla stessa partita',
+        MIN_PARTICIPANTS: 'Servono almeno 2 partecipanti',
+        BACKUP_EXPORT_SUCCESS: 'Backup esportato con successo!',
+        BACKUP_SELECT_FILE: 'Seleziona un file di backup (.hof)',
+        BACKUP_INVALID_FILE: 'Il file selezionato non è un file di backup valido (.hof)',
+        BACKUP_IMPORT_SUCCESS: 'Backup importato con successo!',
+        BACKUP_EXPORT_ERROR: 'Errore durante l\'esportazione del backup.'
+    },
+    MODAL_TYPES: {
+        PLAYER: {
+            name: 'giocatore',
+            addTitle: 'Aggiungi Giocatore',
+            editTitle: 'Modifica Giocatore',
+            addButton: 'Aggiungi',
+            editButton: 'Salva Modifiche'
+        },
+        GAME: {
+            name: 'gioco',
+            addTitle: 'Aggiungi Gioco',
+            editTitle: 'Modifica Gioco',
+            addButton: 'Aggiungi',
+            editButton: 'Salva Modifiche'
+        }
+    },
+    POSITION_POINTS: {
+        winner: 2,
+        participant: 1,
+        last: 0
+    },
+    GAME_TYPE_LABELS: {
+        board: 'Gioco da Tavolo',
+        card: 'Gioco di Carte',
+        garden: 'Gioco da Giardino',
+        sport: 'Sport',
+        other: 'Altro'
+    },
+    POSITION_LABELS: {
+        winner: '🏆 Vincitore',
+        participant: '🥈 Piazzamento', 
+        last: '😞 Ultimo posto'
+    },
+    POSITION_BADGE_CLASSES: {
+        winner: 'bg-warning',
+        participant: 'bg-primary',
+        last: 'bg-secondary'
+    }
+};
+
+// ===== UTILITY FUNCTIONS =====
+class Utils {
+    static formatMessage(template, type) {
+        return template.replace('{type}', type);
+    }
+
+    static validateName(name, existingItems, currentId = null, itemType = 'item') {
+        if (!name.trim()) {
+            throw new Error(Utils.formatMessage(CONSTANTS.MESSAGES.EMPTY_NAME, itemType));
+        }
+        
+        const duplicateExists = existingItems.some(item => 
+            item.name.toLowerCase() === name.toLowerCase() && 
+            (currentId === null || item.id !== currentId)
+        );
+        
+        if (duplicateExists) {
+            throw new Error(Utils.formatMessage(CONSTANTS.MESSAGES.DUPLICATE_NAME, itemType));
+        }
+        
+        return true;
+    }
+
+    static confirmDelete(message) {
+        return confirm(message);
+    }
+
+    static showModal(modalId) {
+        new bootstrap.Modal(document.getElementById(modalId)).show();
+    }
+
+    static hideModal(modalId) {
+        const modalInstance = bootstrap.Modal.getInstance(document.getElementById(modalId));
+        if (modalInstance) modalInstance.hide();
+    }
+}
+
+// ===== MODAL MANAGER =====
+class ModalManager {
+    static setupModal(type, isEdit = false, data = null) {
+        const modalConfig = CONSTANTS.MODAL_TYPES[type.toUpperCase()];
+        const modalId = `add${type.charAt(0).toUpperCase() + type.slice(1)}Modal`;
+        
+        // Reset edit ID
+        document.getElementById(`${type}-edit-id`).value = isEdit && data ? data.id : '';
+        
+        // Set form values
+        if (type === 'player') {
+            this.setupPlayerModal(isEdit, data, modalConfig);
+        } else if (type === 'game') {
+            this.setupGameModal(isEdit, data, modalConfig);
+        }
+        
+        // Update modal title and button
+        document.getElementById(`${type}-modal-title`).textContent = 
+            isEdit ? modalConfig.editTitle : modalConfig.addTitle;
+        document.getElementById(`${type}-submit-btn`).textContent = 
+            isEdit ? modalConfig.editButton : modalConfig.addButton;
+        
+        Utils.showModal(modalId);
+    }
+
+    static setupPlayerModal(isEdit, data, modalConfig) {
+        const nameField = document.getElementById('player-name');
+        const avatarField = document.getElementById('player-avatar');
+        const filterField = document.getElementById('avatar-filter');
+        
+        if (isEdit && data) {
+            nameField.value = data.name;
+            filterField.value = '';
+            avatarField.value = data.avatar || '😊';
+        } else {
+            nameField.value = '';
+            filterField.value = '';
+            avatarField.value = '😊';
+        }
+    }
+
+    static setupGameModal(isEdit, data, modalConfig) {
+        const nameField = document.getElementById('game-name');
+        const typeField = document.getElementById('game-type');
+        
+        if (isEdit && data) {
+            nameField.value = data.name;
+            typeField.value = data.type;
+        } else {
+            nameField.value = '';
+            typeField.value = 'board';
+        }
+    }
+}
+
+// ===== HTML BUILDER HELPERS =====
+class HtmlBuilder {
+    static createButton(text, className, onClick, icon = null) {
+        const iconHtml = icon ? `<i class="bi ${icon}"></i> ` : '';
+        return `<button class="btn btn-sm ${className}" onclick="${onClick}">${iconHtml}${text}</button>`;
+    }
+
+    static createActionButtons(itemId, itemType) {
+        const editButton = this.createButton(
+            'Modifica', 
+            'btn-primary me-2', 
+            `app.showEdit${itemType}Modal(${itemId})`,
+            'bi-pencil'
+        );
+        const deleteButton = this.createButton(
+            'Elimina', 
+            'btn-danger', 
+            `app.delete${itemType}(${itemId})`,
+            'bi-trash'
+        );
+        return editButton + deleteButton;
+    }
+
+    static createStatsBadge(icon, value, title = '') {
+        const titleAttr = title ? `title="${title}" data-bs-toggle="tooltip" data-bs-placement="top"` : '';
+        return `<span ${titleAttr}>${icon} ${value}</span>`;
+    }
+
+    static createEmptyStateMessage(message) {
+        return `<div class="col-12 text-center"><p class="text-muted">${message}</p></div>`;
+    }
+
+    static createParticipantSelector(players, selectedPlayerId = null, selectedPosition = null, participantCount = 0) {
+        const playerOptions = players.map(player => 
+            `<option value="${player.id}" ${selectedPlayerId === player.id ? 'selected' : ''}>${player.name}</option>`
+        ).join('');
+        
+        const positionOptions = [
+            { value: 'winner', label: '🏆 Vincitore (2 punti)', selected: selectedPosition === 'winner' },
+            { value: 'participant', label: '🥈 Piazzamento (1 punto)', selected: selectedPosition === 'participant' },
+            { value: 'last', label: '😞 Ultimo posto (0 punti)', selected: selectedPosition === 'last' }
+        ].map(opt => 
+            `<option value="${opt.value}" ${opt.selected ? 'selected' : ''}>${opt.label}</option>`
+        ).join('');
+
+        const showDeleteButton = participantCount >= 2 || selectedPlayerId;
+        const deleteButton = showDeleteButton ? 
+            `<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button>` : '';
+
+        return `
+            <div class="participant-row">
+                <div class="row w-100">
+                    <div class="col-6">
+                        <select class="form-select" required>
+                            <option value="">Seleziona giocatore...</option>
+                            ${playerOptions}
+                        </select>
+                    </div>
+                    <div class="col-4">
+                        <select class="form-select" required>
+                            <option value="">Posizione...</option>
+                            ${positionOptions}
+                        </select>
+                    </div>
+                    <div class="col-2">
+                        ${deleteButton}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// ===== DISPLAY MANAGER =====
+class DisplayManager {
+    static renderEmptyState(container, message) {
+        container.innerHTML = HtmlBuilder.createEmptyStateMessage(message);
+    }
+
+    static renderItemList(container, items, renderItemFunction) {
+        if (items.length === 0) {
+            return false; // Caller should handle empty state
+        }
+        
+        container.innerHTML = items.map(renderItemFunction).join('');
+        return true;
+    }
+
+    static createStatsDisplay(stats) {
+        const winsStats = HtmlBuilder.createStatsBadge('🏆', stats.wins, 'Vittorie');
+        const participantsStats = HtmlBuilder.createStatsBadge('🥈', stats.participants, 'Piazzamenti');
+        const lastsStats = HtmlBuilder.createStatsBadge('😞', stats.lasts, 'Ultimi posti');
+        
+        return `
+            <div>Partite: <strong>${stats.gamesPlayed}</strong></div>
+            <div>${winsStats} ${participantsStats} ${lastsStats}</div>
+        `;
+    }
+}
+
 // ===== APPLICATION STATE =====
 class HallOfFameApp {
     constructor() {
@@ -194,34 +447,19 @@ class HallOfFameApp {
 
     // ===== PLAYER MANAGEMENT =====
     showAddPlayerModal() {
-        // Reset form for adding new player
-        document.getElementById('player-edit-id').value = '';
-        document.getElementById('player-name').value = '';
-        
-        // Reset avatar filter
-        document.getElementById('avatar-filter').value = '';
+        ModalManager.setupModal('player', false);
         this.populateAvatarSelect(this.allAvatarOptions);
-        document.getElementById('player-avatar').value = '😊';
-        
-        // Update modal title and button
-        document.getElementById('player-modal-title').textContent = 'Aggiungi Giocatore';
-        document.getElementById('player-submit-btn').textContent = 'Aggiungi';
-        
         this.updateAvatarPreview();
-        new bootstrap.Modal(document.getElementById('addPlayerModal')).show();
     }
 
     addPlayer() {
         const name = document.getElementById('player-name').value.trim();
         const avatar = document.getElementById('player-avatar').value;
         
-        if (!name) {
-            alert('Inserisci il nome del giocatore');
-            return;
-        }
-        
-        if (this.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-            alert('Esiste già un giocatore con questo nome');
+        try {
+            Utils.validateName(name, this.players, null, 'giocatore');
+        } catch (error) {
+            alert(error.message);
             return;
         }
         
@@ -238,28 +476,16 @@ class HallOfFameApp {
         this.saveToStorage('players', this.players);
         this.displayPlayers();
         
-        bootstrap.Modal.getInstance(document.getElementById('addPlayerModal')).hide();
+        Utils.hideModal('addPlayerModal');
     }
 
     showEditPlayerModal(playerId) {
         const player = this.players.find(p => p.id === playerId);
         if (!player) return;
 
-        // Populate form with existing data
-        document.getElementById('player-edit-id').value = playerId;
-        document.getElementById('player-name').value = player.name;
-        
-        // Reset avatar filter and set player's avatar
-        document.getElementById('avatar-filter').value = '';
+        ModalManager.setupModal('player', true, player);
         this.populateAvatarSelect(this.allAvatarOptions);
-        document.getElementById('player-avatar').value = player.avatar || '😊';
-        
-        // Update modal title and button
-        document.getElementById('player-modal-title').textContent = 'Modifica Giocatore';
-        document.getElementById('player-submit-btn').textContent = 'Salva Modifiche';
-        
         this.updateAvatarPreview();
-        new bootstrap.Modal(document.getElementById('addPlayerModal')).show();
     }
 
     savePlayer() {
@@ -277,14 +503,10 @@ class HallOfFameApp {
         const name = document.getElementById('player-name').value.trim();
         const avatar = document.getElementById('player-avatar').value;
         
-        if (!name) {
-            alert('Inserisci il nome del giocatore');
-            return;
-        }
-        
-        // Check if name exists (but allow same name for current player)
-        if (this.players.some(p => p.name.toLowerCase() === name.toLowerCase() && p.id !== editId)) {
-            alert('Esiste già un giocatore con questo nome');
+        try {
+            Utils.validateName(name, this.players, editId, 'giocatore');
+        } catch (error) {
+            alert(error.message);
             return;
         }
         
@@ -301,11 +523,11 @@ class HallOfFameApp {
         this.saveToStorage('players', this.players);
         this.displayPlayers();
         
-        bootstrap.Modal.getInstance(document.getElementById('addPlayerModal')).hide();
+        Utils.hideModal('addPlayerModal');
     }
 
     deletePlayer(playerId) {
-        if (confirm('Sei sicuro di voler eliminare questo giocatore? Tutte le sue partite verranno rimosse.')) {
+        if (Utils.confirmDelete(CONSTANTS.MESSAGES.CONFIRM_DELETE_PLAYER)) {
             this.players = this.players.filter(p => p.id !== playerId);
             this.matches = this.matches.filter(m => !m.participants.some(p => p.playerId === playerId));
             this.saveToStorage('players', this.players);
@@ -318,7 +540,7 @@ class HallOfFameApp {
         const container = document.getElementById('players-list');
         
         if (this.players.length === 0) {
-            container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Nessun giocatore aggiunto. Inizia aggiungendo i primi giocatori!</p></div>';
+            DisplayManager.renderEmptyState(container, 'Nessun giocatore aggiunto. Inizia aggiungendo i primi giocatori!');
             return;
         }
         
@@ -340,16 +562,10 @@ class HallOfFameApp {
                     </div>
                     <h5 class="mb-2 mt-3">${player.name}</h5>
                     <div class="text-muted small">
-                        <div>Partite: <strong>${stats.gamesPlayed}</strong></div>
-                        <div><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${stats.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${stats.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${stats.lasts}</span></div>
+                        ${DisplayManager.createStatsDisplay(stats)}
                     </div>
                     <div class="mt-3">
-                        <button class="btn btn-sm btn-primary me-2" onclick="app.showEditPlayerModal(${player.id})">
-                            <i class="bi bi-pencil"></i> Modifica
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="app.deletePlayer(${player.id})">
-                            <i class="bi bi-trash"></i> Elimina
-                        </button>
+                        ${HtmlBuilder.createActionButtons(player.id, 'Player')}
                     </div>
                 </div>
             </div>
@@ -362,29 +578,17 @@ class HallOfFameApp {
 
     // ===== GAME MANAGEMENT =====
     showAddGameModal() {
-        // Reset form for adding new game
-        document.getElementById('game-edit-id').value = '';
-        document.getElementById('game-name').value = '';
-        document.getElementById('game-type').value = 'board';
-        
-        // Update modal title and button
-        document.getElementById('game-modal-title').textContent = 'Aggiungi Gioco';
-        document.getElementById('game-submit-btn').textContent = 'Aggiungi';
-        
-        new bootstrap.Modal(document.getElementById('addGameModal')).show();
+        ModalManager.setupModal('game', false);
     }
 
     addGame() {
         const name = document.getElementById('game-name').value.trim();
         const type = document.getElementById('game-type').value;
         
-        if (!name) {
-            alert('Inserisci il nome del gioco');
-            return;
-        }
-        
-        if (this.games.some(g => g.name.toLowerCase() === name.toLowerCase())) {
-            alert('Esiste già un gioco con questo nome');
+        try {
+            Utils.validateName(name, this.games, null, 'gioco');
+        } catch (error) {
+            alert(error.message);
             return;
         }
         
@@ -398,23 +602,14 @@ class HallOfFameApp {
         this.saveToStorage('games', this.games);
         this.displayGames();
         
-        bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
+        Utils.hideModal('addGameModal');
     }
 
     showEditGameModal(gameId) {
         const game = this.games.find(g => g.id === gameId);
         if (!game) return;
 
-        // Populate form with existing data
-        document.getElementById('game-edit-id').value = gameId;
-        document.getElementById('game-name').value = game.name;
-        document.getElementById('game-type').value = game.type;
-        
-        // Update modal title and button
-        document.getElementById('game-modal-title').textContent = 'Modifica Gioco';
-        document.getElementById('game-submit-btn').textContent = 'Salva Modifiche';
-        
-        new bootstrap.Modal(document.getElementById('addGameModal')).show();
+        ModalManager.setupModal('game', true, game);
     }
 
     saveGame() {
@@ -432,14 +627,10 @@ class HallOfFameApp {
         const name = document.getElementById('game-name').value.trim();
         const type = document.getElementById('game-type').value;
         
-        if (!name) {
-            alert('Inserisci il nome del gioco');
-            return;
-        }
-        
-        // Check if name exists (but allow same name for current game)
-        if (this.games.some(g => g.name.toLowerCase() === name.toLowerCase() && g.id !== editId)) {
-            alert('Esiste già un gioco con questo nome');
+        try {
+            Utils.validateName(name, this.games, editId, 'gioco');
+        } catch (error) {
+            alert(error.message);
             return;
         }
         
@@ -456,11 +647,11 @@ class HallOfFameApp {
         this.saveToStorage('games', this.games);
         this.displayGames();
         
-        bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
+        Utils.hideModal('addGameModal');
     }
 
     deleteGame(gameId) {
-        if (confirm('Sei sicuro di voler eliminare questo gioco? Tutte le partite associate verranno rimosse.')) {
+        if (Utils.confirmDelete(CONSTANTS.MESSAGES.CONFIRM_DELETE_GAME)) {
             this.games = this.games.filter(g => g.id !== gameId);
             this.matches = this.matches.filter(m => m.gameId !== gameId);
             this.saveToStorage('games', this.games);
@@ -473,7 +664,7 @@ class HallOfFameApp {
         const container = document.getElementById('games-list');
         
         if (this.games.length === 0) {
-            container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Nessun gioco aggiunto. Inizia aggiungendo i primi giochi!</p></div>';
+            DisplayManager.renderEmptyState(container, 'Nessun gioco aggiunto. Inizia aggiungendo i primi giochi!');
             return;
         }
         
@@ -496,37 +687,25 @@ class HallOfFameApp {
                     <div class="text-muted small mb-3">
                         Partite giocate: <strong>${this.matches.filter(m => m.gameId === game.id).length}</strong>
                     </div>
-                    <button class="btn btn-sm btn-primary me-2" onclick="app.showEditGameModal(${game.id})">
-                        <i class="bi bi-pencil"></i> Modifica
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="app.deleteGame(${game.id})">
-                        <i class="bi bi-trash"></i> Elimina
-                    </button>
+                    ${HtmlBuilder.createActionButtons(game.id, 'Game')}
                 </div>
             </div>
         `).join('');
     }
 
     getGameTypeLabel(type) {
-        const labels = {
-            board: 'Gioco da Tavolo',
-            card: 'Gioco di Carte',
-            garden: 'Gioco da Giardino',
-            sport: 'Sport',
-            other: 'Altro'
-        };
-        return labels[type] || 'Altro';
+        return CONSTANTS.GAME_TYPE_LABELS[type] || 'Altro';
     }
 
     // ===== MATCH MANAGEMENT =====
     showAddMatchModal() {
         if (this.players.length < 2) {
-            alert('Aggiungi almeno 2 giocatori prima di registrare una partita');
+            alert(CONSTANTS.MESSAGES.MIN_PLAYERS_FOR_MATCH);
             return;
         }
         
         if (this.games.length === 0) {
-            alert('Aggiungi almeno un gioco prima di registrare una partita');
+            alert(CONSTANTS.MESSAGES.MIN_GAMES_FOR_MATCH);
             return;
         }
         
@@ -549,7 +728,7 @@ class HallOfFameApp {
         document.getElementById('match-modal-title').textContent = 'Registra Partita';
         document.getElementById('match-submit-btn').textContent = 'Registra Partita';
         
-        new bootstrap.Modal(document.getElementById('addMatchModal')).show();
+        Utils.showModal('addMatchModal');
     }
 
     addParticipant() {
@@ -557,30 +736,9 @@ class HallOfFameApp {
         const participantCount = container.children.length;
         
         const participantDiv = document.createElement('div');
-        participantDiv.className = 'participant-row';
-        participantDiv.innerHTML = `
-            <div class="row w-100">
-                <div class="col-6">
-                    <select class="form-select" required>
-                        <option value="">Seleziona giocatore...</option>
-                        ${this.players.map(player => `<option value="${player.id}">${player.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="col-4">
-                    <select class="form-select" required>
-                        <option value="">Posizione...</option>
-                        <option value="winner">🏆 Vincitore (2 punti)</option>
-                        <option value="participant">🥈 Piazzamento (1 punto)</option>
-                        <option value="last">😞 Ultimo posto (0 punti)</option>
-                    </select>
-                </div>
-                <div class="col-2">
-                    ${participantCount >= 2 ? `<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button>` : ''}
-                </div>
-            </div>
-        `;
+        participantDiv.innerHTML = HtmlBuilder.createParticipantSelector(this.players, null, null, participantCount);
         
-        container.appendChild(participantDiv);
+        container.appendChild(participantDiv.firstElementChild);
     }
 
     addMatch() {
@@ -589,12 +747,12 @@ class HallOfFameApp {
         const participantRows = document.querySelectorAll('#match-participants .participant-row');
         
         if (!gameId) {
-            alert('Seleziona un gioco');
+            alert(CONSTANTS.MESSAGES.SELECT_GAME);
             return;
         }
         
         if (!date) {
-            alert('Seleziona una data');
+            alert(CONSTANTS.MESSAGES.SELECT_DATE);
             return;
         }
         
@@ -607,12 +765,12 @@ class HallOfFameApp {
             const position = positionSelect.value;
             
             if (!playerId || !position) {
-                alert('Completa tutti i dati dei partecipanti');
+                alert(CONSTANTS.MESSAGES.COMPLETE_PARTICIPANTS);
                 return;
             }
             
             if (participants.some(p => p.playerId === playerId)) {
-                alert('Un giocatore non può partecipare due volte alla stessa partita');
+                alert(CONSTANTS.MESSAGES.NO_DUPLICATE_PLAYERS);
                 return;
             }
             
@@ -620,7 +778,7 @@ class HallOfFameApp {
         }
         
         if (participants.length < 2) {
-            alert('Servono almeno 2 partecipanti');
+            alert(CONSTANTS.MESSAGES.MIN_PARTICIPANTS);
             return;
         }
         
@@ -638,17 +796,17 @@ class HallOfFameApp {
         this.saveToStorage('matches', this.matches);
         this.displayMatches();
         
-        bootstrap.Modal.getInstance(document.getElementById('addMatchModal')).hide();
+        Utils.hideModal('addMatchModal');
     }
 
     showEditMatchModal(matchId) {
         if (this.players.length < 2) {
-            alert('Aggiungi almeno 2 giocatori prima di modificare una partita');
+            alert(CONSTANTS.MESSAGES.MIN_PLAYERS_FOR_MATCH);
             return;
         }
         
         if (this.games.length === 0) {
-            alert('Aggiungi almeno un gioco prima di modificare una partita');
+            alert(CONSTANTS.MESSAGES.MIN_GAMES_FOR_MATCH);
             return;
         }
 
@@ -685,7 +843,7 @@ class HallOfFameApp {
         document.getElementById('match-modal-title').textContent = 'Modifica Partita';
         document.getElementById('match-submit-btn').textContent = 'Salva Modifiche';
         
-        new bootstrap.Modal(document.getElementById('addMatchModal')).show();
+        Utils.showModal('addMatchModal');
     }
 
     addParticipantForEdit(selectedPlayerId = null, selectedPosition = null) {
@@ -693,30 +851,9 @@ class HallOfFameApp {
         const participantCount = container.children.length;
         
         const participantDiv = document.createElement('div');
-        participantDiv.className = 'participant-row';
-        participantDiv.innerHTML = `
-            <div class="row w-100">
-                <div class="col-6">
-                    <select class="form-select" required>
-                        <option value="">Seleziona giocatore...</option>
-                        ${this.players.map(player => `<option value="${player.id}" ${selectedPlayerId === player.id ? 'selected' : ''}>${player.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="col-4">
-                    <select class="form-select" required>
-                        <option value="">Posizione...</option>
-                        <option value="winner" ${selectedPosition === 'winner' ? 'selected' : ''}>🏆 Vincitore (2 punti)</option>
-                        <option value="participant" ${selectedPosition === 'participant' ? 'selected' : ''}>🥈 Piazzamento (1 punto)</option>
-                        <option value="last" ${selectedPosition === 'last' ? 'selected' : ''}>😞 Ultimo posto (0 punti)</option>
-                    </select>
-                </div>
-                <div class="col-2">
-                    ${participantCount >= 2 || selectedPlayerId ? `<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button>` : ''}
-                </div>
-            </div>
-        `;
+        participantDiv.innerHTML = HtmlBuilder.createParticipantSelector(this.players, selectedPlayerId, selectedPosition, participantCount);
         
-        container.appendChild(participantDiv);
+        container.appendChild(participantDiv.firstElementChild);
     }
 
     saveMatch() {
@@ -736,12 +873,12 @@ class HallOfFameApp {
         const participantRows = document.querySelectorAll('#match-participants .participant-row');
         
         if (!gameId) {
-            alert('Seleziona un gioco');
+            alert(CONSTANTS.MESSAGES.SELECT_GAME);
             return;
         }
         
         if (!date) {
-            alert('Seleziona una data');
+            alert(CONSTANTS.MESSAGES.SELECT_DATE);
             return;
         }
         
@@ -754,12 +891,12 @@ class HallOfFameApp {
             const position = positionSelect.value;
             
             if (!playerId || !position) {
-                alert('Completa tutti i dati dei partecipanti');
+                alert(CONSTANTS.MESSAGES.COMPLETE_PARTICIPANTS);
                 return;
             }
             
             if (participants.some(p => p.playerId === playerId)) {
-                alert('Un giocatore non può partecipare due volte alla stessa partita');
+                alert(CONSTANTS.MESSAGES.NO_DUPLICATE_PLAYERS);
                 return;
             }
             
@@ -767,7 +904,7 @@ class HallOfFameApp {
         }
         
         if (participants.length < 2) {
-            alert('Servono almeno 2 partecipanti');
+            alert(CONSTANTS.MESSAGES.MIN_PARTICIPANTS);
             return;
         }
         
@@ -788,11 +925,11 @@ class HallOfFameApp {
         this.saveToStorage('matches', this.matches);
         this.displayMatches();
         
-        bootstrap.Modal.getInstance(document.getElementById('addMatchModal')).hide();
+        Utils.hideModal('addMatchModal');
     }
 
     deleteMatch(matchId) {
-        if (confirm('Sei sicuro di voler eliminare questa partita?')) {
+        if (Utils.confirmDelete(CONSTANTS.MESSAGES.CONFIRM_DELETE_MATCH)) {
             this.matches = this.matches.filter(m => m.id !== matchId);
             this.saveToStorage('matches', this.matches);
             this.displayMatches();
@@ -803,7 +940,7 @@ class HallOfFameApp {
         const container = document.getElementById('matches-list');
         
         if (this.matches.length === 0) {
-            container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">Nessuna partita registrata. Inizia registrando le prime partite!</p></div>';
+            DisplayManager.renderEmptyState(container, 'Nessuna partita registrata. Inizia registrando le prime partite!');
             return;
         }
         
@@ -858,20 +995,15 @@ class HallOfFameApp {
     }
 
     getPointsForPosition(position) {
-        return position === 'winner' ? 2 : position === 'participant' ? 1 : 0;
+        return CONSTANTS.POSITION_POINTS[position] || 0;
     }
 
     getPositionLabel(position) {
-        const labels = {
-            winner: '🏆 Vincitore',
-            participant: '🥈 Piazzamento', 
-            last: '😞 Ultimo posto'
-        };
-        return labels[position] || position;
+        return CONSTANTS.POSITION_LABELS[position] || position;
     }
 
     getPositionBadgeClass(position) {
-        return position === 'winner' ? 'bg-warning' : position === 'participant' ? 'bg-primary' : 'bg-secondary';
+        return CONSTANTS.POSITION_BADGE_CLASSES[position] || 'bg-secondary';
     }
 
     getPerformanceClass(performance) {
@@ -1085,22 +1217,22 @@ class HallOfFameApp {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                alert('Backup esportato con successo!');
+                alert(CONSTANTS.MESSAGES.BACKUP_EXPORT_SUCCESS);
             }).catch(error => {
                 console.error('Errore durante l\'esportazione:', error);
-                alert('Errore durante l\'esportazione del backup.');
+                alert(CONSTANTS.MESSAGES.BACKUP_EXPORT_ERROR);
             });
 
         } catch (error) {
             console.error('Errore durante l\'esportazione:', error);
-            alert('Errore durante l\'esportazione del backup.');
+            alert(CONSTANTS.MESSAGES.BACKUP_EXPORT_ERROR);
         }
     }
 
     showImportModal() {
         // Reset file input
         document.getElementById('backup-file').value = '';
-        new bootstrap.Modal(document.getElementById('importModal')).show();
+        Utils.showModal('importModal');
     }
 
     importData() {
@@ -1108,12 +1240,12 @@ class HallOfFameApp {
         const file = fileInput.files[0];
 
         if (!file) {
-            alert('Seleziona un file di backup (.hof)');
+            alert(CONSTANTS.MESSAGES.BACKUP_SELECT_FILE);
             return;
         }
 
         if (!file.name.endsWith('.hof')) {
-            alert('Il file selezionato non è un file di backup valido (.hof)');
+            alert(CONSTANTS.MESSAGES.BACKUP_INVALID_FILE);
             return;
         }
 
@@ -1165,9 +1297,9 @@ class HallOfFameApp {
                     this.showSection(currentSection);
 
                     // Close modal
-                    bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                    Utils.hideModal('importModal');
 
-                    alert('Backup importato con successo!');
+                    alert(CONSTANTS.MESSAGES.BACKUP_IMPORT_SUCCESS);
                 }
 
             }).catch(error => {

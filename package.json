@@ -1,0 +1,33 @@
+{
+  "name": "hall-of-fame",
+  "version": "1.0.0",
+  "description": "Hall of Fame - Family game ranking system with modular architecture",
+  "main": "app.js",
+  "scripts": {
+    "validate": "node validate-compliance.js",
+    "serve": "python3 -m http.server 8080",
+    "check-compliance": "node validate-compliance.js && echo '✅ Code is compliant with Hall of Fame standards'",
+    "start": "npm run check-compliance && npm run serve"
+  },
+  "keywords": [
+    "hall-of-fame",
+    "games",
+    "ranking",
+    "family",
+    "modular-architecture"
+  ],
+  "author": "Hall of Fame Project",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "ai_assistant": {
+    "required_reading": [
+      ".ai-context.md",
+      ".ai-development-rules.md"
+    ],
+    "compliance_script": "validate-compliance.js",
+    "architecture": "modular",
+    "zero_tolerance": "duplications"
+  }
+} 

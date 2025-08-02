@@ -1,0 +1,74 @@
+# Cursor AI Rules - Hall of Fame Project
+
+## MANDATORY: Read .ai-context.md FIRST
+
+Before ANY code modification, you MUST read and follow:
+1. `.ai-context.md` - Immediate context and checklist
+2. `.ai-development-rules.md` - Non-negotiable rules
+3. `CODE_INSTRUCTIONS.md` - Technical architecture
+
+## ARCHITECTURE ENFORCEMENT
+
+This project uses STRICT modular architecture:
+```
+CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → HallOfFameApp
+```
+
+## ZERO TOLERANCE RULES
+
+### ❌ NEVER DO:
+- Duplicate any code, messages, or HTML templates
+- Hardcode text strings outside CONSTANTS.MESSAGES
+- Create manual modal setup - use ModalManager.setupModal()
+- Write inline HTML templates - use HtmlBuilder methods
+- Handle empty states manually - use DisplayManager.renderEmptyState()
+- Create validation logic - use Utils.validateName()
+
+### ✅ ALWAYS DO:
+- Check if functionality exists in Utils/HtmlBuilder/DisplayManager first
+- Add new messages to CONSTANTS.MESSAGES with placeholders
+- Use existing utility classes for ALL operations
+- Follow established patterns exactly
+- Maintain zero duplications policy
+
+## QUICK PATTERNS
+
+### Validation:
+```javascript
+try {
+    Utils.validateName(name, existingItems, currentId, 'entityType');
+} catch (error) {
+    alert(error.message);
+    return;
+}
+```
+
+### Modals:
+```javascript
+ModalManager.setupModal('entity', false);  // Add
+ModalManager.setupModal('entity', true, data);  // Edit
+```
+
+### HTML Generation:
+```javascript
+HtmlBuilder.createButton('Text', 'class', callback, 'icon');
+HtmlBuilder.createActionButtons(id, 'EntityType');
+```
+
+### Empty States:
+```javascript
+DisplayManager.renderEmptyState(container, 'Message');
+```
+
+## MANDATORY CHECKS
+
+Before suggesting any code:
+1. ✓ Does this functionality already exist?
+2. ✓ Am I using the correct utility class?
+3. ✓ Is this following established patterns?
+4. ✓ Will this maintain zero duplications?
+5. ✓ Is text properly centralized in CONSTANTS?
+
+## ENFORCEMENT
+
+These rules are NON-NEGOTIABLE. Any suggestion that violates them will degrade code quality and introduce regressions. 

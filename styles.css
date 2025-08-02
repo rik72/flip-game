@@ -256,10 +256,10 @@ body {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     padding: 20px;
-    text-align: center;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
     margin-bottom: 20px;
+    text-align: center;
 }
 
 .player-card:hover {
@@ -329,17 +329,22 @@ body {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
     padding: 20px;
-    margin-bottom: 15px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    margin-bottom: 15px;
+}
+
+.match-item:hover {
+    transform: translateY(-5px);
 }
 
 .match-card {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     padding: 20px;
-    margin-bottom: 20px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+    margin-bottom: 20px;
     height: 100%;
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
@@ -390,6 +395,7 @@ body {
 /* ===== RANKING TABLE ===== */
 .ranking-table {
     background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
     border-radius: 15px;
     overflow: hidden;
 }
@@ -469,41 +475,37 @@ body {
     padding: 8px 12px;
     border-radius: 20px;
     transition: all 0.3s ease;
-}
-
-.performance-excellent {
-    background: linear-gradient(135deg, #059669, #10b981);
     color: white;
-    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
-}
-
-.performance-good {
-    background: linear-gradient(135deg, #0d9488, #14b8a6);
-    color: white;
-    box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);
-}
-
-.performance-average {
-    background: linear-gradient(135deg, #f59e0b, #fbbf24);
-    color: white;
-    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-}
-
-.performance-poor {
-    background: linear-gradient(135deg, #ea580c, #fb923c);
-    color: white;
-    box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
-}
-
-.performance-very-poor {
-    background: linear-gradient(135deg, #dc2626, #ef4444);
-    color: white;
-    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
 }
 
 .performance-value:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.performance-excellent {
+    background: linear-gradient(135deg, #059669, #10b981);
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+}
+
+.performance-good {
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+    box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);
+}
+
+.performance-average {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.performance-poor {
+    background: linear-gradient(135deg, #ea580c, #fb923c);
+    box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
+}
+
+.performance-very-poor {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
 }
 
 /* ===== MODALS ===== */
@@ -648,6 +650,52 @@ body {
 .bg-soft {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
+}
+
+/* ===== COMMON CARD STYLES ===== */
+.card-base {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.card-base:hover {
+    transform: translateY(-5px);
+}
+
+/* ===== GRADIENT BACKGROUNDS ===== */
+.gradient-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.gradient-success {
+    background: linear-gradient(135deg, var(--success-color), var(--secondary-color));
+}
+
+.gradient-warning {
+    background: linear-gradient(135deg, var(--warning-color), #fbbf24);
+}
+
+.gradient-danger {
+    background: linear-gradient(135deg, var(--danger-color), #f87171);
+}
+
+/* ===== PERFORMANCE LEVEL BASE ===== */
+.performance-base {
+    font-size: 1.25rem;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.performance-base:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== STICKY FOOTER ===== */

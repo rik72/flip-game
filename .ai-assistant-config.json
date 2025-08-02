@@ -1,0 +1,72 @@
+{
+  "project": "Hall of Fame",
+  "version": "1.0.0",
+  "ai_compliance": {
+    "mandatory_reading": [
+      ".ai-context.md",
+      ".ai-development-rules.md",
+      "CODE_INSTRUCTIONS.md"
+    ],
+    "architecture": {
+      "type": "modular",
+      "loading_order": [
+        "CONSTANTS",
+        "Utils", 
+        "ModalManager",
+        "HtmlBuilder",
+        "DisplayManager",
+        "HallOfFameApp"
+      ],
+      "zero_tolerance": [
+        "code_duplication",
+        "message_hardcoding",
+        "pattern_bypassing"
+      ]
+    },
+    "mandatory_patterns": {
+      "validation": "Utils.validateName()",
+      "modals": "ModalManager.setupModal()",
+      "html_generation": "HtmlBuilder.*",
+      "empty_states": "DisplayManager.renderEmptyState()",
+      "messages": "CONSTANTS.MESSAGES.*"
+    },
+    "forbidden_patterns": [
+      "inline HTML templates",
+      "hardcoded text strings",
+      "manual modal setup",
+      "duplicated validation logic",
+      "manual empty state handling"
+    ],
+    "pre_modification_checklist": [
+      "Read .ai-context.md",
+      "Verify no existing functionality",
+      "Confirm pattern compliance", 
+      "Check zero duplication policy",
+      "Validate utility class usage"
+    ]
+  },
+  "quality_standards": {
+    "code_duplication": "0%",
+    "hardcoded_messages": "0%",
+    "pattern_consistency": "100%",
+    "utility_coverage": "100%"
+  },
+  "enforcement": {
+    "level": "strict",
+    "auto_suggest": true,
+    "block_violations": true,
+    "require_confirmation": "for any architecture changes"
+  },
+  "quick_reference": {
+    "validate_name": "Utils.validateName(name, items, id, 'type')",
+    "setup_modal": "ModalManager.setupModal('entity', isEdit, data)",
+    "create_button": "HtmlBuilder.createButton(text, class, callback, icon)",
+    "empty_state": "DisplayManager.renderEmptyState(container, message)",
+    "new_message": "CONSTANTS.MESSAGES.NEW_MSG = 'Text with {placeholder}'"
+  },
+  "escalation": {
+    "uncertain": "study existing patterns",
+    "complex": "ask for confirmation",
+    "architecture": "propose following established structure"
+  }
+} 
