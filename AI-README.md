@@ -106,6 +106,14 @@ Utilizzare `.ai-assistant-config.json` per:
 - [ ] ✅ Uso `ModalManager.setupModal()` per modali
 - [ ] ✅ Uso `HtmlBuilder.*` per HTML
 - [ ] ✅ Uso `DisplayManager.*` per stati vuoti
+- [ ] ✅ Uso manager appropriati per business logic:
+  - `StorageManager` per localStorage
+  - `NavigationManager` per navigazione sezioni
+  - `BackupManager` per import/export
+  - `AvatarManager` per sistema avatar
+  - `PlayerManager` per CRUD giocatori
+  - `StatsManager` per statistiche e ranking
+- [ ] ✅ Delego operazioni a manager invece di codice diretto
 - [ ] ✅ Aggiungo messaggi in `CONSTANTS.MESSAGES`
 
 ### **Post-Modifica (Validazione):**

@@ -21,30 +21,58 @@ halloffame/
 ├── modal-manager.js           # Gestione modali standardizzata
 ├── html-builder.js            # Generazione HTML riutilizzabile
 ├── display-manager.js         # Pattern di visualizzazione comuni
-├── hall-of-fame.js            # Logica business (classe HallOfFameApp)
+├── storage-manager.js         # 🆕 Gestione localStorage centralizzata
+├── navigation-manager.js      # 🆕 Navigazione sezioni con callback
+├── backup-manager.js          # 🆕 Import/export dati avanzato
+├── avatar-manager.js          # 🆕 Sistema avatar e filtri
+├── player-manager.js          # 🆕 CRUD giocatori e statistiche
+├── stats-manager.js           # 🆕 Calcolo ranking e podio
+├── hall-of-fame.js            # Controller principale (architettura manager)
 ├── app-bridge.js              # Funzioni globali e inizializzazione
+├── validate-compliance.js     # Script validazione compliance automatica
 ├── styles.css                 # Stili CSS consolidati  
 ├── README.md                  # Documentazione progetto
 ├── CODE_INSTRUCTIONS.md       # Istruzioni tecniche dettagliate
+├── AI-README.md               # Setup automatico per AI assistant
 ├── .ai-development-rules.md   # Regole obbligatorie per AI development
 └── .gitignore                 # File da escludere dal versioning
 ```
 
 ## 🏗️ Architettura del Codice
 
-### **Struttura Modulare:**
+### **Architettura Manager (Modularizzata):**
 ```javascript
-constants.js → utils.js → modal-manager.js → html-builder.js → display-manager.js → hall-of-fame.js → app-bridge.js
+constants.js → utils.js → modal-manager.js → html-builder.js → display-manager.js → 
+storage-manager.js → navigation-manager.js → backup-manager.js → 
+avatar-manager.js → player-manager.js → stats-manager.js → 
+hall-of-fame.js → app-bridge.js
 ```
 
-**File e Moduli Principali:**
+**Manager Specializzati (Nuova Architettura):**
+- **`storage-manager.js`**: Gestione localStorage centralizzata e sicura
+- **`navigation-manager.js`**: Navigazione sezioni con sistema callback
+- **`backup-manager.js`**: Import/export avanzato con validazione dati
+- **`avatar-manager.js`**: Sistema avatar, filtri dinamici, preview
+- **`player-manager.js`**: CRUD giocatori, statistiche, validazioni
+- **`stats-manager.js`**: Calcolo ranking, performance, podio dinamico
+
+**Moduli Base (Invariati):**
 - **`constants.js`**: Configurazioni centrali e messaggi
 - **`utils.js`**: Funzioni di utilità (validazioni, modali)  
 - **`modal-manager.js`**: Gestione unificata modali add/edit
 - **`html-builder.js`**: Generazione HTML standardizzata
 - **`display-manager.js`**: Pattern comuni di visualizzazione
-- **`hall-of-fame.js`**: Logica business principale (solo classe HallOfFameApp)
+- **`hall-of-fame.js`**: **Controller principale** che coordina i manager
 - **`app-bridge.js`**: Funzioni globali e inizializzazione app
+
+### **🏆 Benefici della Nuova Architettura:**
+- ✅ **Separation of Concerns**: Ogni manager ha responsabilità specifiche
+- ✅ **Testabilità**: Manager individuali completamente testabili
+- ✅ **Manutenibilità**: Modifiche isolate senza impact trasversali
+- ✅ **Scalabilità**: Facile aggiungere nuovi manager o funzionalità
+- ✅ **Riusabilità**: Manager utilizzabili in altri contesti
+- ✅ **Performance**: Caricamento ottimizzato e gestione memoria
+- ✅ **Debugging**: Errori localizzati nei manager specifici
 
 ## 🤖 Sistema di Compliance Automatico per AI
 

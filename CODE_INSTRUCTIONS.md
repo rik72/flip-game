@@ -6,14 +6,27 @@ Questo documento descrive la struttura del codice del progetto Hall of Fame e fo
 
 ## 🏗️ Architettura del Codice
 
-### 1. **Struttura Modulare (app.js)**
+### 1. **Struttura Modulare (Architettura Manager)**
 
-Il codice è organizzato in classi specializzate:
+Il codice è organizzato in manager specializzati con separazione delle responsabilità:
 
 ```javascript
 // Ordine di caricamento e dipendenze:
-CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → HallOfFameApp
+CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → 
+StorageManager → NavigationManager → BackupManager → 
+AvatarManager → PlayerManager → StatsManager → HallOfFameApp
 ```
+
+#### **Manager Specializzati:**
+
+- **StorageManager**: Gestione localStorage centralizzata
+- **NavigationManager**: Navigazione tra sezioni con callback system
+- **BackupManager**: Import/export dati con validazione
+- **AvatarManager**: Sistema avatar, filtri, preview
+- **PlayerManager**: CRUD giocatori con statistics integration
+- **StatsManager**: Calcolo statistiche, ranking, podio
+
+#### **HallOfFameApp**: Controller principale che coordina i manager
 
 #### **CONSTANTS**
 Oggetto centralizzato per tutte le configurazioni:
@@ -47,6 +60,43 @@ Oggetto centralizzato per tutte le configurazioni:
 - `renderItemList(container, items, renderFunction)`: Rendering liste
 - `createStatsDisplay(stats)`: Display statistiche con tooltip
 
+#### **StorageManager** - Gestione localStorage
+- `save(key, data)`: Salvataggio con prefisso automatico
+- `load(key)`: Caricamento con deserializzazione JSON
+- `remove(key)`, `exists(key)`, `clearAll()`: Operazioni gestione dati
+- `getStorageInfo()`: Informazioni utilizzo spazio
+
+#### **NavigationManager** - Navigazione Sezioni
+- `showSection(sectionName, element)`: Cambio sezione con callback
+- `registerSectionCallback(name, callback)`: Registrazione callback sezione
+- `getCurrentSection()`: Sezione corrente attiva
+- `goToPreviousSection()`, `goToNextSection()`: Navigazione sequenziale
+
+#### **BackupManager** - Import/Export
+- `exportData(data)`: Esporta dati in file .hof compresso
+- `importData()`: Importa e valida dati da file .hof
+- `showImportModal()`: Gestione modal importazione
+- `createAutoBackup(data)`: Backup automatico in localStorage
+
+#### **AvatarManager** - Sistema Avatar
+- `createAvatar(emoji, size)`: Creazione elementi avatar HTML
+- `updateAvatarPreview()`: Aggiornamento preview in tempo reale
+- `filterAvatars(text)`: Filtro dinamico emoji
+- `prepareForNewPlayer()`, `prepareForEditPlayer()`: Setup per modali
+
+#### **PlayerManager** - CRUD Giocatori
+- `addPlayer()`, `editPlayer()`, `deletePlayer()`: Operazioni CRUD
+- `displayPlayers()`: Rendering lista giocatori con statistiche
+- `calculatePlayerStats(id)`: Calcolo statistiche individuali
+- `searchPlayers(term)`: Ricerca giocatori per nome
+
+#### **StatsManager** - Statistiche e Ranking
+- `calculatePlayerStats(id)`: Statistiche complete giocatore
+- `getRanking(sortBy)`: Ranking ordinato per criterio
+- `displayPodium()`: Rendering podio top 3
+- `displayFullRanking()`: Classifica completa con tooltip
+- `getOverallStats()`: Statistiche aggregate globali
+
 ### 2. **Principi di Design**
 
 #### **Struttura Attuale:**
@@ -60,11 +110,36 @@ try {
 }
 ```
 
-#### **Benefici dell'Architettura:**
+#### **Benefici dell'Architettura Manager:**
 - ✅ **Single Source of Truth** per configurazioni
-- ✅ **Separation of Concerns** tra logica, UI e dati
+- ✅ **Separation of Concerns** tra logica, UI e dati  
 - ✅ **Reusable Components** per operazioni comuni
 - ✅ **Consistent Patterns** in tutto il codebase
+- ✅ **Modular Architecture** con manager specializzati
+- ✅ **Delegation Pattern** nella classe principale
+- ✅ **Testability** di ogni manager individualmente
+- ✅ **Scalability** per nuove funzionalità
+
+#### **Pattern di Delegazione:**
+```javascript
+// HallOfFameApp delega ai manager invece di implementare direttamente
+class HallOfFameApp {
+    constructor() {
+        this.storageManager = new StorageManager();
+        this.playerManager = new PlayerManager(this.storageManager, ...);
+        // ...altri manager
+    }
+    
+    // Metodi delegano ai manager appropriati
+    addPlayer() {
+        return this.playerManager.addPlayer();
+    }
+    
+    displayPodium() {
+        return this.statsManager.displayPodium();
+    }
+}
+```
 
 ## 🎨 Architettura CSS
 
