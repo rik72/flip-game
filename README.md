@@ -21,12 +21,15 @@ halloffame/
 ├── modal-manager.js           # Gestione modali standardizzata
 ├── html-builder.js            # Generazione HTML riutilizzabile
 ├── display-manager.js         # Pattern di visualizzazione comuni
-├── storage-manager.js         # 🆕 Gestione localStorage centralizzata
-├── navigation-manager.js      # 🆕 Navigazione sezioni con callback
-├── backup-manager.js          # 🆕 Import/export dati avanzato
-├── avatar-manager.js          # 🆕 Sistema avatar e filtri
-├── player-manager.js          # 🆕 CRUD giocatori e statistiche
-├── stats-manager.js           # 🆕 Calcolo ranking e podio
+├── managers/                  # 📁 Manager specializzati (architettura modulare)
+│   ├── storage-manager.js     # 🆕 Gestione localStorage centralizzata
+│   ├── navigation-manager.js  # 🆕 Navigazione sezioni con callback
+│   ├── backup-manager.js      # 🆕 Import/export dati avanzato
+│   ├── avatar-manager.js      # 🆕 Sistema avatar e filtri
+│   ├── player-manager.js      # 🆕 CRUD giocatori e statistiche
+│   ├── stats-manager.js       # 🆕 Calcolo ranking e podio
+│   ├── game-manager.js        # 🆕 CRUD giochi e statistiche
+│   └── match-manager.js       # 🆕 CRUD partite e partecipanti
 ├── hall-of-fame.js            # Controller principale (architettura manager)
 ├── app-bridge.js              # Funzioni globali e inizializzazione
 ├── validate-compliance.js     # Script validazione compliance automatica
@@ -48,13 +51,15 @@ avatar-manager.js → player-manager.js → stats-manager.js →
 hall-of-fame.js → app-bridge.js
 ```
 
-**Manager Specializzati (Nuova Architettura):**
-- **`storage-manager.js`**: Gestione localStorage centralizzata e sicura
-- **`navigation-manager.js`**: Navigazione sezioni con sistema callback
-- **`backup-manager.js`**: Import/export avanzato con validazione dati
-- **`avatar-manager.js`**: Sistema avatar, filtri dinamici, preview
-- **`player-manager.js`**: CRUD giocatori, statistiche, validazioni
-- **`stats-manager.js`**: Calcolo ranking, performance, podio dinamico
+**Manager Specializzati (Nuova Architettura - `/managers/`):**
+- **`managers/storage-manager.js`**: Gestione localStorage centralizzata e sicura
+- **`managers/navigation-manager.js`**: Navigazione sezioni con sistema callback
+- **`managers/backup-manager.js`**: Import/export avanzato con validazione dati
+- **`managers/avatar-manager.js`**: Sistema avatar, filtri dinamici, preview
+- **`managers/player-manager.js`**: CRUD giocatori, statistiche, validazioni
+- **`managers/stats-manager.js`**: Calcolo ranking, performance, podio dinamico
+- **`managers/game-manager.js`**: CRUD giochi, statistiche, tipologie
+- **`managers/match-manager.js`**: CRUD partite, partecipanti, ordinamento
 
 **Moduli Base (Invariati):**
 - **`constants.js`**: Configurazioni centrali e messaggi

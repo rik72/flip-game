@@ -8,16 +8,18 @@ Questo documento descrive la struttura del codice del progetto Hall of Fame e fo
 
 ### 1. **Struttura Modulare (Architettura Manager)**
 
-Il codice è organizzato in manager specializzati con separazione delle responsabilità:
+Il codice è organizzato in manager specializzati con separazione delle responsabilità.
+Tutti i manager sono organizzati nella cartella **`/managers/`** per una struttura pulita e modulare.
 
 ```javascript
 // Ordine di caricamento e dipendenze:
 CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → 
-StorageManager → NavigationManager → BackupManager → 
-AvatarManager → PlayerManager → StatsManager → HallOfFameApp
+managers/StorageManager → managers/NavigationManager → managers/BackupManager → 
+managers/AvatarManager → managers/PlayerManager → managers/StatsManager → 
+managers/GameManager → managers/MatchManager → HallOfFameApp
 ```
 
-#### **Manager Specializzati:**
+#### **Manager Specializzati (in `/managers/`):**
 
 - **StorageManager**: Gestione localStorage centralizzata
 - **NavigationManager**: Navigazione tra sezioni con callback system
@@ -25,6 +27,8 @@ AvatarManager → PlayerManager → StatsManager → HallOfFameApp
 - **AvatarManager**: Sistema avatar, filtri, preview
 - **PlayerManager**: CRUD giocatori con statistics integration
 - **StatsManager**: Calcolo statistiche, ranking, podio
+- **GameManager**: CRUD giochi, statistiche, tipologie
+- **MatchManager**: CRUD partite, partecipanti, ordinamento
 
 #### **HallOfFameApp**: Controller principale che coordina i manager
 
