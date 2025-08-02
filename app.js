@@ -335,13 +335,13 @@ class HallOfFameApp {
                             ${this.createAvatar(player.avatar || '😊', 'avatar-large').outerHTML}
                         </div>
                         <div class="player-performance">
-                            <div class="performance-value ${this.getPerformanceClass(stats.performance)}" title="Performance: Percentuale dei punti sul massimo possibile (2 × partite giocate)" data-bs-toggle="tooltip" data-bs-placement="top">${stats.performance}%</div>
+                            <div class="performance-value ${this.getPerformanceClass(stats.performance)}" title="Performance: Percentuale dei punti vinti sul massimo possibile (2 per ogni partita)" data-bs-toggle="tooltip" data-bs-placement="top">${stats.performance}%</div>
                         </div>
                     </div>
                     <h5 class="mb-2 mt-3">${player.name}</h5>
                     <div class="text-muted small">
                         <div>Partite: <strong>${stats.gamesPlayed}</strong></div>
-                        <div><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${stats.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">👤 ${stats.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${stats.lasts}</span></div>
+                        <div><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${stats.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${stats.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${stats.lasts}</span></div>
                     </div>
                     <div class="mt-3">
                         <button class="btn btn-sm btn-primary me-2" onclick="app.showEditPlayerModal(${player.id})">
@@ -570,7 +570,7 @@ class HallOfFameApp {
                     <select class="form-select" required>
                         <option value="">Posizione...</option>
                         <option value="winner">🏆 Vincitore (2 punti)</option>
-                        <option value="participant">👤 Piazzamento (1 punto)</option>
+                        <option value="participant">🥈 Piazzamento (1 punto)</option>
                         <option value="last">😞 Ultimo posto (0 punti)</option>
                     </select>
                 </div>
@@ -706,7 +706,7 @@ class HallOfFameApp {
                     <select class="form-select" required>
                         <option value="">Posizione...</option>
                         <option value="winner" ${selectedPosition === 'winner' ? 'selected' : ''}>🏆 Vincitore (2 punti)</option>
-                        <option value="participant" ${selectedPosition === 'participant' ? 'selected' : ''}>👤 Piazzamento (1 punto)</option>
+                        <option value="participant" ${selectedPosition === 'participant' ? 'selected' : ''}>🥈 Piazzamento (1 punto)</option>
                         <option value="last" ${selectedPosition === 'last' ? 'selected' : ''}>😞 Ultimo posto (0 punti)</option>
                     </select>
                 </div>
@@ -864,7 +864,7 @@ class HallOfFameApp {
     getPositionLabel(position) {
         const labels = {
             winner: '🏆 Vincitore',
-            participant: '👤 Piazzamento', 
+            participant: '🥈 Piazzamento', 
             last: '😞 Ultimo posto'
         };
         return labels[position] || position;
@@ -936,7 +936,7 @@ class HallOfFameApp {
             }
         });
         
-        // Calcola la performance come percentuale dei punti sul massimo possibile (2 * partite giocate)
+        // Calcola la performance come percentuale dei punti vinti sul massimo possibile (2 per ogni partita)
         const maxPossiblePoints = playerMatches.length * 2;
         const performance = maxPossiblePoints > 0 ? Math.round((totalPoints / maxPossiblePoints) * 100) : 0;
         
@@ -1042,14 +1042,14 @@ class HallOfFameApp {
                     ${this.createAvatar(player.avatar || '😊').outerHTML}
                     <div>
                         <div class="fw-bold">${player.name}</div>
-                        <small class="text-muted">${player.gamesPlayed} partite<br><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">👤 ${player.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span></small>
+                        <small class="text-muted">${player.gamesPlayed} partite<br><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${player.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span></small>
                     </div>
                 </div>
                 <div class="ranking-stats">
                     <div class="fs-4 fw-bold text-primary">${player.totalPoints}<span class="points-unit">pt</span></div>
                 </div>
                 <div class="ranking-performance">
-                    <div class="performance-value ${this.getPerformanceClass(player.performance)}" title="Performance: Percentuale dei punti sul massimo possibile (2 × partite giocate)" data-bs-toggle="tooltip" data-bs-placement="top">${player.performance}%</div>
+                    <div class="performance-value ${this.getPerformanceClass(player.performance)}" title="Performance: Percentuale dei punti vinti sul massimo possibile (2 per ogni partita)" data-bs-toggle="tooltip" data-bs-placement="top">${player.performance}%</div>
                 </div>
             </div>
         `).join('');
