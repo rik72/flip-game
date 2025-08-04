@@ -193,9 +193,16 @@ class StatsManager {
                 <div class="ranking-position pos-${index + 1}">${index + 1}</div>
                 <div class="ranking-player">
                     ${this.avatarManager.createAvatar(player.avatar || '😊').outerHTML}
-                    <div>
-                        <div class="fw-bold">${player.name}</div>
-                        <small class="text-muted">${player.gamesPlayed} partite<br><span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span> <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${player.participants}</span> <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span></small>
+                    <div class="fw-bold">${player.name}</div>
+                    <div class="text-muted">
+                        <small>${player.gamesPlayed} partite</small>
+                    </div>
+                    <div class="text-muted">
+                        <small>
+                            <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span>
+                            <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${player.participants}</span>
+                            <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span>
+                        </small>
                     </div>
                 </div>
                 <div class="ranking-stats">
