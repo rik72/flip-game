@@ -162,7 +162,6 @@ body {
     justify-content: center;
     align-items: end;
     gap: 20px;
-    margin: 40px 0;
     perspective: 1000px;
     position: relative;
     background-image: url('img/podium_bg.jpg');
@@ -285,6 +284,11 @@ body {
 
 #full-ranking {
     border: 6px solid var(--podium-first-border);
+}
+
+#full-ranking .card-body {
+    border-radius: 15px;
+    padding: 0;
 }
 
 /* ===== POINTS UNIT STYLING ===== */
@@ -468,11 +472,15 @@ body {
 }
 
 /* ===== RANKING TABLE ===== */
-.ranking-table {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    overflow: hidden;
+
+#ranking-table .ranking-row:first-child {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+#ranking-table .ranking-row:last-child {
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
 }
 
 .ranking-sort-container {
@@ -503,12 +511,7 @@ body {
     display: flex;
     align-items: center;
     padding: 5px 20px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s ease;
-}
-
-.ranking-row:last-child {
-    border-bottom: none;
 }
 
 .ranking-row:hover {
@@ -516,21 +519,71 @@ body {
 }
 
 .ranking-position {
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: bold;
     width: 60px;
     text-align: center;
 }
 
-.ranking-position.pos-1 { color: var(--podium-gold); }
-.ranking-position.pos-2 { color: var(--podium-silver); }
-.ranking-position.pos-3 { color: var(--podium-bronze); }
+/* ===== TOP 3 RANKING ROWS - PODIUM STYLES ===== */
+.ranking-row.pos-1 {
+    background: var(--podium-first);
+    box-shadow: 0 4px 15px rgba(255, 162, 2, 0.3);
+}
+
+.ranking-row.pos-2 {
+    background: var(--podium-second);
+    box-shadow: 0 4px 15px rgba(255, 205, 5, 0.3);
+}
+
+.ranking-row.pos-3 {
+    background: var(--podium-third);
+    box-shadow: 0 4px 15px rgba(14, 178, 48, 0.3);
+}
+
+.ranking-row .ranking-player,
+.ranking-row .ranking-stats,
+.ranking-row .ranking-position,
+.ranking-row .ranking-stats .fs-4,
+.ranking-row .ranking-stats .text-primary {
+    font-weight: bold;
+}
+
+.ranking-row.pos-1 .ranking-player,
+.ranking-row.pos-1 .ranking-stats,
+.ranking-row.pos-1 .ranking-position,
+.ranking-row.pos-1 .ranking-stats .fs-4,
+.ranking-row.pos-1 .ranking-stats .text-primary {
+    color: var(--podium-first-text) !important;
+}
+
+.ranking-row.pos-2 .ranking-player,
+.ranking-row.pos-2 .ranking-stats,
+.ranking-row.pos-2 .ranking-position,
+.ranking-row.pos-2 .ranking-stats .fs-4,
+.ranking-row.pos-2 .ranking-stats .text-primary {
+    color: var(--podium-second-text) !important;
+}
+
+.ranking-row.pos-3 .ranking-player,
+.ranking-row.pos-3 .ranking-stats,
+.ranking-row.pos-3 .ranking-position,
+.ranking-row.pos-3 .ranking-stats .fs-4,
+.ranking-row.pos-3 .ranking-stats .text-primary {
+    color: var(--podium-third-text) !important;
+}
 
 .ranking-player {
     flex: 1;
     display: flex;
     align-items: center;
     gap: 15px;
+}
+
+.ranking-player .player-name {
+    min-width: 250px;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
 .ranking-stats {
@@ -788,7 +841,7 @@ body {
 
 .footer-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-end;
     gap: 12px;
 }

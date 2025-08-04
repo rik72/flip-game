@@ -189,15 +189,15 @@ class StatsManager {
         }
         
         container.innerHTML = ranking.map((player, index) => `
-            <div class="ranking-row">
+            <div class="ranking-row pos-${index + 1}">
                 <div class="ranking-position pos-${index + 1}">${index + 1}</div>
                 <div class="ranking-player">
                     ${this.avatarManager.createAvatar(player.avatar || '😊').outerHTML}
-                    <div class="fw-bold">${player.name}</div>
-                    <div class="text-muted">
+                    <div class="player-name">${player.name}</div>
+                    <div>
                         <small>${player.gamesPlayed} partite</small>
                     </div>
-                    <div class="text-muted">
+                    <div>
                         <small>
                             <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span>
                             <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${player.participants}</span>
