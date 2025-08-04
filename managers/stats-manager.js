@@ -160,7 +160,14 @@ class StatsManager {
             // Score
             const scoreDiv = document.createElement('div');
             scoreDiv.className = 'podium-score';
-            scoreDiv.innerHTML = `${player.totalPoints}<span class="points-unit">pt</span>`;
+            
+            // Show performance percentage when sorting by performance, otherwise show points
+            if (this.currentSortOrder === 'performance') {
+                scoreDiv.innerHTML = `${player.performance}<span class="points-unit">%</span>`;
+            } else {
+                scoreDiv.innerHTML = `${player.totalPoints}<span class="points-unit">pt</span>`;
+            }
+            
             stepDiv.appendChild(scoreDiv);
             
             podiumDiv.appendChild(stepDiv);
