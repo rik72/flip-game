@@ -6,20 +6,20 @@ class HtmlBuilder {
     }
 
     static createActionButtons(itemId, itemType, additionalButtons = []) {
-        const editButton = this.createButton(
-            'Modifica', 
-            'btn-primary me-2', 
-            `app.showEdit${itemType}Modal(${itemId})`,
-            'bi-pencil'
-        );
         const deleteButton = this.createButton(
             'Elimina', 
             'btn-danger', 
             `app.delete${itemType}(${itemId})`,
             'bi-trash'
         );
+        const editButton = this.createButton(
+            'Modifica', 
+            'btn-primary', 
+            `app.showEdit${itemType}Modal(${itemId})`,
+            'bi-pencil'
+        );
         
-        let buttons = editButton + deleteButton;
+        let buttons = deleteButton + editButton;
         
         // Add additional buttons if provided
         additionalButtons.forEach(button => {

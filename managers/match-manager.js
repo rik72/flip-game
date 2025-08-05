@@ -367,23 +367,10 @@ class MatchManager {
             return `
                 <div class="col-lg-4 col-md-6 col-12 mb-3">
                     <div class="match-card">
-                        <div class="match-header d-flex justify-content-between align-items-start mb-3">
+                        <div class="match-header mb-3">
                             <div>
                                 <h5 class="mb-1">${game ? game.name : 'Gioco eliminato'}</h5>
                                 <small class="text-muted">${new Date(match.date).toLocaleDateString('it-IT')}</small>
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    Azioni
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="app.showEditMatchModal(${match.id})">
-                                        <i class="bi bi-pencil me-2"></i>Modifica
-                                    </a></li>
-                                    <li><a class="dropdown-item text-danger" href="#" onclick="app.deleteMatch(${match.id})">
-                                        <i class="bi bi-trash me-2"></i>Elimina
-                                    </a></li>
-                                </ul>
                             </div>
                         </div>
                         <div class="participants">
@@ -402,6 +389,9 @@ class MatchManager {
                                     </div>
                                 `;
                             }).join('')}
+                        </div>
+                        <div class="mt-3 d-flex justify-content-between">
+                            ${HtmlBuilder.createActionButtons(match.id, 'Match')}
                         </div>
                     </div>
                 </div>

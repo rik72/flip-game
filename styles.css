@@ -416,6 +416,11 @@ body {
     transform: translateY(-5px);
 }
 
+/* ===== PLAYER NAME ALIGNMENT ===== */
+.player-card h5 {
+    text-align: left;
+}
+
 .player-card-stats {
     display: flex;
     align-items: center;
@@ -597,6 +602,7 @@ body {
 
 .stats-single-line span {
     white-space: nowrap;
+    font-size: 1.1rem;
 }
 
 /* ===== MATCH HISTORY ===== */
@@ -943,6 +949,28 @@ body {
     .ranking-sort-container .form-select {
         font-size: 0.8rem;
     }
+    
+    /* Action buttons responsive design */
+    .player-card .mt-3,
+    .game-card .mt-3,
+    .match-card .mt-3 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .player-card .mt-3 .btn,
+    .game-card .mt-3 .btn,
+    .match-card .mt-3 .btn {
+        margin-left: 0;
+        margin-bottom: 8px;
+        width: 100%;
+    }
+    
+    .player-card .mt-3 .btn:last-child,
+    .game-card .mt-3 .btn:last-child,
+    .match-card .mt-3 .btn:last-child {
+        margin-bottom: 0;
+    }
 }
 
 /* ===== ANIMATIONS ===== */
@@ -1107,19 +1135,40 @@ body {
 }
 
 #gameRankingModal .modal-title {
-    font-size: 1.25em; /* Adjust title size proportionally */
+    font-size: 1.2em; /* Adjust title size proportionally */
 }
 
 #gameRankingModal .form-select {
-    font-size: 0.9em; /* Adjust form elements proportionally */
+    font-size: 1.2em; /* Adjust form elements proportionally */
 }
 
 #gameRankingModal .btn {
-    font-size: 0.9em; /* Adjust buttons proportionally */
+    font-size: 1.2em; /* Adjust buttons proportionally */
 }
 
 #gameRankingModal #game-ranking-table .player-name {
     min-width: 200px;
+}
+
+/* ===== GAME RANKING MODAL BORDER ===== */
+#gameRankingModal .card {
+    border: 6px solid var(--podium-first-border);
+}
+
+#gameRankingModal .card-body {
+    border-radius: 15px;
+    padding: 0;
+}
+
+/* ===== GAME RANKING MODAL ROW BORDERS ===== */
+#gameRankingModal #game-ranking-table .ranking-row:first-child {
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+#gameRankingModal #game-ranking-table .ranking-row:last-child {
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
 }
 
 /* ===== CARD BUTTON PADDING ===== */
@@ -1127,4 +1176,24 @@ body {
 .player-card .btn,
 .match-card .btn {
     padding: 6px 15px;
+}
+
+/* ===== ACTION BUTTONS ALIGNMENT ===== */
+.player-card .mt-3.d-flex.justify-content-end,
+.game-card .mt-3.d-flex.justify-content-end,
+.match-card .mt-3.d-flex.justify-content-end {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.player-card .mt-3.d-flex.justify-content-end .btn,
+.game-card .mt-3.d-flex.justify-content-end .btn,
+.match-card .mt-3.d-flex.justify-content-end .btn {
+    margin-left: 8px;
+}
+
+.player-card .mt-3.d-flex.justify-content-end .btn:first-child,
+.game-card .mt-3.d-flex.justify-content-end .btn:first-child,
+.match-card .mt-3.d-flex.justify-content-end .btn:first-child {
+    margin-left: 0;
 } 

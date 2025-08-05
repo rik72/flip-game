@@ -246,7 +246,7 @@ class StatsManager {
         const ranking = this.getRanking(this.currentSortOrder);
         
         if (ranking.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted">Nessun giocatore in classifica</p>';
+            container.innerHTML = '<p class="my-2 text-center text-muted">Nessun giocatore in classifica</p>';
             return;
         }
         
@@ -295,7 +295,7 @@ class StatsManager {
         const ranking = this.getGameRanking(gameId, sortBy);
         
         if (ranking.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted">Nessun giocatore ha ancora giocato questo gioco</p>';
+            container.innerHTML = '<p class="my-2 text-center text-muted">Nessun giocatore ha ancora giocato questo gioco</p>';
             return;
         }
         

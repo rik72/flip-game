@@ -196,9 +196,6 @@ class GameManager {
         };
         
         container.innerHTML = this.games.map(game => {
-            const bestPlayer = bestPlayers ? bestPlayers.find(bp => bp.gameId === game.id) : null;
-            const bestPlayerHtml = bestPlayer ? this.createBestPlayerHtml(bestPlayer) : '';
-            
             return `
                 <div class="col-md-6 col-lg-4">
                     <div class="game-card">
@@ -218,8 +215,9 @@ class GameManager {
                         <div class="text-muted small mb-3">
                             Partite giocate: <strong>${this.getGameMatchCount(game.id)}</strong>
                         </div>
-                        ${bestPlayerHtml}
-                        ${HtmlBuilder.createActionButtons(game.id, 'Game')}
+                        <div class="mt-3 d-flex justify-content-between">
+                            ${HtmlBuilder.createActionButtons(game.id, 'Game')}
+                        </div>
                     </div>
                 </div>
             `;
