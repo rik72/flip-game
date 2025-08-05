@@ -19,8 +19,10 @@ class DisplayManager {
         const lastsStats = HtmlBuilder.createStatsBadge('😞', stats.lasts, 'Ultimi posti');
         
         return `
-            <div>Partite: <strong>${stats.gamesPlayed}</strong></div>
-            <div>${winsStats} ${participantsStats} ${lastsStats}</div>
+            <div class="stats-single-line">
+                <span class="me-3">Partite: <strong>${stats.gamesPlayed}</strong></span>
+                <span>${winsStats} ${participantsStats} ${lastsStats}</span>
+            </div>
         `;
     }
 } 

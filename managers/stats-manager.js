@@ -106,6 +106,61 @@ class StatsManager {
     }
 
     /**
+     * Ottiene il ranking dei giocatori per un gioco specifico
+     * @param {number} gameId - ID del gioco
+     * @param {string} sortBy - Criterio di ordinamento ('points', 'performance')
+     * @returns {Array} - Array dei giocatori con statistiche per il gioco specifico, ordinato
+     */
+    getGameRanking(gameId, sortBy = 'points') {
+        const gameMatches = this.matches.filter(m => m.gameId === gameId);
+        
+        if (gameMatches.length === 0) {
+            return [];
+        }
+        
+        // Ottieni tutti i giocatori che hanno giocato questo gioco
+        const playersInGame = new Set();
+        gameMatches.forEach(match => {
+            match.participants.forEach(participant => {
+                playersInGame.add(participant.playerId);
+            });
+        });
+        
+        // Calcola statistiche per ogni giocatore in questo gioco
+        const playersWithStats = Array.from(playersInGame).map(playerId => {
+            const player = this.players.find(p => p.id === playerId);
+            if (!player) return null;
+            
+            const stats = this.calculatePlayerStatsForGame(playerId, gameId);
+            if (!stats) return null;
+            
+            return {
+                ...player,
+                ...stats
+            };
+        }).filter(player => player !== null);
+        
+        if (playersWithStats.length === 0) {
+            return [];
+        }
+        
+        // Ordina per il criterio specificato
+        return playersWithStats.sort((a, b) => {
+            if (sortBy === 'performance') {
+                if (b.performance !== a.performance) return b.performance - a.performance;
+                if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return a.gamesPlayed - b.gamesPlayed;
+            } else {
+                if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                if (b.gamesPlayed !== a.gamesPlayed) return a.gamesPlayed - b.gamesPlayed;
+                return a.name.localeCompare(b.name);
+            }
+        });
+    }
+
+    /**
      * Visualizza il podio con i primi 3 giocatori
      */
     displayPodium() {
@@ -202,14 +257,61 @@ class StatsManager {
                     ${this.avatarManager.createAvatar(player.avatar || '😊').outerHTML}
                     <div class="player-name">${player.name}</div>
                     <div>
-                        <small>${player.gamesPlayed} partite</small>
+                        ${player.gamesPlayed} partite
                     </div>
                     <div>
-                        <small>
-                            <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span>
-                            <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${player.participants}</span>
-                            <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span>
-                        </small>
+                        <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span>
+                        <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${player.participants}</span>
+                        <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span>
+                    </div>
+                </div>
+                <div class="ranking-stats">
+                    <div class="fs-4 fw-bold text-primary">${player.totalPoints}<span class="points-unit">pt</span></div>
+                </div>
+                <div class="ranking-performance">
+                    <div class="performance-value ${this.getPerformanceClass(player.performance)}" title="Performance: Percentuale dei punti vinti sul massimo possibile (2 per ogni partita)" data-bs-toggle="tooltip" data-bs-placement="top">${player.performance}%</div>
+                </div>
+            </div>
+        `).join('');
+        
+        // Inizializza i tooltip di Bootstrap
+        this.initializeTooltips();
+    }
+
+    /**
+     * Visualizza la classifica per un gioco specifico
+     * @param {number} gameId - ID del gioco
+     * @param {string} gameName - Nome del gioco
+     * @param {string} sortBy - Criterio di ordinamento ('points', 'performance')
+     */
+    displayGameRanking(gameId, gameName, sortBy = 'points') {
+        const container = document.getElementById('game-ranking-table');
+        
+        if (!container) {
+            console.warn('Container game-ranking-table non trovato');
+            return;
+        }
+        
+        const ranking = this.getGameRanking(gameId, sortBy);
+        
+        if (ranking.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted">Nessun giocatore ha ancora giocato questo gioco</p>';
+            return;
+        }
+        
+        container.innerHTML = ranking.map((player, index) => `
+            <div class="ranking-row pos-${index + 1}">
+                <div class="ranking-position pos-${index + 1}">${index + 1}</div>
+                <div class="ranking-player">
+                    ${this.avatarManager.createAvatar(player.avatar || '😊').outerHTML}
+                    <div class="player-name">${player.name}</div>
+                    <div>
+                        ${player.gamesPlayed} partite
+                    </div>
+                    <div>
+                        <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span>
+                        <span title="Piazzamenti" data-bs-toggle="tooltip" data-bs-placement="top">🥈 ${player.participants}</span>
+                        <span title="Ultimi posti" data-bs-toggle="tooltip" data-bs-placement="top">😞 ${player.lasts}</span>
                     </div>
                 </div>
                 <div class="ranking-stats">
@@ -395,5 +497,143 @@ class StatsManager {
         }
         
         return previousPosition - currentPosition; // Positive means improved (lower position number)
+    }
+
+    /**
+     * Calcola le statistiche di un giocatore per un gioco specifico
+     * @param {number} playerId - ID del giocatore
+     * @param {number} gameId - ID del gioco
+     * @returns {object} - Oggetto con le statistiche del giocatore per il gioco specifico
+     */
+    calculatePlayerStatsForGame(playerId, gameId) {
+        const gameMatches = this.matches.filter(m => m.gameId === gameId);
+        const playerMatches = gameMatches.filter(m => 
+            m.participants.some(p => p.playerId === playerId)
+        );
+        
+        if (playerMatches.length === 0) {
+            return null;
+        }
+        
+        let totalPoints = 0;
+        let wins = 0;
+        let participants = 0;
+        let lasts = 0;
+        
+        playerMatches.forEach(match => {
+            const participation = match.participants.find(p => p.playerId === playerId);
+            if (participation) {
+                const points = this.getPointsForPosition(participation.position);
+                totalPoints += points;
+                
+                if (participation.position === 'winner') {
+                    wins++;
+                } else if (participation.position === 'participant') {
+                    participants++;
+                } else if (participation.position === 'last') {
+                    lasts++;
+                }
+            }
+        });
+        
+        // Calcola la performance come percentuale dei punti vinti sul massimo possibile (2 per ogni partita)
+        const maxPossiblePoints = playerMatches.length * 2;
+        const performance = maxPossiblePoints > 0 ? Math.round((totalPoints / maxPossiblePoints) * 100) : 0;
+        
+        return {
+            totalPoints,
+            gamesPlayed: playerMatches.length,
+            wins,
+            participants,
+            lasts,
+            performance
+        };
+    }
+
+    /**
+     * Ottiene il miglior giocatore per un gioco specifico
+     * @param {number} gameId - ID del gioco
+     * @param {string} sortBy - Criterio di ordinamento ('points', 'performance', 'wins')
+     * @returns {object|null} - Miglior giocatore con statistiche o null se nessun giocatore
+     */
+    getBestPlayerForGame(gameId, sortBy = 'points') {
+        const gameMatches = this.matches.filter(m => m.gameId === gameId);
+        
+        if (gameMatches.length === 0) {
+            return null;
+        }
+        
+        // Ottieni tutti i giocatori che hanno giocato questo gioco
+        const playersInGame = new Set();
+        gameMatches.forEach(match => {
+            match.participants.forEach(participant => {
+                playersInGame.add(participant.playerId);
+            });
+        });
+        
+        // Calcola statistiche per ogni giocatore in questo gioco
+        const playersWithStats = Array.from(playersInGame).map(playerId => {
+            const player = this.players.find(p => p.id === playerId);
+            if (!player) return null;
+            
+            const stats = this.calculatePlayerStatsForGame(playerId, gameId);
+            if (!stats) return null;
+            
+            return {
+                ...player,
+                ...stats
+            };
+        }).filter(player => player !== null);
+        
+        if (playersWithStats.length === 0) {
+            return null;
+        }
+        
+        // Ordina per il criterio specificato
+        playersWithStats.sort((a, b) => {
+            switch (sortBy) {
+                case 'performance':
+                    if (b.performance !== a.performance) return b.performance - a.performance;
+                    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                    if (b.wins !== a.wins) return b.wins - a.wins;
+                    return a.gamesPlayed - b.gamesPlayed;
+                case 'wins':
+                    if (b.wins !== a.wins) return b.wins - a.wins;
+                    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                    if (b.performance !== a.performance) return b.performance - a.performance;
+                    return a.gamesPlayed - b.gamesPlayed;
+                case 'points':
+                default:
+                    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+                    if (b.wins !== a.wins) return b.wins - a.wins;
+                    if (b.performance !== a.performance) return b.performance - a.performance;
+                    return a.gamesPlayed - b.gamesPlayed;
+            }
+        });
+        
+        return playersWithStats[0];
+    }
+
+    /**
+     * Ottiene i giochi dove un giocatore è il migliore
+     * @param {number} playerId - ID del giocatore
+     * @param {Array} games - Array di tutti i giochi
+     * @returns {Array} - Array di oggetti con id, nome e tipo del gioco
+     */
+    getGamesWherePlayerIsBest(playerId, games) {
+        const bestGames = [];
+        
+        games.forEach(game => {
+            const bestPlayer = this.getBestPlayerForGame(game.id, 'points');
+            if (bestPlayer && bestPlayer.id === playerId) {
+                bestGames.push({
+                    id: game.id,
+                    name: game.name,
+                    type: game.type
+                });
+            }
+        });
+        
+        return bestGames;
     }
 } 

@@ -5,7 +5,7 @@ class HtmlBuilder {
         return `<button class="btn btn-sm ${className}" onclick="${onClick}">${iconHtml}${text}</button>`;
     }
 
-    static createActionButtons(itemId, itemType) {
+    static createActionButtons(itemId, itemType, additionalButtons = []) {
         const editButton = this.createButton(
             'Modifica', 
             'btn-primary me-2', 
@@ -18,7 +18,20 @@ class HtmlBuilder {
             `app.delete${itemType}(${itemId})`,
             'bi-trash'
         );
-        return editButton + deleteButton;
+        
+        let buttons = editButton + deleteButton;
+        
+        // Add additional buttons if provided
+        additionalButtons.forEach(button => {
+            buttons += this.createButton(
+                button.text,
+                button.className,
+                button.onClick,
+                button.icon
+            );
+        });
+        
+        return buttons;
     }
 
     static createStatsBadge(icon, value, title = '') {

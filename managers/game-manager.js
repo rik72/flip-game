@@ -2,9 +2,10 @@
 // Gestisce tutte le operazioni CRUD sui giochi: creazione, modifica, eliminazione, visualizzazione
 
 class GameManager {
-    constructor(storageManager, onDataChange = null) {
+    constructor(storageManager, onDataChange = null, getBestPlayersCallback = null) {
         this.storageManager = storageManager;
         this.onDataChange = onDataChange; // Callback chiamato quando i dati cambiano
+        this.getBestPlayersCallback = getBestPlayersCallback; // Callback per ottenere i migliori giocatori
         this.games = [];
         this.matches = []; // Necessario per calcolare statistiche sui giochi
     }
@@ -166,8 +167,9 @@ class GameManager {
 
     /**
      * Visualizza la lista dei giochi
+     * @param {Array} bestPlayers - Array con i migliori giocatori per ogni gioco
      */
-    displayGames() {
+    displayGames(bestPlayers = null) {
         const container = document.getElementById('games-list');
         
         if (!container) {
@@ -180,6 +182,11 @@ class GameManager {
             return;
         }
         
+        // Se bestPlayers non è fornito, prova a ottenerlo dal callback
+        if (!bestPlayers && this.getBestPlayersCallback) {
+            bestPlayers = this.getBestPlayersCallback();
+        }
+        
         const gameIcons = {
             board: 'bi-grid-3x3-gap-fill',
             card: 'bi-suit-spade-fill',
@@ -188,21 +195,77 @@ class GameManager {
             other: 'bi-controller'
         };
         
-        container.innerHTML = this.games.map(game => `
-            <div class="col-md-6 col-lg-4">
-                <div class="game-card">
-                    <div class="game-icon ${game.type}">
-                        <i class="bi ${gameIcons[game.type]}"></i>
+        container.innerHTML = this.games.map(game => {
+            const bestPlayer = bestPlayers ? bestPlayers.find(bp => bp.gameId === game.id) : null;
+            const bestPlayerHtml = bestPlayer ? this.createBestPlayerHtml(bestPlayer) : '';
+            
+            return `
+                <div class="col-md-6 col-lg-4">
+                    <div class="game-card">
+                        <div class="game-icon ${game.type}">
+                            <i class="bi ${gameIcons[game.type]}"></i>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">${game.name}</h5>
+                            ${HtmlBuilder.createButton(
+                                'Classifica',
+                                'btn-info btn-sm',
+                                `app.showGameRankingModal(${game.id}, '${game.name}')`,
+                                'bi-trophy'
+                            )}
+                        </div>
+                        <p class="text-muted small mb-3">${this.getGameTypeLabel(game.type)}</p>
+                        <div class="text-muted small mb-3">
+                            Partite giocate: <strong>${this.getGameMatchCount(game.id)}</strong>
+                        </div>
+                        ${bestPlayerHtml}
+                        ${HtmlBuilder.createActionButtons(game.id, 'Game')}
                     </div>
-                    <h5 class="mb-2">${game.name}</h5>
-                    <p class="text-muted small mb-3">${this.getGameTypeLabel(game.type)}</p>
-                    <div class="text-muted small mb-3">
-                        Partite giocate: <strong>${this.getGameMatchCount(game.id)}</strong>
+                </div>
+            `;
+        }).join('');
+    }
+
+    /**
+     * Crea l'HTML per visualizzare il miglior giocatore di un gioco
+     * @param {object} bestPlayer - Dati del miglior giocatore
+     * @returns {string} - HTML per il miglior giocatore
+     */
+    createBestPlayerHtml(bestPlayer) {
+        const performanceClass = this.getPerformanceClass(bestPlayer.performance);
+        const performanceText = bestPlayer.performance > 0 ? `${bestPlayer.performance}%` : 'N/A';
+        
+        return `
+            <div class="best-player-info mb-3">
+                <div class="best-player-label text-muted small mb-1">
+                    <i class="bi bi-trophy-fill text-warning me-1"></i>Primo posto:
+                </div>
+                <div class="best-player-details d-flex align-items-center">
+                    <div class="best-player-avatar me-2">
+                        ${bestPlayer.avatar}
                     </div>
-                    ${HtmlBuilder.createActionButtons(game.id, 'Game')}
+                    <div class="best-player-stats flex-grow-1">
+                        <div class="best-player-name fw-bold">
+                            ${bestPlayer.name}
+                            <span class="text-muted ms-2">${bestPlayer.totalPoints} pt • ${bestPlayer.wins != 1 ? `${bestPlayer.wins} vittorie` : `${bestPlayer.wins} vittoria`}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        `).join('');
+        `;
+    }
+
+    /**
+     * Ottiene la classe CSS per la performance
+     * @param {number} performance - Percentuale di performance
+     * @returns {string} - Classe CSS per la performance
+     */
+    getPerformanceClass(performance) {
+        if (performance >= 80) return 'performance-excellent';
+        if (performance >= 60) return 'performance-good';
+        if (performance >= 40) return 'performance-average';
+        if (performance >= 20) return 'performance-poor';
+        return 'performance-very-poor';
     }
 
     /**

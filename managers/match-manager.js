@@ -365,7 +365,7 @@ class MatchManager {
         container.innerHTML = `<div class="row">${sortedMatches.map(match => {
             const game = this.games.find(g => g.id === match.gameId);
             return `
-                <div class="col-lg-4 col-md-6 col-12">
+                <div class="col-lg-4 col-md-6 col-12 mb-3">
                     <div class="match-card">
                         <div class="match-header d-flex justify-content-between align-items-start mb-3">
                             <div>

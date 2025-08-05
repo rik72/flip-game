@@ -16,10 +16,11 @@ class HallOfFameApp {
         this.statsManager = new StatsManager(this.avatarManager);
         this.statsManager.setData(this.players, this.matches);
         
-        // Inizializza il GameManager con callback per i cambiamenti dati
+        // Inizializza il GameManager con callback per i cambiamenti dati e per ottenere i migliori giocatori
         this.gameManager = new GameManager(
             this.storageManager,
-            (type, data) => this.onDataChange(type, data)
+            (type, data) => this.onDataChange(type, data),
+            () => this.getBestPlayersForGames()
         );
         this.gameManager.setData(this.games, this.matches);
         
@@ -31,11 +32,14 @@ class HallOfFameApp {
         );
         this.matchManager.setData(this.matches, this.players, this.games);
         
-        // Inizializza il PlayerManager con callback per i cambiamenti dati
+        // Inizializza il PlayerManager con callback per i cambiamenti dati e per ottenere i giochi migliori
         this.playerManager = new PlayerManager(
             this.storageManager, 
             this.avatarManager, 
-            (type, data) => this.onDataChange(type, data)
+            (type, data) => this.onDataChange(type, data),
+            (playerId) => this.getBestGamesForPlayer(playerId),
+            () => this.getRanking('points'),
+            () => this.getRanking('performance')
         );
         this.playerManager.setData(this.players, this.matches);
         
@@ -213,7 +217,36 @@ class HallOfFameApp {
     }
 
     displayGames() {
-        return this.gameManager.displayGames();
+        // Calcola i migliori giocatori per ogni gioco
+        const bestPlayers = this.getBestPlayersForGames();
+        return this.gameManager.displayGames(bestPlayers);
+    }
+
+    /**
+     * Ottiene i migliori giocatori per tutti i giochi
+     * @returns {Array} - Array con i migliori giocatori per ogni gioco
+     */
+    getBestPlayersForGames() {
+        return this.gameManager.getAllGames().map(game => {
+            const bestPlayer = this.statsManager.getBestPlayerForGame(game.id, 'points');
+            if (bestPlayer) {
+                return {
+                    gameId: game.id,
+                    ...bestPlayer
+                };
+            }
+            return null;
+        }).filter(bp => bp !== null);
+    }
+
+    /**
+     * Ottiene i giochi dove un giocatore è il migliore
+     * @param {number} playerId - ID del giocatore
+     * @returns {Array} - Array di oggetti con id e nome del gioco
+     */
+    getBestGamesForPlayer(playerId) {
+        const games = this.gameManager.getAllGames();
+        return this.statsManager.getGamesWherePlayerIsBest(playerId, games);
     }
 
     getGameTypeLabel(type) {
@@ -341,6 +374,38 @@ class HallOfFameApp {
             Utils.hideModal('importModal');
 
             alert(CONSTANTS.MESSAGES.BACKUP_IMPORT_SUCCESS);
+        }
+    }
+
+    // ===== GAME RANKING FUNCTIONALITY =====
+    showGameRankingModal(gameId, gameName) {
+        // Set the modal title and game name
+        document.getElementById('game-ranking-game-name').textContent = gameName;
+        
+        // Store the game ID in the modal for later use
+        document.getElementById('gameRankingModal').setAttribute('data-game-id', gameId);
+        
+        // Set the current sort order in the selector
+        const sortSelector = document.getElementById('game-ranking-sort');
+        if (sortSelector) {
+            sortSelector.value = this.statsManager.getCurrentSortOrder();
+        }
+        
+        // Display the game ranking
+        this.statsManager.displayGameRanking(gameId, gameName, this.statsManager.getCurrentSortOrder());
+        
+        // Show the modal
+        Utils.showModal('gameRankingModal');
+    }
+
+    updateGameRankingSortOrder(sortBy) {
+        // Get the current game ID from the modal (we'll need to store it)
+        const modal = document.getElementById('gameRankingModal');
+        const gameId = modal.getAttribute('data-game-id');
+        const gameName = document.getElementById('game-ranking-game-name').textContent;
+        
+        if (gameId) {
+            this.statsManager.displayGameRanking(parseInt(gameId), gameName, sortBy);
         }
     }
 }

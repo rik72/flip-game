@@ -403,6 +403,130 @@ body {
 .game-icon.sport { color: var(--warning-color); }
 .game-icon.other { color: #6b7280; }
 
+/* ===== BEST PLAYER INFO ===== */
+.best-player-info {
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    border-left: 3px solid #ffc107;
+    margin-bottom: 15px;
+}
+
+.best-player-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.best-player-details {
+    margin-top: 8px;
+}
+
+.best-player-avatar {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.best-player-name {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    margin-bottom: 2px;
+}
+
+.best-player-performance {
+    font-size: 0.8rem;
+}
+
+.best-player-performance .performance-value {
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+/* ===== PLAYER BADGES ===== */
+.best-games-badges {
+    margin-top: 10px;
+}
+
+.best-games-badges .badge {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* Game type badge colors - matching game icon colors */
+.badge-game-board {
+    background-color: #8b5cf6 !important;
+    color: white !important;
+}
+
+.badge-game-card {
+    background-color: var(--danger-color) !important;
+    color: white !important;
+}
+
+.badge-game-garden {
+    background-color: var(--success-color) !important;
+    color: white !important;
+}
+
+.badge-game-sport {
+    background-color: var(--warning-color) !important;
+    color: #212529 !important;
+}
+
+.badge-game-other {
+    background-color: #6b7280 !important;
+    color: white !important;
+}
+
+/* First place badge with gradient background */
+.badge-first-place {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%) !important;
+    color: #212529 !important;
+    font-weight: 600 !important;
+    border: 2px solid #ffc107 !important;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    display: inline-block;
+}
+
+/* Best performance badge with different gradient background */
+.badge-first-performance {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #a8edea 100%) !important;
+    color: #212529 !important;
+    font-weight: 600 !important;
+    border: 2px solid #17a2b8 !important;
+    box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    display: inline-block;
+}
+
+/* Container for ranking badges */
+.ranking-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== STATS SINGLE LINE ===== */
+.stats-single-line {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.stats-single-line span {
+    white-space: nowrap;
+}
+
 /* ===== MATCH HISTORY ===== */
 .match-item {
     background: rgba(255, 255, 255, 0.95);
@@ -423,7 +547,6 @@ body {
     padding: 20px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
-    margin-bottom: 20px;
     height: 100%;
     border: 1px solid rgba(0, 0, 0, 0.05);
 }
@@ -836,7 +959,7 @@ body {
     bottom: 0;
     right: 0;
     z-index: 1020;
-    padding: 20px;
+    padding: 12px;
 }
 
 .footer-actions {
@@ -905,4 +1028,32 @@ body {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
     margin-top: 10px;
+}
+
+/* ===== GAME RANKING MODAL FONT SIZE REDUCTION ===== */
+#gameRankingModal {
+    font-size: 0.8em; /* Reduce font size by 20% */
+}
+
+#gameRankingModal .modal-title {
+    font-size: 1.25em; /* Adjust title size proportionally */
+}
+
+#gameRankingModal .form-select {
+    font-size: 0.9em; /* Adjust form elements proportionally */
+}
+
+#gameRankingModal .btn {
+    font-size: 0.9em; /* Adjust buttons proportionally */
+}
+
+#gameRankingModal #game-ranking-table .player-name {
+    min-width: 200px;
+}
+
+/* ===== CARD BUTTON PADDING ===== */
+.game-card .btn,
+.player-card .btn,
+.match-card .btn {
+    padding: 6px 12px;
 } 

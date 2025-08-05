@@ -2,10 +2,13 @@
 // Gestisce tutte le operazioni CRUD sui giocatori: creazione, modifica, eliminazione, visualizzazione
 
 class PlayerManager {
-    constructor(storageManager, avatarManager, onDataChange = null) {
+    constructor(storageManager, avatarManager, onDataChange = null, getBestGamesCallback = null, getRankingCallback = null, getRankingPerformanceCallback = null) {
         this.storageManager = storageManager;
         this.avatarManager = avatarManager;
         this.onDataChange = onDataChange; // Callback chiamato quando i dati cambiano
+        this.getBestGamesCallback = getBestGamesCallback; // Callback per ottenere i giochi dove il giocatore è il migliore
+        this.getRankingCallback = getRankingCallback; // Callback per ottenere il ranking per punteggio
+        this.getRankingPerformanceCallback = getRankingPerformanceCallback; // Callback per ottenere il ranking per performance
         this.players = [];
         this.matches = []; // Necessario per calcolare le statistiche
     }
@@ -188,8 +191,25 @@ class PlayerManager {
             return;
         }
         
+        // Ottieni il ranking per determinare chi è primo per punteggio e performance
+        const rankingPoints = this.getRankingCallback ? this.getRankingCallback() : [];
+        const rankingPerformance = this.getRankingPerformanceCallback ? this.getRankingPerformanceCallback() : [];
+        const firstPlacePlayerId = rankingPoints.length > 0 ? rankingPoints[0].id : null;
+        const firstPerformancePlayerId = rankingPerformance.length > 0 ? rankingPerformance[0].id : null;
+        
         container.innerHTML = this.players.map(player => {
             const stats = this.calculatePlayerStats(player.id);
+            const bestGames = this.getBestGamesCallback ? this.getBestGamesCallback(player.id) : [];
+            const bestGamesBadges = bestGames.length > 0 ? this.createBestGamesBadges(bestGames) : '';
+            const isFirstPlace = player.id === firstPlacePlayerId;
+            const isFirstPerformance = player.id === firstPerformancePlayerId;
+            const firstPlaceBadge = isFirstPlace ? this.createFirstPlaceBadge() : '';
+            const firstPerformanceBadge = isFirstPerformance ? this.createFirstPerformanceBadge() : '';
+            
+            // Crea il container per i badge di ranking se almeno uno è presente
+            const rankingBadges = (isFirstPlace || isFirstPerformance) ? 
+                `<div class="ranking-badges mt-2">${firstPlaceBadge}${firstPerformanceBadge}</div>` : '';
+            
             return `
             <div class="col-md-6 col-lg-4">
                 <div class="player-card">
@@ -208,6 +228,8 @@ class PlayerManager {
                     <div class="text-muted small">
                         ${DisplayManager.createStatsDisplay(stats)}
                     </div>
+                    ${rankingBadges}
+                    ${bestGamesBadges}
                     <div class="mt-3">
                         ${HtmlBuilder.createActionButtons(player.id, 'Player')}
                     </div>
@@ -285,6 +307,57 @@ class PlayerManager {
         if (performance >= 40) return 'performance-average';
         if (performance >= 20) return 'performance-poor';
         return 'performance-very-poor';
+    }
+
+    /**
+     * Crea il badge "Primo posto"
+     * @returns {string} - HTML per il badge
+     */
+    createFirstPlaceBadge() {
+        return `<span class="badge badge-first-place me-1">
+            <i class="bi bi-trophy-fill me-1"></i>Primo posto
+        </span>`;
+    }
+
+    /**
+     * Crea il badge "Miglior performance"
+     * @returns {string} - HTML per il badge
+     */
+    createFirstPerformanceBadge() {
+        return `<span class="badge badge-first-performance me-1">
+            <i class="bi bi-graph-up-arrow me-1"></i>Miglior performance
+        </span>`;
+    }
+
+    /**
+     * Crea i badge per i giochi dove il giocatore è il migliore
+     * @param {Array} bestGames - Array di oggetti con id, nome e tipo del gioco
+     * @returns {string} - HTML per i badge
+     */
+    createBestGamesBadges(bestGames) {
+        if (bestGames.length === 0) return '';
+        
+        const getGameTypeBadgeClass = (gameType) => {
+            switch (gameType) {
+                case 'board': return 'badge-game-board';
+                case 'card': return 'badge-game-card';
+                case 'garden': return 'badge-game-garden';
+                case 'sport': return 'badge-game-sport';
+                case 'other': return 'badge-game-other';
+                default: return 'badge-game-other';
+            }
+        };
+        
+        const badges = bestGames.map(game => {
+            const badgeClass = getGameTypeBadgeClass(game.type);
+            return `<span class="badge ${badgeClass} me-1 mb-1">Primo posto a ${game.name}</span>`;
+        }).join('');
+        
+        return `
+            <div class="best-games-badges mt-2">
+                ${badges}
+            </div>
+        `;
     }
 
     /**
