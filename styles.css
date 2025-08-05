@@ -73,7 +73,77 @@ body {
 
 .navbar-brand {
     font-size: 1.5rem;
-    color: var(--primary-color) !important;
+    font-weight: bold;
+}
+
+.title-word {
+    display: inline-block;
+    margin-right: 4px;
+}
+
+.title-word-1 {
+    color: var(--podium-third) !important;
+}
+
+.title-word-2 {
+    color: var(--podium-second) !important;
+}
+
+.title-word-3 {
+    color: var(--podium-first) !important;
+}
+
+/* ===== SECTION TITLES GRADIENT ===== */
+#players-section h2,
+#games-section h2,
+#matches-section h2 {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+    display: inline-block;
+}
+
+/* ===== CLASSIFICA BUTTONS GRADIENT ===== */
+.btn-info {
+    background: linear-gradient(135deg, var(--podium-third), var(--podium-second), var(--podium-first)) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-info:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+    color: white !important;
+}
+
+.navbar-nav li:last-child .nav-link {
+    margin-right: 0px;
+}
+
+.navbar .nav-link {
+    font-size: 15pt;
+    color: white !important;
+    background: linear-gradient(135deg, #54e2f7, #7dd3fc);
+    border-radius: 25px;
+    padding: 4px 10px;
+    font-weight: 600;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    margin: 0 8px;
+}
+
+.navbar .nav-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white !important;
 }
 
 /* ===== CARDS & CONTAINERS ===== */
@@ -339,6 +409,7 @@ body {
     transition: transform 0.3s ease;
     margin-bottom: 20px;
     text-align: center;
+    border: 4px solid #e5e7eb;
 }
 
 .player-card:hover {
@@ -384,6 +455,7 @@ body {
     box-shadow: none;
     transition: transform 0.3s ease;
     margin-bottom: 20px;
+    border: 4px solid #e5e7eb;
 }
 
 .game-card:hover {
@@ -548,7 +620,7 @@ body {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
     height: 100%;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border: 4px solid #e5e7eb;
 }
 
 .match-card:hover {
@@ -563,7 +635,6 @@ body {
 }
 
 .match-header h5 {
-    color: var(--primary-color);
     font-weight: 600;
 }
 
@@ -612,8 +683,8 @@ body {
 
 .ranking-sort-container .form-select {
     border-radius: 20px;
-    border: 2px solid #e5e7eb;
-    font-size: 0.875rem;
+    border: 4px solid #e5e7eb;
+    font-size: 1rem;
     font-weight: 500;
     color: var(--primary-color);
     background: rgba(255, 255, 255, 0.95);
@@ -1055,5 +1126,5 @@ body {
 .game-card .btn,
 .player-card .btn,
 .match-card .btn {
-    padding: 6px 12px;
+    padding: 6px 15px;
 } 
