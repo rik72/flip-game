@@ -318,7 +318,7 @@ class PlayerManager {
      * @returns {string} - HTML per il badge
      */
     createFirstPlaceBadge() {
-        return `<span class="badge badge-first-place me-1">
+        return `<span class="badge badge-first-place me-1" title="Podio nella classifica dei punteggi completa" data-bs-toggle="tooltip" data-bs-placement="top">
             <i class="bi bi-trophy-fill me-1"></i>Primo posto
         </span>`;
     }
@@ -328,7 +328,7 @@ class PlayerManager {
      * @returns {string} - HTML per il badge
      */
     createFirstPerformanceBadge() {
-        return `<span class="badge badge-first-performance me-1">
+        return `<span class="badge badge-first-performance me-1" title="Performance: Percentuale dei punti vinti sul massimo possibile (2 per ogni partita)" data-bs-toggle="tooltip" data-bs-placement="top">
             <i class="bi bi-graph-up-arrow me-1"></i>Miglior performance
         </span>`;
     }
@@ -338,7 +338,7 @@ class PlayerManager {
      * @returns {string} - HTML per il badge
      */
     createSecondPlaceBadge() {
-        return `<span class="badge badge-second-place me-1">
+        return `<span class="badge badge-second-place me-1" title="Podio nella classifica dei punteggi completa" data-bs-toggle="tooltip" data-bs-placement="top">
             <i class="bi bi-trophy-fill me-1"></i>Secondo posto
         </span>`;
     }
@@ -348,7 +348,7 @@ class PlayerManager {
      * @returns {string} - HTML per il badge
      */
     createThirdPlaceBadge() {
-        return `<span class="badge badge-third-place me-1">
+        return `<span class="badge badge-third-place me-1" title="Podio nella classifica dei punteggi completa" data-bs-toggle="tooltip" data-bs-placement="top">
             <i class="bi bi-trophy-fill me-1"></i>Terzo posto
         </span>`;
     }
