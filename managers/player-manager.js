@@ -202,13 +202,17 @@ class PlayerManager {
             const bestGames = this.getBestGamesCallback ? this.getBestGamesCallback(player.id) : [];
             const bestGamesBadges = bestGames.length > 0 ? this.createBestGamesBadges(bestGames) : '';
             const isFirstPlace = player.id === firstPlacePlayerId;
+            const isSecondPlace = rankingPoints.length > 1 ? player.id === rankingPoints[1].id : false;
+            const isThirdPlace = rankingPoints.length > 2 ? player.id === rankingPoints[2].id : false;
             const isFirstPerformance = player.id === firstPerformancePlayerId;
             const firstPlaceBadge = isFirstPlace ? this.createFirstPlaceBadge() : '';
+            const secondPlaceBadge = isSecondPlace ? this.createSecondPlaceBadge() : '';
+            const thirdPlaceBadge = isThirdPlace ? this.createThirdPlaceBadge() : '';
             const firstPerformanceBadge = isFirstPerformance ? this.createFirstPerformanceBadge() : '';
             
             // Crea il container per i badge di ranking se almeno uno è presente
-            const rankingBadges = (isFirstPlace || isFirstPerformance) ? 
-                `<div class="ranking-badges mt-2">${firstPlaceBadge}${firstPerformanceBadge}</div>` : '';
+            const rankingBadges = (isFirstPlace || isSecondPlace || isThirdPlace || isFirstPerformance) ? 
+                `<div class="ranking-badges mt-2">${firstPlaceBadge}${secondPlaceBadge}${thirdPlaceBadge}${firstPerformanceBadge}</div>` : '';
             
             return `
             <div class="col-md-6 col-lg-4">
@@ -326,6 +330,26 @@ class PlayerManager {
     createFirstPerformanceBadge() {
         return `<span class="badge badge-first-performance me-1">
             <i class="bi bi-graph-up-arrow me-1"></i>Miglior performance
+        </span>`;
+    }
+
+    /**
+     * Crea il badge "Secondo posto"
+     * @returns {string} - HTML per il badge
+     */
+    createSecondPlaceBadge() {
+        return `<span class="badge badge-second-place me-1">
+            <i class="bi bi-trophy-fill me-1"></i>Secondo posto
+        </span>`;
+    }
+
+    /**
+     * Crea il badge "Terzo posto"
+     * @returns {string} - HTML per il badge
+     */
+    createThirdPlaceBadge() {
+        return `<span class="badge badge-third-place me-1">
+            <i class="bi bi-trophy-fill me-1"></i>Terzo posto
         </span>`;
     }
 
