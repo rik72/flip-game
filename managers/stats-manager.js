@@ -302,7 +302,7 @@ class StatsManager {
                     ${this.avatarManager.createAvatar(player.avatar || '😊').outerHTML}
                     <div class="player-name">${player.name}</div>
                     <div>
-                        ${player.gamesPlayed} partite
+                        ${player.gamesPlayed} ${Utils.pluralizeMatches(player.gamesPlayed)}
                     </div>
                     <div>
                         <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span>
@@ -351,7 +351,7 @@ class StatsManager {
                     ${this.avatarManager.createAvatar(player.avatar || '😊').outerHTML}
                     <div class="player-name">${player.name}</div>
                     <div>
-                        ${player.gamesPlayed} partite
+                        ${player.gamesPlayed} ${Utils.pluralizeMatches(player.gamesPlayed)}
                     </div>
                     <div>
                         <span title="Vittorie" data-bs-toggle="tooltip" data-bs-placement="top">🏆 ${player.wins}</span>

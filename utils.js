@@ -33,4 +33,9 @@ class Utils {
         const modalInstance = bootstrap.Modal.getInstance(document.getElementById(modalId));
         if (modalInstance) modalInstance.hide();
     }
+
+    static pluralizeMatches(count, capitalize = false) {
+        const word = count === 1 ? 'partita' : 'partite';
+        return capitalize ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+    }
 } 

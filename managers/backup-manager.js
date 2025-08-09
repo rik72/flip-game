@@ -176,7 +176,7 @@ class BackupManager {
                        `Dati nel backup:\n` +
                        `- ${playerCount} giocatori\n` +
                        `- ${gameCount} giochi\n` +
-                       `- ${matchCount} partite\n\n` +
+                       `- ${matchCount} ${Utils.pluralizeMatches(matchCount)}\n\n` +
                        `Tutti i dati attuali verranno sostituiti.`;
 
         return {

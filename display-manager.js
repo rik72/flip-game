@@ -20,7 +20,7 @@ class DisplayManager {
         
         return `
             <div class="stats-single-line">
-                <span class="me-3">Partite: <strong>${stats.gamesPlayed}</strong></span>
+                <span class="me-3">${Utils.pluralizeMatches(stats.gamesPlayed, true)}: <strong>${stats.gamesPlayed}</strong></span>
                 <span>${winsStats} ${participantsStats} ${lastsStats}</span>
             </div>
         `;
