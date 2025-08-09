@@ -216,7 +216,7 @@ class PlayerManager {
             
             return `
             <div class="col-md-6 col-lg-4">
-                <div class="player-card">
+                <div class="card-base player-card">
                     <div class="player-card-stats">
                         <div class="player-points">
                             <div class="fs-4 fw-bold text-primary">${stats.totalPoints}<span class="points-unit">pt</span></div>

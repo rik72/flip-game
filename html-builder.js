@@ -58,7 +58,7 @@ class HtmlBuilder {
 
         const showDeleteButton = participantCount >= 2 || selectedPlayerId;
         const deleteButton = showDeleteButton ? 
-            `<button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.parentElement.remove()"><i class="bi bi-trash"></i></button>` : '';
+            this.createButton('', 'btn-danger', 'this.parentElement.parentElement.parentElement.remove()', 'bi-trash') : '';
 
         return `
             <div class="participant-row">

@@ -366,7 +366,7 @@ class MatchManager {
             const game = this.games.find(g => g.id === match.gameId);
             return `
                 <div class="col-lg-4 col-md-6 col-12 mb-3">
-                    <div class="match-card">
+                    <div class="card-base match-card">
                         <div class="match-header mb-3">
                             <div>
                                 <h5 class="mb-1">${game ? game.name : 'Gioco eliminato'}</h5>
