@@ -683,7 +683,6 @@ body {
 }
 
 .match-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     padding-bottom: 15px;
     margin-bottom: 15px;
 }
@@ -1128,7 +1127,7 @@ body {
         margin-top: 10px;
     }
     
-    .d-flex.justify-content-between.align-items-center {
+    .ranking-header {
         flex-direction: column;
         align-items: stretch !important;
     }
@@ -1144,24 +1143,18 @@ body {
     }
     
     /* Action buttons responsive design */
-    .player-card .mt-3,
-    .game-card .mt-3,
-    .match-card .mt-3 {
+    .card-actions {
         flex-direction: column;
         align-items: stretch;
     }
     
-    .player-card .mt-3 .btn,
-    .game-card .mt-3 .btn,
-    .match-card .mt-3 .btn {
+    .card-actions .btn {
         margin-left: 0;
         margin-bottom: 8px;
         width: 100%;
     }
     
-    .player-card .mt-3 .btn:last-child,
-    .game-card .mt-3 .btn:last-child,
-    .match-card .mt-3 .btn:last-child {
+    .card-actions .btn:last-child {
         margin-bottom: 0;
     }
 }
@@ -1371,32 +1364,41 @@ body {
     padding: 6px 15px;
 }
 
-/* ===== ACTION BUTTONS ALIGNMENT ===== */
-.player-card .mt-3.d-flex.justify-content-end,
-.game-card .mt-3.d-flex.justify-content-end,
-.match-card .mt-3.d-flex.justify-content-end {
+/* ===== CARD ACTION BUTTONS ===== */
+.card-actions {
+    margin-top: 1rem;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
-/* ===== PUSH BUTTONS TO BOTTOM ===== */
-.player-card .mt-3.d-flex,
-.match-card .mt-3.d-flex {
-    order: 100;
-}
-
-.game-card .mt-3.d-flex {
-    margin-top: auto !important;
-}
-
-.player-card .mt-3.d-flex.justify-content-end .btn,
-.game-card .mt-3.d-flex.justify-content-end .btn,
-.match-card .mt-3.d-flex.justify-content-end .btn {
+.card-actions .btn {
     margin-left: 8px;
 }
 
-.player-card .mt-3.d-flex.justify-content-end .btn:first-child,
-.game-card .mt-3.d-flex.justify-content-end .btn:first-child,
-.match-card .mt-3.d-flex.justify-content-end .btn:first-child {
+.card-actions .btn:first-child {
     margin-left: 0;
+}
+
+/* ===== HEADER LAYOUTS ===== */
+.ranking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+/* ===== PUSH BUTTONS TO BOTTOM ===== */
+.player-card .card-actions,
+.match-card .card-actions {
+    order: 100;
+}
+
+.game-card .card-actions {
+    margin-top: auto !important;
 } 

@@ -23,6 +23,7 @@ constants.js → utils.js → modal-manager.js → html-builder.js → display-m
 - Write inline HTML templates - use HtmlBuilder methods
 - Handle empty states manually - use DisplayManager.renderEmptyState()
 - Create validation logic - use Utils.validateName()
+- Use Bootstrap utility classes as CSS selectors (.mt-3, .d-flex, etc.)
 
 ### ✅ ALWAYS DO:
 - Check if functionality exists in Utils/HtmlBuilder/DisplayManager first
@@ -30,6 +31,7 @@ constants.js → utils.js → modal-manager.js → html-builder.js → display-m
 - Use existing utility classes for ALL operations
 - Follow established patterns exactly
 - Maintain zero duplications policy
+- Create semantic custom CSS classes instead of Bootstrap utility selectors
 
 ## QUICK PATTERNS
 

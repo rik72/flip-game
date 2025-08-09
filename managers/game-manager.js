@@ -202,7 +202,7 @@ class GameManager {
                         <div class="game-icon ${game.type}">
                             <i class="bi ${gameIcons[game.type]}"></i>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="card-header">
                             <h5 class="mb-0">${game.name}</h5>
                             ${HtmlBuilder.createButton(
                                 'Classifica',
@@ -215,7 +215,7 @@ class GameManager {
                         <div class="text-muted small mb-3">
                             Partite giocate: <strong>${this.getGameMatchCount(game.id)}</strong>
                         </div>
-                        <div class="mt-3 d-flex justify-content-between">
+                        <div class="card-actions">
                             ${HtmlBuilder.createActionButtons(game.id, 'Game')}
                         </div>
                     </div>

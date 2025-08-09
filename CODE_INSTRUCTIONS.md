@@ -162,6 +162,12 @@ class HallOfFameApp {
 - Performance classes con gradienti e ombre coerenti
 - Border radius standardizzato (15px-20px)
 
+### **Regole CSS Selettori**
+- ❌ **MAI usare** selettori basati su classi Bootstrap (`.mt-3`, `.d-flex`, `.justify-content-*`)
+- ✅ **SEMPRE creare** classi custom semantiche (`.card-actions`, `.ranking-header`)
+- ✅ **Consentito** override di stili Bootstrap (`.btn-primary`, `.form-control`)
+- ✅ **Consentito** selettori su classi custom contenenti Bootstrap (`.my-container .form-select`)
+
 ## 🔧 Pattern di Sviluppo
 
 ### **1. Aggiunta Nuovi Entity Types**

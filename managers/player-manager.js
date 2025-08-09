@@ -234,7 +234,7 @@ class PlayerManager {
                     </div>
                     ${rankingBadges}
                     ${bestGamesBadges}
-                    <div class="mt-3 d-flex justify-content-between">
+                    <div class="card-actions">
                         ${HtmlBuilder.createActionButtons(player.id, 'Player')}
                     </div>
                 </div>

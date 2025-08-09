@@ -390,7 +390,7 @@ class MatchManager {
                                 `;
                             }).join('')}
                         </div>
-                        <div class="mt-3 d-flex justify-content-between">
+                        <div class="card-actions">
                             ${HtmlBuilder.createActionButtons(match.id, 'Match')}
                         </div>
                     </div>
