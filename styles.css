@@ -926,12 +926,115 @@ body {
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
+
+/* Extra Large Desktop (1400px and below) */
+@media (max-width: 1400px) {
+    .podium {
+        background-size: 127%;
+        background-position: center -460px;
+    }
+}
+
+/* Large Desktop (1200px and below) */
+@media (max-width: 1200px) {
+    .podium {
+        background-size: 130%;
+        background-position: center -350px;
+        gap: 18px;
+    }
+    
+    .podium-step {
+        min-width: 130px;
+    }
+    
+    .podium-name {
+        max-width: 130px;
+    }
+    
+    .podium-name-wrapper {
+        max-width: 130px;
+    }
+}
+
+/* Small Desktop (992px and below) */
+@media (max-width: 992px) {
+    .podium {
+        gap: 15px;
+        padding: 15px 0 50px 0;
+        background-size: 135%;
+        background-position: center -480px;
+    }
+    
+    .podium-step {
+        min-width: 120px;
+        padding: 8px 15px;
+    }
+    
+    .podium-name {
+        font-size: 1.8rem;
+        max-width: 120px;
+    }
+    
+    .podium-name-wrapper {
+        max-width: 120px;
+    }
+    
+    .podium-name.long-name {
+        animation: scrollTextSmallDesktop 10s ease-in-out infinite;
+        animation-delay: 1s;
+        text-overflow: clip;
+        max-width: none;
+        width: max-content;
+    }
+    
+    @keyframes scrollTextSmallDesktop {
+        0%, 5% {
+            transform: translateX(0);
+        }
+        50%, 55% {
+            transform: translateX(calc(-100% + 120px));
+        }
+        85%, 100% {
+            transform: translateX(0);
+        }
+    }
+    
+    .podium-step.first {
+        height: 260px;
+    }
+    
+    .podium-step.second {
+        height: 240px;
+    }
+    
+    .podium-step.third {
+        height: 220px;
+    }
+    
+    .avatar-podium {
+        font-size: 2.5rem;
+    }
+    
+    .podium-score {
+        font-size: 1.3rem;
+    }
+}
+
+/* Medium Tablet (992px to 769px) */
+@media (max-width: 992px) and (min-width: 769px) {
+    .podium {
+        background-size: 140%;
+        background-position: center -460px;
+    }
+}
+
+/* Tablet and Mobile (768px and below) */
 @media (max-width: 768px) {
     .podium {
         flex-direction: column;
         align-items: center;
-        background-size: contain;
-        background-position: center bottom;
+        background-size: 200%;
+        background-position: center -200px;
         min-height: auto;
         padding: 10px;
     }
