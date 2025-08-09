@@ -235,7 +235,7 @@ body {
     position: relative;
     background-image: url('img/podium_bg.jpg');
     background-size: 125%;
-    background-position: center -450px;
+    background-position: center -575px;
     background-repeat: no-repeat;
     padding: 20px 0 60px 0;
     border-radius: 20px;
@@ -319,6 +319,37 @@ body {
     text-align: center;
     font-size: 2rem;
     font-weight: bold;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+}
+
+.podium-name-wrapper {
+    max-width: 140px;
+    overflow: hidden;
+    position: relative;
+}
+
+.podium-name.long-name {
+    animation: scrollText 10s ease-in-out infinite;
+    animation-delay: 1s;
+    text-overflow: clip;
+    max-width: none;
+    width: max-content;
+}
+
+@keyframes scrollText {
+    0%, 5% {
+        transform: translateX(0);
+    }
+    50%, 55% {
+        transform: translateX(calc(-100% + 140px));
+    }
+    85%, 100% {
+        transform: translateX(0);
+    }
 }
 
 .podium-step.first .podium-name {
@@ -418,6 +449,9 @@ body {
 /* ===== PLAYER NAME ALIGNMENT ===== */
 .player-card h5 {
     text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
 }
 
 .player-card-stats {
@@ -803,8 +837,12 @@ body {
 
 .ranking-player .player-name {
     min-width: 250px;
+    max-width: 250px;
     font-size: 1.5rem;
     font-weight: bold;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
 }
 
 .ranking-stats {
@@ -903,6 +941,38 @@ body {
         margin-bottom: 20px;
     }
     
+    .podium-name {
+        max-width: 220px;
+        font-size: 1.5rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .podium-name-wrapper {
+        max-width: 220px;
+    }
+    
+    .podium-name.long-name {
+        animation: scrollTextMobile 10s ease-in-out infinite;
+        animation-delay: 1s;
+        text-overflow: clip;
+        max-width: none;
+        width: max-content;
+    }
+    
+    @keyframes scrollTextMobile {
+        0%, 5% {
+            transform: translateX(0);
+        }
+        50%, 55% {
+            transform: translateX(calc(-100% + 220px));
+        }
+        85%, 100% {
+            transform: translateX(0);
+        }
+    }
+    
     .podium-step.first,
     .podium-step.second,
     .podium-step.third {
@@ -969,6 +1039,12 @@ body {
     
     .ranking-sort-container .form-select {
         font-size: 0.8rem;
+    }
+    
+    .ranking-player .player-name {
+        min-width: 150px;
+        max-width: 200px;
+        font-size: 1.2rem;
     }
     
     /* Action buttons responsive design */

@@ -206,11 +206,26 @@ class StatsManager {
             const avatar = this.avatarManager.createAvatar(player.avatar || '😊', 'avatar-podium');
             stepDiv.appendChild(avatar);
             
-            // Player name
+            // Player name with wrapper for scroll animation
+            const nameWrapper = document.createElement('div');
+            nameWrapper.className = 'podium-name-wrapper';
+            
             const nameDiv = document.createElement('div');
             nameDiv.className = 'podium-name';
             nameDiv.textContent = player.name;
-            stepDiv.appendChild(nameDiv);
+            
+            nameWrapper.appendChild(nameDiv);
+            stepDiv.appendChild(nameWrapper);
+            
+            // Check if name is too long and add animation class
+            setTimeout(() => {
+                const maxWidth = window.innerWidth <= 768 ? 220 : 140; // Mobile vs Desktop
+                const isTextTruncated = nameDiv.scrollWidth > nameDiv.clientWidth;
+                
+                if (isTextTruncated) {
+                    nameDiv.classList.add('long-name');
+                }
+            }, 500);
             
             // Score
             const scoreDiv = document.createElement('div');
@@ -230,6 +245,36 @@ class StatsManager {
         
         container.innerHTML = '';
         container.appendChild(podiumDiv);
+    }
+
+    /**
+     * Calcola la larghezza del testo in pixel
+     * @param {string} text - Il testo da misurare
+     * @param {HTMLElement} element - L'elemento per ottenere lo stile
+     * @returns {number} - La larghezza in pixel
+     */
+    getTextWidth(text, element) {
+        try {
+            // Metodo alternativo: crea un elemento temporaneo per misurare
+            const tempElement = document.createElement('span');
+            tempElement.style.visibility = 'hidden';
+            tempElement.style.position = 'absolute';
+            tempElement.style.whiteSpace = 'nowrap';
+            tempElement.style.fontSize = window.getComputedStyle(element).fontSize;
+            tempElement.style.fontWeight = window.getComputedStyle(element).fontWeight;
+            tempElement.style.fontFamily = window.getComputedStyle(element).fontFamily;
+            tempElement.textContent = text;
+            
+            document.body.appendChild(tempElement);
+            const width = tempElement.offsetWidth;
+            document.body.removeChild(tempElement);
+            
+            return width;
+        } catch (error) {
+            console.error('Error measuring text width:', error);
+            // Fallback: stima approssimativa
+            return text.length * 16; // ~16px per carattere
+        }
     }
 
     /**
