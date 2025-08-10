@@ -215,7 +215,7 @@ class PlayerManager {
                 `<div class="ranking-badges mt-2">${firstPlaceBadge}${secondPlaceBadge}${thirdPlaceBadge}${firstPerformanceBadge}</div>` : '';
             
             return `
-            <div class="col-md-6 col-lg-4">
+            <div class="col-md-6 col-lg-4 mb-3">
                 <div class="card-base player-card">
                     <div class="player-card-stats">
                         <div class="player-points">

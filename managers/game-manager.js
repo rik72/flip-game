@@ -197,7 +197,7 @@ class GameManager {
         
         container.innerHTML = this.games.map(game => {
             return `
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4 mb-3">
                     <div class="card-base game-card">
                         <div class="game-icon ${game.type}">
                             <i class="bi ${gameIcons[game.type]}"></i>

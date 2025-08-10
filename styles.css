@@ -1199,7 +1199,6 @@ body {
     padding: 20px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
-    margin-bottom: 20px;
 }
 
 .card-base:hover {
