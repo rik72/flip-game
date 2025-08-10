@@ -292,13 +292,10 @@ Performance = (Total Points / (Matches × 2)) × 100
 - [x] Complete documentation
 
 ### **Version 1.1** 🔄
-- [ ] Multi-round tournament system
 - [ ] Advanced statistics charts
-- [ ] PDF leaderboard export
 - [ ] Complete offline mode
 
 ### **Version 2.0** 📋
-- [ ] Multi-database support
 - [ ] Optional cloud sync
 - [ ] Progressive Web App
 - [ ] Additional languages (🇪🇸 Spanish, 🇫🇷 French, etc.)
