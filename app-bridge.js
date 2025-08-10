@@ -24,7 +24,7 @@ window.addEventListener('languageReady', (event) => {
     }
     
     // Then initialize the main app
-    app = new HallOfFameApp();
+    app = new App();
 });
 
 // Global functions for HTML onclick handlers

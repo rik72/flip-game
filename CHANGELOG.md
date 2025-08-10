@@ -105,7 +105,7 @@ const html = HtmlBuilder.createActionButtons(player.id, 'Player');
 - **ModalManager**: Solo gestione modali
 - **HtmlBuilder**: Solo generazione HTML
 - **DisplayManager**: Solo pattern di visualizzazione
-- **HallOfFameApp**: Solo logica business
+- **App**: Solo logica business
 
 ##### **Single Source of Truth**
 - **Messaggi**: Tutti in `CONSTANTS.MESSAGES`

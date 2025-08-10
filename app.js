@@ -1,5 +1,5 @@
 // ===== APPLICATION STATE =====
-class HallOfFameApp {
+class App {
     constructor() {
         // Inizializza i manager
         this.storageManager = new StorageManager();
@@ -416,5 +416,5 @@ class HallOfFameApp {
     }
 }
 
-// HallOfFameApp class - now refactored with modular managers
+// App class - now refactored with modular managers
 // Uses StorageManager, NavigationManager, BackupManager, AvatarManager, PlayerManager, StatsManager, GameManager, MatchManager, and LanguageManager for better separation of concerns 

@@ -9,7 +9,7 @@
  * Updated to validate the new modular manager architecture:
  * - StorageManager, NavigationManager, BackupManager
  * - AvatarManager, PlayerManager, StatsManager
- * - Proper delegation patterns in HallOfFameApp
+ * - Proper delegation patterns in App
  */
 
 const fs = require('fs');
@@ -20,7 +20,8 @@ class ComplianceValidator {
         this.violations = [];
         this.warnings = [];
         this.moduleFiles = {
-            constants: 'constants-it.js',
+            constantsIt: 'constants-it.js',
+            constantsEn: 'constants-en.js',
             utils: 'utils.js',
             modalManager: 'modal-manager.js',
             htmlBuilder: 'html-builder.js',
@@ -33,7 +34,7 @@ class ComplianceValidator {
             statsManager: 'managers/stats-manager.js',
             gameManager: 'managers/game-manager.js',
             matchManager: 'managers/match-manager.js',
-            hallOfFame: 'app.js',
+            app: 'app.js',
             appBridge: 'app-bridge.js'
         };
     }
@@ -70,9 +71,13 @@ class ComplianceValidator {
     validateArchitecture(moduleContents) {
         console.log('🏗️  Checking architecture compliance...');
         
-        // Check if CONSTANTS exists in constants-it.js
-        if (!moduleContents.constants.includes('const CONSTANTS = {')) {
-            this.addViolation('CRITICAL', 'CONSTANTS object not found in constants-it.js');
+        // Check if multi-language constants structure exists in both constants files
+        if (!moduleContents.constantsIt.includes('window.CONSTANTS_IT_OBJ')) {
+            this.addViolation('CRITICAL', 'Multi-language constants structure not found in constants-it.js');
+        }
+        
+        if (!moduleContents.constantsEn.includes('window.CONSTANTS_EN_OBJ')) {
+            this.addViolation('CRITICAL', 'Multi-language constants structure not found in constants-en.js');
         }
 
         // Check required classes exist in their respective files
@@ -89,7 +94,7 @@ class ComplianceValidator {
             statsManager: 'class StatsManager',
             gameManager: 'class GameManager',
             matchManager: 'class MatchManager',
-            hallOfFame: 'class HallOfFameApp'
+            app: 'class App'
         };
 
         for (const [module, className] of Object.entries(requiredClasses)) {
@@ -164,19 +169,28 @@ class ComplianceValidator {
     validateConstants(moduleContents) {
         console.log('📋 Checking CONSTANTS usage...');
         
-        // Check if CONSTANTS structure is proper in constants-it.js
+        // Check if multi-language constants structure is proper in both constants files
         const requiredSections = ['MESSAGES', 'MODAL_TYPES', 'POSITION_POINTS', 'GAME_TYPE_LABELS'];
         
+        // Validate constants-it.js
         requiredSections.forEach(section => {
-            if (!moduleContents.constants.includes(`${section}:`)) {
-                this.addViolation('MEDIUM', `Missing required CONSTANTS section: ${section}`);
+            if (!moduleContents.constantsIt.includes(`${section}:`)) {
+                this.addViolation('MEDIUM', `Missing required CONSTANTS section: ${section} in constants-it.js`);
             }
         });
 
-        // Check that CONSTANTS is not redefined in other files
+        // Validate constants-en.js
+        requiredSections.forEach(section => {
+            if (!moduleContents.constantsEn.includes(`${section}:`)) {
+                this.addViolation('MEDIUM', `Missing required CONSTANTS section: ${section} in constants-en.js`);
+            }
+        });
+
+        // Check that constants are not redefined in other files (except language manager)
         for (const [module, content] of Object.entries(moduleContents)) {
-            if (module !== 'constants' && content.includes('const CONSTANTS = {')) {
-                this.addViolation('HIGH', `CONSTANTS should not be redefined in ${this.moduleFiles[module]} - they are in constants-it.js`);
+            if (module !== 'constantsIt' && module !== 'constantsEn' && 
+                (content.includes('window.CONSTANTS_IT_OBJ = {') || content.includes('window.CONSTANTS_EN_OBJ = {'))) {
+                this.addViolation('HIGH', `Constants should not be redefined in ${this.moduleFiles[module]} - they are in constants files`);
             }
         }
         
@@ -188,7 +202,7 @@ class ComplianceValidator {
         
         // Check for proper error handling in relevant files
         for (const [module, content] of Object.entries(moduleContents)) {
-            if (module === 'hallOfFame' || module === 'utils') {
+            if (module === 'app' || module === 'utils') {
                 if (!content.includes('try {') || !content.includes('Utils.validateName')) {
                     this.addWarning(`Ensure proper error handling with try-catch for validations in ${this.moduleFiles[module]}`);
                 }
@@ -203,7 +217,8 @@ class ComplianceValidator {
 
         // Check that each module contains only its expected content
         const moduleExpectations = {
-            constants: ['const CONSTANTS'],
+            constantsIt: ['window.CONSTANTS_IT_OBJ'],
+            constantsEn: ['window.CONSTANTS_EN_OBJ'],
             utils: ['class Utils'],
             modalManager: ['class ModalManager'],
             htmlBuilder: ['class HtmlBuilder'],
@@ -216,7 +231,7 @@ class ComplianceValidator {
             statsManager: ['class StatsManager'],
             gameManager: ['class GameManager'],
             matchManager: ['class MatchManager'],
-            hallOfFame: ['class HallOfFameApp'],
+            app: ['class App'],
             appBridge: ['let app', 'document.addEventListener', 'function showSection']
         };
 
@@ -237,11 +252,11 @@ class ComplianceValidator {
             // Manager modules can be larger as they contain specialized business logic
             const managerModules = ['storageManager', 'navigationManager', 'backupManager', 'avatarManager', 'playerManager', 'statsManager', 'gameManager', 'matchManager'];
             
-            if (module === 'hallOfFame' && sizeKB > 30) {
+            if (module === 'app' && sizeKB > 30) {
                 this.addWarning(`${file} is quite large (${sizeKB}KB) - main app class should be mostly delegation now`);
             } else if (managerModules.includes(module) && sizeKB > 25) {
                 this.addWarning(`${file} is larger than expected (${sizeKB}KB) for a manager module`);
-            } else if (!managerModules.includes(module) && module !== 'hallOfFame' && sizeKB > 20) {
+            } else if (!managerModules.includes(module) && module !== 'app' && sizeKB > 20) {
                 this.addWarning(`${file} is larger than expected (${sizeKB}KB) for a utility module`);
             }
         }
@@ -313,8 +328,8 @@ class ComplianceValidator {
             }
         }
 
-        // Check that HallOfFameApp delegates to managers
-        const hallOfFameContent = moduleContents.hallOfFame;
+        // Check that App delegates to managers
+        const appContent = moduleContents.app;
         const expectedDelegations = [
             'this.storageManager',
             'this.navigationManager', 
@@ -327,8 +342,8 @@ class ComplianceValidator {
         ];
 
         for (const delegation of expectedDelegations) {
-            if (!hallOfFameContent.includes(delegation)) {
-                this.addViolation('HIGH', `HallOfFameApp should use ${delegation} for delegation`);
+            if (!appContent.includes(delegation)) {
+                this.addViolation('HIGH', `App should use ${delegation} for delegation`);
             }
         }
 

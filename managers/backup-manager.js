@@ -35,7 +35,7 @@ class BackupManager {
 
             // Crea il file ZIP
             const zip = new JSZip();
-            zip.file("halloffame-backup.json", JSON.stringify(exportData, null, 2));
+            zip.file("app-backup.json", JSON.stringify(exportData, null, 2));
 
             // Genera il file ZIP e avvia il download
             const content = await zip.generateAsync({ type: "blob" });
@@ -89,7 +89,7 @@ class BackupManager {
 
             // Legge e processa il file ZIP
             const zip = await JSZip.loadAsync(file);
-            const jsonFile = zip.file("halloffame-backup.json");
+            const jsonFile = zip.file("app-backup.json");
             
             if (!jsonFile) {
                 throw new Error('File di backup non valido: manca il file JSON');

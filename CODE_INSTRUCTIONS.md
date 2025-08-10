@@ -16,7 +16,7 @@ Tutti i manager sono organizzati nella cartella **`/managers/`** per una struttu
 CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → 
 managers/StorageManager → managers/NavigationManager → managers/BackupManager → 
 managers/AvatarManager → managers/PlayerManager → managers/StatsManager → 
-managers/GameManager → managers/MatchManager → HallOfFameApp
+managers/GameManager → managers/MatchManager → App
 ```
 
 #### **Manager Specializzati (in `/managers/`):**
@@ -30,7 +30,7 @@ managers/GameManager → managers/MatchManager → HallOfFameApp
 - **GameManager**: CRUD giochi, statistiche, tipologie
 - **MatchManager**: CRUD partite, partecipanti, ordinamento
 
-#### **HallOfFameApp**: Controller principale che coordina i manager
+#### **App**: Controller principale che coordina i manager
 
 #### **CONSTANTS**
 Oggetto centralizzato per tutte le configurazioni:
@@ -126,8 +126,8 @@ try {
 
 #### **Pattern di Delegazione:**
 ```javascript
-// HallOfFameApp delega ai manager invece di implementare direttamente
-class HallOfFameApp {
+// App delega ai manager invece di implementare direttamente
+class App {
     constructor() {
         this.storageManager = new StorageManager();
         this.playerManager = new PlayerManager(this.storageManager, ...);

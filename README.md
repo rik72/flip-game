@@ -39,7 +39,7 @@ A web application for managing family games leaderboards with scoring system, st
 ## 📁 Project Structure
 
 ```
-halloffame/
+<root>/
 ├── index.html                 # Main user interface
 ├── constants-it.js            # 🇮🇹 Italian constants and configurations
 ├── constants-en.js            # 🇺🇸 English constants and configurations
