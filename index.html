@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hall of Fame - Classifica Giochi Famiglia</title>
+    <title id="page-title"></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@100;300;400;500;700;800;900&display=swap" rel="stylesheet">
@@ -16,9 +16,9 @@
         <div class="container">
             <a class="navbar-brand fw-bold" href="#" onclick="showSection('podium', this)">
                 <i class="bi bi-trophy-fill text-warning me-2"></i>
-                <span class="title-word title-word-1">Hall</span>
-                <span class="title-word title-word-2">of</span>
-                <span class="title-word title-word-3">Fame</span>
+                                        <span class="title-word title-word-1" id="app-title-hall"></span>
+                        <span class="title-word title-word-2" id="app-title-of"></span>
+                        <span class="title-word title-word-3" id="app-title-fame"></span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -26,18 +26,18 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showSection('players', this)">
-                            <i class="bi bi-people me-1"></i>Giocatori
+                        <a class="nav-link" href="#" onclick="showSection('players', this)" id="nav-players">
+                            <i class="bi bi-people me-1"></i><span id="nav-players-text"></span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showSection('games', this)">
-                            <i class="bi bi-controller me-1"></i>Giochi
+                        <a class="nav-link" href="#" onclick="showSection('games', this)" id="nav-games">
+                            <i class="bi bi-controller me-1"></i><span id="nav-games-text"></span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" onclick="showSection('matches', this)">
-                            <i class="bi bi-list-check me-1"></i>Partite
+                        <a class="nav-link" href="#" onclick="showSection('matches', this)" id="nav-matches">
+                            <i class="bi bi-list-check me-1"></i><span id="nav-matches-text"></span>
                         </a>
                     </li>
                 </ul>
@@ -57,11 +57,11 @@
             <div class="row mt-3">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="mb-0">Classifica</h3>
+                        <h3 class="mb-0" id="ranking-header"></h3>
                         <div class="ranking-sort-container">
                             <select id="ranking-sort" class="form-select form-select-sm" onchange="app.updateRankingSortOrder(this.value)">
-                                <option value="points">Ordina per Punteggio</option>
-                                <option value="performance">Ordina per Performance</option>
+                                <option value="points" id="ranking-sort-points"></option>
+                                <option value="performance" id="ranking-sort-performance"></option>
                             </select>
                         </div>
                     </div>
@@ -79,9 +79,9 @@
         <!-- Players Section -->
         <div id="players-section" class="section" style="display: none;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-people me-2"></i>Giocatori</h2>
-                <button class="btn btn-primary" onclick="showAddPlayerModal()">
-                    <i class="bi bi-person-plus me-1"></i>Aggiungi Giocatore
+                <h2><i class="bi bi-people me-2"></i><span id="section-players-header"></span></h2>
+                <button class="btn btn-primary" onclick="showAddPlayerModal()" id="add-player-btn">
+                    <i class="bi bi-person-plus me-1"></i><span id="add-player-btn-text"></span>
                 </button>
             </div>
             <div id="players-list" class="row">
@@ -92,9 +92,9 @@
         <!-- Games Section -->
         <div id="games-section" class="section" style="display: none;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-controller me-2"></i>Giochi</h2>
-                <button class="btn btn-primary" onclick="showAddGameModal()">
-                    <i class="bi bi-plus-circle me-1"></i>Aggiungi Gioco
+                <h2><i class="bi bi-controller me-2"></i><span id="section-games-header"></span></h2>
+                <button class="btn btn-primary" onclick="showAddGameModal()" id="add-game-btn">
+                    <i class="bi bi-plus-circle me-1"></i><span id="add-game-btn-text"></span>
                 </button>
             </div>
             <div id="games-list" class="row">
@@ -105,9 +105,9 @@
         <!-- Matches Section -->
         <div id="matches-section" class="section" style="display: none;">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-list-check me-2"></i>Partite</h2>
-                <button class="btn btn-primary" onclick="showAddMatchModal()">
-                    <i class="bi bi-plus-circle me-1"></i>Registra Partita
+                <h2><i class="bi bi-list-check me-2"></i><span id="section-matches-header"></span></h2>
+                <button class="btn btn-primary" onclick="showAddMatchModal()" id="add-match-btn">
+                    <i class="bi bi-plus-circle me-1"></i><span id="add-match-btn-text"></span>
                 </button>
             </div>
             <div id="matches-list">
@@ -121,22 +121,22 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="player-modal-title">Aggiungi Giocatore</h5>
+                    <h5 class="modal-title" id="player-modal-title"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="player-form">
                         <input type="hidden" id="player-edit-id" value="">
                         <div class="mb-3">
-                            <label for="player-name" class="form-label">Nome</label>
+                            <label for="player-name" class="form-label" id="player-name-label"></label>
                             <input type="text" class="form-control" id="player-name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="player-avatar" class="form-label">Avatar</label>
+                            <label for="player-avatar" class="form-label" id="player-avatar-label"></label>
                             <div class="avatar-selector-container">
                                 <div class="mb-2">
-                                    <input type="text" class="form-control" id="avatar-filter" placeholder="Filtra avatar... (es: 'gatto', 'felice', 'cibo')" autocomplete="off">
-                                    <div class="form-text">Digita per filtrare la lista degli avatar</div>
+                                    <input type="text" class="form-control" id="avatar-filter" placeholder="" autocomplete="off">
+                                    <div class="form-text" id="avatar-filter-help"></div>
                                 </div>
                                 <select class="form-select" id="player-avatar" size="8">
                                 <!-- Faces & Emotions -->
@@ -576,24 +576,24 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="game-modal-title">Aggiungi Gioco</h5>
+                    <h5 class="modal-title" id="game-modal-title"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="game-form">
                         <input type="hidden" id="game-edit-id" value="">
                         <div class="mb-3">
-                            <label for="game-name" class="form-label">Nome del Gioco</label>
+                            <label for="game-name" class="form-label" id="game-name-label"></label>
                             <input type="text" class="form-control" id="game-name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="game-type" class="form-label">Tipo</label>
+                            <label for="game-type" class="form-label" id="game-type-label"></label>
                             <select class="form-select" id="game-type">
-                                <option value="board">Gioco da Tavolo</option>
-                                <option value="card">Gioco di Carte</option>
-                                <option value="garden">Gioco da Giardino</option>
-                                <option value="sport">Sport</option>
-                                <option value="other">Altro</option>
+                                <option value="board" id="game-type-board"></option>
+                                <option value="card" id="game-type-card"></option>
+                                <option value="garden" id="game-type-garden"></option>
+                                <option value="sport" id="game-type-sport"></option>
+                                <option value="other" id="game-type-other"></option>
                             </select>
                         </div>
                     </form>
@@ -611,29 +611,29 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="match-modal-title">Registra Partita</h5>
+                    <h5 class="modal-title" id="match-modal-title"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="match-form">
                         <input type="hidden" id="match-edit-id" value="">
                         <div class="mb-3">
-                            <label for="match-game" class="form-label">Gioco</label>
+                            <label for="match-game" class="form-label" id="match-game-label"></label>
                             <select class="form-select" id="match-game" required>
-                                <option value="">Seleziona un gioco...</option>
+                                <option value="" id="match-game-placeholder"></option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="match-date" class="form-label">Data</label>
+                            <label for="match-date" class="form-label" id="match-date-label"></label>
                             <input type="date" class="form-control" id="match-date" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Partecipanti e Risultati</label>
+                            <label class="form-label" id="participants-label"></label>
                             <div id="match-participants">
                                 <!-- Participants will be added here -->
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addParticipant()">
-                                <i class="bi bi-person-plus me-1"></i>Aggiungi Partecipante
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addParticipant()" id="add-participant-btn">
+                                <i class="bi bi-person-plus me-1"></i><span id="add-participant-btn-text"></span>
                             </button>
                         </div>
                     </form>
@@ -651,17 +651,17 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Importa Backup</h5>
+                    <h5 class="modal-title" id="import-modal-title"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="backup-file" class="form-label">Seleziona file .hof</label>
+                        <label for="backup-file" class="form-label" id="backup-file-label"></label>
                         <input type="file" class="form-control" id="backup-file" accept=".hof">
-                        <div class="form-text">Seleziona un file di backup (.hof) precedentemente esportato</div>
+                        <div class="form-text" id="backup-file-help"></div>
                     </div>
                     <div class="alert alert-warning" role="alert">
-                        <strong>Attenzione!</strong> L'importazione sostituirà tutti i dati attuali (giocatori, giochi e partite) con quelli del file di backup.
+                        <strong id="import-warning-title"></strong> <span id="import-warning-message"></span>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -679,7 +679,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="game-ranking-modal-title">Classifica Gioco</h5>
+                    <h5 class="modal-title" id="game-ranking-modal-title"></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -688,8 +688,8 @@
                             <h5 id="game-ranking-game-name" class="mb-0"></h5>
                             <div class="ranking-sort-container">
                                 <select id="game-ranking-sort" class="form-select form-select-sm" onchange="app.updateGameRankingSortOrder(this.value)">
-                                    <option value="points">Ordina per Punteggio</option>
-                                    <option value="performance">Ordina per Performance</option>
+                                                                    <option value="points" id="game-ranking-sort-points"></option>
+                                <option value="performance" id="game-ranking-sort-performance"></option>
                                 </select>
                             </div>
                         </div>
@@ -712,20 +712,20 @@
     <!-- Sticky Footer with Backup Dropdown -->
     <div class="sticky-footer">
         <div class="footer-actions">
-            <a href="https://github.com/rik72/hall-of-fame" target="_blank" rel="noopener noreferrer" class="github-link" title="View on GitHub">
+            <a href="https://github.com/rik72/hall-of-fame" target="_blank" rel="noopener noreferrer" class="github-link" id="github-link" title="">
                 <i class="bi bi-github"></i>
             </a>
             <div class="backup-dropdown dropdown">
-                <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="backup-dropdown-toggle">
                     <i class="bi bi-cloud"></i>
-                    Backup
+                    <span id="backup-dropdown-text"></span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#" onclick="app.exportData()">
-                        <i class="bi bi-download me-2"></i>Esporta Backup (.hof)
+                    <li><a class="dropdown-item" href="#" onclick="app.exportData()" id="export-backup-item">
+                        <i class="bi bi-download me-2"></i><span id="export-backup-text"></span>
                     </a></li>
-                    <li><a class="dropdown-item" href="#" onclick="app.showImportModal()">
-                        <i class="bi bi-upload me-2"></i>Importa Backup
+                    <li><a class="dropdown-item" href="#" onclick="app.showImportModal()" id="import-backup-item">
+                        <i class="bi bi-upload me-2"></i><span id="import-backup-text"></span>
                     </a></li>
                 </ul>
             </div>
@@ -735,6 +735,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="constants.js"></script>
+    <script src="text-manager.js"></script>
     <script src="utils.js"></script>
     <script src="modal-manager.js"></script>
     <script src="html-builder.js"></script>

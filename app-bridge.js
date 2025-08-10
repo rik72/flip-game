@@ -3,6 +3,10 @@ let app;
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize TextManager first
+    textManager.initialize();
+    
+    // Then initialize the main app
     app = new HallOfFameApp();
 });
 
