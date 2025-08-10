@@ -309,7 +309,6 @@ This project is released under MIT license. See the `LICENSE` file for details.
 - **Bootstrap Team** for the CSS framework
 - **JSZip** for compressed file management
 - **Emojipedia** for emoji documentation
-- **GitHub Community** for feedback and contributions
 
 ---
 
