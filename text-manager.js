@@ -6,8 +6,6 @@ class TextManager {
 
     // Initialize text content throughout the application
     initialize() {
-        console.log('🔄 TextManager: Updating all text content...');
-        
         // Check if CONSTANTS is available
         if (typeof window.CONSTANTS === 'undefined') {
             console.error('❌ CONSTANTS not available, cannot initialize TextManager');
@@ -28,9 +26,6 @@ class TextManager {
         
         if (!this.initialized) {
             this.initialized = true;
-            console.log('✅ TextManager initialized successfully');
-        } else {
-            console.log('✅ TextManager text updated successfully');
         }
     }
 
@@ -213,8 +208,6 @@ class TextManager {
 
     // Update avatar options (this would be a large update, so we'll create a separate method)
     updateAvatarOptions() {
-        console.log('🔄 Updating avatar options for language:', window.languageManager?.getCurrentLanguage());
-        
         const avatarSelect = document.getElementById('player-avatar');
         if (!avatarSelect) {
             console.warn('⚠️ Avatar select element not found');
@@ -665,8 +658,6 @@ class TextManager {
             // Select first option if current value doesn't exist
             avatarSelect.value = avatarSelect.options[0].value;
         }
-
-        console.log('✅ Avatar options updated successfully');
     }
 
     // Helper method to add avatar option

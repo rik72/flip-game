@@ -3,13 +3,10 @@ let app;
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🔄 DOM loaded, initializing application...');
-    
     // Wait for all scripts to be loaded
     setTimeout(() => {
         // Initialize LanguageManager first to set the correct language
         if (window.languageManager) {
-            console.log('🔄 Initializing LanguageManager...');
             window.languageManager.init();
         } else {
             console.error('❌ LanguageManager not found!');
@@ -19,18 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Listen for language ready event
 window.addEventListener('languageReady', (event) => {
-    console.log('🔄 Language ready event received:', event.detail);
-    
     // Initialize TextManager with the correct language
     if (window.textManager) {
-        console.log('🔄 Initializing TextManager...');
         window.textManager.initialize();
     } else {
         console.error('❌ TextManager not found!');
     }
     
     // Then initialize the main app
-    console.log('🔄 Initializing HallOfFameApp...');
     app = new HallOfFameApp();
 });
 
