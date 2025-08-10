@@ -11,7 +11,7 @@ Before ANY code modification, you MUST read and follow:
 
 This project uses STRICT modular architecture:
 ```
-constants.js → utils.js → modal-manager.js → html-builder.js → display-manager.js → hall-of-fame.js → app-bridge.js
+constants.js → utils.js → modal-manager.js → html-builder.js → display-manager.js → app.js → app-bridge.js
 ```
 
 ## ZERO TOLERANCE RULES

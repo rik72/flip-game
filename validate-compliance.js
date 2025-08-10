@@ -33,7 +33,7 @@ class ComplianceValidator {
             statsManager: 'managers/stats-manager.js',
             gameManager: 'managers/game-manager.js',
             matchManager: 'managers/match-manager.js',
-            hallOfFame: 'hall-of-fame.js',
+            hallOfFame: 'app.js',
             appBridge: 'app-bridge.js'
         };
     }

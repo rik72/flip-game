@@ -57,7 +57,7 @@ halloffame/
 │   ├── stats-manager.js       # 🆕 Ranking and podium calculations
 │   ├── game-manager.js        # 🆕 Game CRUD and statistics
 │   └── match-manager.js       # 🆕 Match CRUD and participants
-├── hall-of-fame.js            # Main controller (manager architecture)
+├── app.js                     # Main controller (manager architecture)
 ├── app-bridge.js              # Global functions and initialization
 ├── validate-compliance.js     # Automatic compliance validation script
 ├── styles.css                 # Consolidated CSS styles
@@ -75,7 +75,7 @@ halloffame/
 constants-it.js/constants-en.js → text-manager.js → utils.js → modal-manager.js → 
 html-builder.js → display-manager.js → storage-manager.js → navigation-manager.js → 
 backup-manager.js → avatar-manager.js → player-manager.js → stats-manager.js → 
-hall-of-fame.js → app-bridge.js
+app.js → app-bridge.js
 ```
 
 **Multi-Language System:**
@@ -101,7 +101,7 @@ hall-of-fame.js → app-bridge.js
 - **`modal-manager.js`**: Unified add/edit modal management
 - **`html-builder.js`**: Standardized HTML generation
 - **`display-manager.js`**: Common display patterns
-- **`hall-of-fame.js`**: **Main controller** that coordinates managers
+- **`app.js`**: **Main controller** that coordinates managers
 - **`app-bridge.js`**: Global functions and app initialization
 
 ### **🏆 Benefits of the New Architecture:**

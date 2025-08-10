@@ -44,7 +44,7 @@ const deleteButton = showDeleteButton ?
 ## ⚡ **PRIORITÀ MEDIA - Ottimizzazioni**
 
 ### 3. **Miglioramento Error Handling** 🛡️
-**File**: `utils.js`, `hall-of-fame.js`  
+**File**: `utils.js`, `app.js`  
 **Tempo stimato**: 1 ora  
 **Impatto**: Robustezza del codice  
 

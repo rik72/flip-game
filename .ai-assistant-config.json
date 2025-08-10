@@ -15,7 +15,7 @@
         "modal-manager.js",
         "html-builder.js",
         "display-manager.js",
-        "hall-of-fame.js",
+                    "app.js",
         "app-bridge.js"
       ],
       "zero_tolerance": [
