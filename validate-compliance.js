@@ -20,7 +20,7 @@ class ComplianceValidator {
         this.violations = [];
         this.warnings = [];
         this.moduleFiles = {
-            constants: 'constants.js',
+            constants: 'constants-it.js',
             utils: 'utils.js',
             modalManager: 'modal-manager.js',
             htmlBuilder: 'html-builder.js',
@@ -70,9 +70,9 @@ class ComplianceValidator {
     validateArchitecture(moduleContents) {
         console.log('🏗️  Checking architecture compliance...');
         
-        // Check if CONSTANTS exists in constants.js
+        // Check if CONSTANTS exists in constants-it.js
         if (!moduleContents.constants.includes('const CONSTANTS = {')) {
-            this.addViolation('CRITICAL', 'CONSTANTS object not found in constants.js');
+            this.addViolation('CRITICAL', 'CONSTANTS object not found in constants-it.js');
         }
 
         // Check required classes exist in their respective files
@@ -164,7 +164,7 @@ class ComplianceValidator {
     validateConstants(moduleContents) {
         console.log('📋 Checking CONSTANTS usage...');
         
-        // Check if CONSTANTS structure is proper in constants.js
+        // Check if CONSTANTS structure is proper in constants-it.js
         const requiredSections = ['MESSAGES', 'MODAL_TYPES', 'POSITION_POINTS', 'GAME_TYPE_LABELS'];
         
         requiredSections.forEach(section => {
@@ -176,7 +176,7 @@ class ComplianceValidator {
         // Check that CONSTANTS is not redefined in other files
         for (const [module, content] of Object.entries(moduleContents)) {
             if (module !== 'constants' && content.includes('const CONSTANTS = {')) {
-                this.addViolation('HIGH', `CONSTANTS should not be redefined in ${this.moduleFiles[module]} - they are in constants.js`);
+                this.addViolation('HIGH', `CONSTANTS should not be redefined in ${this.moduleFiles[module]} - they are in constants-it.js`);
             }
         }
         

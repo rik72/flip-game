@@ -183,7 +183,7 @@ CONSTANTS = {
 - ✅ Better accessibility
 
 ### **3. Centralized Management**
-- ✅ All text in one location (`constants.js`)
+- ✅ All text in one location (`constants-it.js`)
 - ✅ Consistent text handling
 - ✅ Easy to find and modify
 

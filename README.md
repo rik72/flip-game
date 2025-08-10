@@ -167,7 +167,7 @@ python3 -m http.server 8088
 
 ### **Aggiunta Nuove Funzionalità**
 ```javascript
-// 1. Aggiungi configurazioni in constants.js
+// 1. Aggiungi configurazioni in constants-it.js
 CONSTANTS.MESSAGES.NEW_FEATURE = 'Messaggio per nuova feature';
 
 // 2. Usa utility modules esistenti
@@ -235,7 +235,7 @@ Performance = (Punti Totali / (Partite × 2)) × 100
 ### **Standard di Qualità**
 - ✅ Zero duplicazioni nel codice
 - ✅ Uso obbligatorio dei moduli utility
-- ✅ Messaggi centralizzati in constants.js
+- ✅ Messaggi centralizzati in constants-it.js
 - ✅ Rispetto dell'architettura modulare
 - ✅ Validazione compliance automatica
 
