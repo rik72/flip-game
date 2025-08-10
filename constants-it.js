@@ -348,6 +348,7 @@ window.CONSTANTS_IT_OBJ = window.CONSTANTS_IT_OBJ || {
             GORILLA: 'Gorilla',
             ORANGUTAN: 'Orangutan',
             ELEFANTE: 'Elefante',
+            LEOPARDO: 'Leopardo',
             IPPOPOTAMO: 'Ippopotamo',
             RINOCERONTE: 'Rinoceronte',
             CAMMELLO: 'Cammello',

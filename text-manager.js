@@ -213,11 +213,470 @@ class TextManager {
 
     // Update avatar options (this would be a large update, so we'll create a separate method)
     updateAvatarOptions() {
-        // This method would update all the avatar options in the select dropdown
-        // Since there are hundreds of avatar options, this would be a significant update
-        // For now, we'll leave this as a placeholder that can be implemented later
-        // The avatar options are already well-organized in CONSTANTS.AVATAR_CATEGORIES
-        console.log('Avatar options update would be implemented here');
+        console.log('🔄 Updating avatar options for language:', window.languageManager?.getCurrentLanguage());
+        
+        const avatarSelect = document.getElementById('player-avatar');
+        if (!avatarSelect) {
+            console.warn('⚠️ Avatar select element not found');
+            return;
+        }
+
+        // Store current selection
+        const currentValue = avatarSelect.value;
+        
+        // Clear existing options
+        avatarSelect.innerHTML = '';
+        
+        // Get avatar categories from constants
+        const categories = CONSTANTS.AVATAR_CATEGORIES;
+        if (!categories) {
+            console.error('❌ Avatar categories not found in constants');
+            return;
+        }
+
+        // Add Faces & Emotions section
+        if (categories.FACES_EMOTIONS) {
+            const emotions = categories.FACES_EMOTIONS;
+            this.addAvatarOption(avatarSelect, '😊', emotions.SORRIDENTE);
+            this.addAvatarOption(avatarSelect, '😎', emotions.COOL);
+            this.addAvatarOption(avatarSelect, '🤩', emotions.STELLARE);
+            this.addAvatarOption(avatarSelect, '🥳', emotions.FESTA);
+            this.addAvatarOption(avatarSelect, '🤯', emotions.WOW);
+            this.addAvatarOption(avatarSelect, '😍', emotions.INNAMORATO);
+            this.addAvatarOption(avatarSelect, '🤔', emotions.PENSIEROSO);
+            this.addAvatarOption(avatarSelect, '😄', emotions.FELICE);
+            this.addAvatarOption(avatarSelect, '😂', emotions.LACRIME);
+            this.addAvatarOption(avatarSelect, '🥰', emotions.AMOROSO);
+            this.addAvatarOption(avatarSelect, '😇', emotions.ANGELO);
+            this.addAvatarOption(avatarSelect, '🤗', emotions.ABBRACCIO);
+            this.addAvatarOption(avatarSelect, '🤭', emotions.TIMIDO);
+            this.addAvatarOption(avatarSelect, '🤫', emotions.SILENZIO);
+            this.addAvatarOption(avatarSelect, '🤨', emotions.SOSPETTOSO);
+            this.addAvatarOption(avatarSelect, '😏', emotions.FURBO);
+            this.addAvatarOption(avatarSelect, '😴', emotions.DORMIENTE);
+            this.addAvatarOption(avatarSelect, '🤓', emotions.NERD);
+            this.addAvatarOption(avatarSelect, '🥶', emotions.FREDDO);
+            this.addAvatarOption(avatarSelect, '🥵', emotions.CALDO);
+            this.addAvatarOption(avatarSelect, '😶‍🌫️', emotions.MISTERIOSO);
+            this.addAvatarOption(avatarSelect, '🤪', emotions.PAZZO);
+            this.addAvatarOption(avatarSelect, '😵‍💫', emotions.STORDITO);
+            this.addAvatarOption(avatarSelect, '🤑', emotions.SOLDI);
+            this.addAvatarOption(avatarSelect, '🤠', emotions.COWBOY);
+        }
+
+        // Add People section
+        if (categories.PEOPLE) {
+            const people = categories.PEOPLE;
+            
+            // Babies
+            this.addAvatarOption(avatarSelect, '👶', people.BIMBO);
+            this.addAvatarOption(avatarSelect, '👶🏻', people.BIMBO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👶🏼', people.BIMBO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👶🏽', people.BIMBO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👶🏾', people.BIMBO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👶🏿', people.BIMBO_SCURO);
+            
+            this.addAvatarOption(avatarSelect, '👧', people.BIMBA);
+            this.addAvatarOption(avatarSelect, '👧🏻', people.BIMBA_CHIARA);
+            this.addAvatarOption(avatarSelect, '👧🏼', people.BIMBA_MEDIO_CHIARA);
+            this.addAvatarOption(avatarSelect, '👧🏽', people.BIMBA_MEDIA);
+            this.addAvatarOption(avatarSelect, '👧🏾', people.BIMBA_MEDIO_SCURA);
+            this.addAvatarOption(avatarSelect, '👧🏿', people.BIMBA_SCURA);
+            
+            this.addAvatarOption(avatarSelect, '👦', people.BAMBINO);
+            this.addAvatarOption(avatarSelect, '👦🏻', people.BAMBINO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👦🏼', people.BAMBINO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👦🏽', people.BAMBINO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👦🏾', people.BAMBINO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👦🏿', people.BAMBINO_SCURO);
+            
+            // Women
+            this.addAvatarOption(avatarSelect, '👩', people.DONNA);
+            this.addAvatarOption(avatarSelect, '👩🏻', people.DONNA_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏼', people.DONNA_MEDIO_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏽', people.DONNA_MEDIA);
+            this.addAvatarOption(avatarSelect, '👩🏾', people.DONNA_MEDIO_SCURA);
+            this.addAvatarOption(avatarSelect, '👩🏿', people.DONNA_SCURA);
+            
+            this.addAvatarOption(avatarSelect, '👱‍♀️', people.DONNA_BIONDA);
+            this.addAvatarOption(avatarSelect, '👱🏻‍♀️', people.DONNA_BIONDA_CHIARA);
+            this.addAvatarOption(avatarSelect, '👱🏼‍♀️', people.DONNA_BIONDA_MEDIO_CHIARA);
+            this.addAvatarOption(avatarSelect, '👱🏽‍♀️', people.DONNA_BIONDA_MEDIA);
+            this.addAvatarOption(avatarSelect, '👱🏾‍♀️', people.DONNA_BIONDA_MEDIO_SCURA);
+            this.addAvatarOption(avatarSelect, '👱🏿‍♀️', people.DONNA_BIONDA_SCURA);
+            
+            this.addAvatarOption(avatarSelect, '👩‍🦱', people.DONNA_RICCIA);
+            this.addAvatarOption(avatarSelect, '👩🏻‍🦱', people.DONNA_RICCIA_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏼‍🦱', people.DONNA_RICCIA_MEDIO_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏽‍🦱', people.DONNA_RICCIA_MEDIA);
+            this.addAvatarOption(avatarSelect, '👩🏾‍🦱', people.DONNA_RICCIA_MEDIO_SCURA);
+            this.addAvatarOption(avatarSelect, '👩🏿‍🦱', people.DONNA_RICCIA_SCURA);
+            
+            this.addAvatarOption(avatarSelect, '👩‍🦰', people.DONNA_ROSSA);
+            this.addAvatarOption(avatarSelect, '👩🏻‍🦰', people.DONNA_ROSSA_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏼‍🦰', people.DONNA_ROSSA_MEDIO_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏽‍🦰', people.DONNA_ROSSA_MEDIA);
+            this.addAvatarOption(avatarSelect, '👩🏾‍🦰', people.DONNA_ROSSA_MEDIO_SCURA);
+            this.addAvatarOption(avatarSelect, '👩🏿‍🦰', people.DONNA_ROSSA_SCURA);
+            
+            this.addAvatarOption(avatarSelect, '👩‍🦳', people.DONNA_BIANCA);
+            this.addAvatarOption(avatarSelect, '👩🏻‍🦳', people.DONNA_BIANCA_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏼‍🦳', people.DONNA_BIANCA_MEDIO_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏽‍🦳', people.DONNA_BIANCA_MEDIA);
+            this.addAvatarOption(avatarSelect, '👩🏾‍🦳', people.DONNA_BIANCA_MEDIO_SCURA);
+            this.addAvatarOption(avatarSelect, '👩🏿‍🦳', people.DONNA_BIANCA_SCURA);
+            
+            this.addAvatarOption(avatarSelect, '👩‍🦲', people.DONNA_CALVA);
+            this.addAvatarOption(avatarSelect, '👩🏻‍🦲', people.DONNA_CALVA_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏼‍🦲', people.DONNA_CALVA_MEDIO_CHIARA);
+            this.addAvatarOption(avatarSelect, '👩🏽‍🦲', people.DONNA_CALVA_MEDIA);
+            this.addAvatarOption(avatarSelect, '👩🏾‍🦲', people.DONNA_CALVA_MEDIO_SCURA);
+            this.addAvatarOption(avatarSelect, '👩🏿‍🦲', people.DONNA_CALVA_SCURA);
+            
+            // Men
+            this.addAvatarOption(avatarSelect, '👨', people.UOMO);
+            this.addAvatarOption(avatarSelect, '👨🏻', people.UOMO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏼', people.UOMO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏽', people.UOMO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👨🏾', people.UOMO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👨🏿', people.UOMO_SCURO);
+            
+            this.addAvatarOption(avatarSelect, '👱‍♂️', people.UOMO_BIONDO);
+            this.addAvatarOption(avatarSelect, '👱🏻‍♂️', people.UOMO_BIONDO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👱🏼‍♂️', people.UOMO_BIONDO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👱🏽‍♂️', people.UOMO_BIONDO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👱🏾‍♂️', people.UOMO_BIONDO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👱🏿‍♂️', people.UOMO_BIONDO_SCURO);
+            
+            this.addAvatarOption(avatarSelect, '👨‍🦱', people.UOMO_RICCIO);
+            this.addAvatarOption(avatarSelect, '👨🏻‍🦱', people.UOMO_RICCIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏼‍🦱', people.UOMO_RICCIO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏽‍🦱', people.UOMO_RICCIO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👨🏾‍🦱', people.UOMO_RICCIO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👨🏿‍🦱', people.UOMO_RICCIO_SCURO);
+            
+            this.addAvatarOption(avatarSelect, '👨‍🦰', people.UOMO_ROSSO);
+            this.addAvatarOption(avatarSelect, '👨🏻‍🦰', people.UOMO_ROSSO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏼‍🦰', people.UOMO_ROSSO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏽‍🦰', people.UOMO_ROSSO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👨🏾‍🦰', people.UOMO_ROSSO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👨🏿‍🦰', people.UOMO_ROSSO_SCURO);
+            
+            this.addAvatarOption(avatarSelect, '👨‍🦳', people.UOMO_BIANCO);
+            this.addAvatarOption(avatarSelect, '👨🏻‍🦳', people.UOMO_BIANCO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏼‍🦳', people.UOMO_BIANCO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏽‍🦳', people.UOMO_BIANCO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👨🏾‍🦳', people.UOMO_BIANCO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👨🏿‍🦳', people.UOMO_BIANCO_SCURO);
+            
+            this.addAvatarOption(avatarSelect, '👨‍🦲', people.UOMO_CALVO);
+            this.addAvatarOption(avatarSelect, '👨🏻‍🦲', people.UOMO_CALVO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏼‍🦲', people.UOMO_CALVO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👨🏽‍🦲', people.UOMO_CALVO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👨🏾‍🦲', people.UOMO_CALVO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👨🏿‍🦲', people.UOMO_CALVO_SCURO);
+            
+            // Grandparents
+            this.addAvatarOption(avatarSelect, '👵', people.NONNA);
+            this.addAvatarOption(avatarSelect, '👵🏻', people.NONNA_CHIARA);
+            this.addAvatarOption(avatarSelect, '👵🏼', people.NONNA_MEDIO_CHIARA);
+            this.addAvatarOption(avatarSelect, '👵🏽', people.NONNA_MEDIA);
+            this.addAvatarOption(avatarSelect, '👵🏾', people.NONNA_MEDIO_SCURA);
+            this.addAvatarOption(avatarSelect, '👵🏿', people.NONNA_SCURA);
+            
+            this.addAvatarOption(avatarSelect, '👴', people.NONNO);
+            this.addAvatarOption(avatarSelect, '👴🏻', people.NONNO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👴🏼', people.NONNO_MEDIO_CHIARO);
+            this.addAvatarOption(avatarSelect, '👴🏽', people.NONNO_MEDIO);
+            this.addAvatarOption(avatarSelect, '👴🏾', people.NONNO_MEDIO_SCURO);
+            this.addAvatarOption(avatarSelect, '👴🏿', people.NONNO_SCURO);
+        }
+
+        // Add Professions section
+        if (categories.PROFESSIONS) {
+            const professions = categories.PROFESSIONS;
+            this.addAvatarOption(avatarSelect, '👮‍♀️', professions.POLIZIOTTA);
+            this.addAvatarOption(avatarSelect, '👮‍♂️', professions.POLIZIOTTO);
+            this.addAvatarOption(avatarSelect, '👷‍♀️', professions.COSTRUTTRICE);
+            this.addAvatarOption(avatarSelect, '👷‍♂️', professions.COSTRUTTORE);
+            this.addAvatarOption(avatarSelect, '💂‍♀️', professions.GUARDIA);
+            this.addAvatarOption(avatarSelect, '💂‍♂️', professions.GUARDIA);
+            this.addAvatarOption(avatarSelect, '🕵️‍♀️', professions.DETECTIVE);
+            this.addAvatarOption(avatarSelect, '🕵️‍♂️', professions.DETECTIVE);
+            this.addAvatarOption(avatarSelect, '👩‍⚕️', professions.DOTTORESSA);
+            this.addAvatarOption(avatarSelect, '👨‍⚕️', professions.DOTTORE);
+            this.addAvatarOption(avatarSelect, '👩‍🌾', professions.CONTADINA);
+            this.addAvatarOption(avatarSelect, '👨‍🌾', professions.CONTADINO);
+            this.addAvatarOption(avatarSelect, '👩‍🍳', professions.CHEF);
+            this.addAvatarOption(avatarSelect, '👨‍🍳', professions.CHEF);
+            this.addAvatarOption(avatarSelect, '👩‍🎓', professions.STUDENTESSA);
+            this.addAvatarOption(avatarSelect, '👨‍🎓', professions.STUDENTE);
+            this.addAvatarOption(avatarSelect, '👩‍🎤', professions.CANTANTE);
+            this.addAvatarOption(avatarSelect, '👨‍🎤', professions.CANTANTE);
+            this.addAvatarOption(avatarSelect, '👩‍🏫', professions.INSEGNANTE);
+            this.addAvatarOption(avatarSelect, '👨‍🏫', professions.INSEGNANTE);
+            this.addAvatarOption(avatarSelect, '👩‍💻', professions.PROGRAMMATRICE);
+            this.addAvatarOption(avatarSelect, '👨‍💻', professions.PROGRAMMATORE);
+            this.addAvatarOption(avatarSelect, '👩‍🚀', professions.ASTRONAUTA);
+            this.addAvatarOption(avatarSelect, '👨‍🚀', professions.ASTRONAUTA);
+            this.addAvatarOption(avatarSelect, '👩‍🚒', professions.POMPIERE);
+            this.addAvatarOption(avatarSelect, '👨‍🚒', professions.POMPIERE);
+            this.addAvatarOption(avatarSelect, '🥷', professions.NINJA);
+            this.addAvatarOption(avatarSelect, '🤴', professions.PRINCIPE);
+            this.addAvatarOption(avatarSelect, '👸', professions.PRINCIPESSA);
+        }
+
+        // Add Fantasy & Characters section
+        if (categories.FANTASY_CHARACTERS) {
+            const fantasy = categories.FANTASY_CHARACTERS;
+            this.addAvatarOption(avatarSelect, '👻', fantasy.FANTASMA);
+            this.addAvatarOption(avatarSelect, '🤡', fantasy.PAGLIACCIO);
+            this.addAvatarOption(avatarSelect, '👹', fantasy.OGRE);
+            this.addAvatarOption(avatarSelect, '👺', fantasy.GOBLIN);
+            this.addAvatarOption(avatarSelect, '🤖', fantasy.ROBOT);
+            this.addAvatarOption(avatarSelect, '👽', fantasy.ALIENO);
+            this.addAvatarOption(avatarSelect, '👾', fantasy.MOSTRO);
+            this.addAvatarOption(avatarSelect, '🎅', fantasy.BABBO_NATALE);
+            this.addAvatarOption(avatarSelect, '🤶', fantasy.MAMMA_NATALE);
+            this.addAvatarOption(avatarSelect, '🧙‍♀️', fantasy.STREGA);
+            this.addAvatarOption(avatarSelect, '🧙‍♂️', fantasy.MAGO);
+            this.addAvatarOption(avatarSelect, '🧚‍♀️', fantasy.FATA);
+            this.addAvatarOption(avatarSelect, '🧚‍♂️', fantasy.FOLLETTO);
+            this.addAvatarOption(avatarSelect, '🧛‍♀️', fantasy.VAMPIRA);
+            this.addAvatarOption(avatarSelect, '🧛‍♂️', fantasy.VAMPIRO);
+            this.addAvatarOption(avatarSelect, '🧟‍♀️', fantasy.ZOMBIE);
+            this.addAvatarOption(avatarSelect, '🧟‍♂️', fantasy.ZOMBIE);
+        }
+
+        // Add Animals section
+        if (categories.ANIMALS) {
+            const animals = categories.ANIMALS;
+            this.addAvatarOption(avatarSelect, '🐶', animals.CANE);
+            this.addAvatarOption(avatarSelect, '🐱', animals.GATTO);
+            this.addAvatarOption(avatarSelect, '🐭', animals.TOPO);
+            this.addAvatarOption(avatarSelect, '🐹', animals.CRICETO);
+            this.addAvatarOption(avatarSelect, '🐰', animals.CONIGLIO);
+            this.addAvatarOption(avatarSelect, '🦊', animals.VOLPE);
+            this.addAvatarOption(avatarSelect, '🐻', animals.ORSO);
+            this.addAvatarOption(avatarSelect, '🐼', animals.PANDA);
+            this.addAvatarOption(avatarSelect, '🐨', animals.KOALA);
+            this.addAvatarOption(avatarSelect, '🐯', animals.TIGRE);
+            this.addAvatarOption(avatarSelect, '🦁', animals.LEONE);
+            this.addAvatarOption(avatarSelect, '🐮', animals.MUCCA);
+            this.addAvatarOption(avatarSelect, '🐷', animals.MAIALE);
+            this.addAvatarOption(avatarSelect, '🐸', animals.RANA);
+            this.addAvatarOption(avatarSelect, '🐵', animals.SCIMMIA);
+            this.addAvatarOption(avatarSelect, '🙈', animals.NON_VEDO);
+            this.addAvatarOption(avatarSelect, '🙉', animals.NON_SENTO);
+            this.addAvatarOption(avatarSelect, '🙊', animals.NON_PARLO);
+            this.addAvatarOption(avatarSelect, '🐒', animals.SCIMMIA);
+            this.addAvatarOption(avatarSelect, '🦄', animals.UNICORNO);
+            this.addAvatarOption(avatarSelect, '🐝', animals.APE);
+            this.addAvatarOption(avatarSelect, '🐛', animals.BRUCO);
+            this.addAvatarOption(avatarSelect, '🦋', animals.FARFALLA);
+            this.addAvatarOption(avatarSelect, '🐌', animals.LUMACA);
+            this.addAvatarOption(avatarSelect, '🐞', animals.COCCINELLA);
+            this.addAvatarOption(avatarSelect, '🐜', animals.FORMICA);
+            this.addAvatarOption(avatarSelect, '🦗', animals.GRILLO);
+            this.addAvatarOption(avatarSelect, '🕷️', animals.RAGNO);
+            this.addAvatarOption(avatarSelect, '🦂', animals.SCORPIONE);
+            this.addAvatarOption(avatarSelect, '🐢', animals.TARTARUGA);
+            this.addAvatarOption(avatarSelect, '🐍', animals.SERPENTE);
+            this.addAvatarOption(avatarSelect, '🦎', animals.LUCERTOLA);
+            this.addAvatarOption(avatarSelect, '🦖', animals.T_REX);
+            this.addAvatarOption(avatarSelect, '🦕', animals.DINOSAURO);
+            this.addAvatarOption(avatarSelect, '🐙', animals.POLPO);
+            this.addAvatarOption(avatarSelect, '🦑', animals.CALAMARO);
+            this.addAvatarOption(avatarSelect, '🦐', animals.GAMBERO);
+            this.addAvatarOption(avatarSelect, '🦀', animals.GRANCHIO);
+            this.addAvatarOption(avatarSelect, '🐡', animals.PESCE_PALLA);
+            this.addAvatarOption(avatarSelect, '🐠', animals.PESCE);
+            this.addAvatarOption(avatarSelect, '🐟', animals.PESCE);
+            this.addAvatarOption(avatarSelect, '🐬', animals.DELFINO);
+            this.addAvatarOption(avatarSelect, '🐳', animals.BALENA);
+            this.addAvatarOption(avatarSelect, '🦈', animals.SQUALO);
+            this.addAvatarOption(avatarSelect, '🐊', animals.COCCODRILLO);
+            this.addAvatarOption(avatarSelect, '🐅', animals.TIGRE);
+            this.addAvatarOption(avatarSelect, '🐆', animals.LEOPARDO);
+            this.addAvatarOption(avatarSelect, '🦓', animals.ZEBRA);
+            this.addAvatarOption(avatarSelect, '🦍', animals.GORILLA);
+            this.addAvatarOption(avatarSelect, '🦧', animals.ORANGUTAN);
+            this.addAvatarOption(avatarSelect, '🐘', animals.ELEFANTE);
+            this.addAvatarOption(avatarSelect, '🦛', animals.IPPOPOTAMO);
+            this.addAvatarOption(avatarSelect, '🦏', animals.RINOCERONTE);
+            this.addAvatarOption(avatarSelect, '🐪', animals.CAMMELLO);
+            this.addAvatarOption(avatarSelect, '🐫', animals.DROMEDARIO);
+            this.addAvatarOption(avatarSelect, '🦒', animals.GIRAFFA);
+            this.addAvatarOption(avatarSelect, '🦘', animals.CANGURO);
+            this.addAvatarOption(avatarSelect, '🐃', animals.BUFALO);
+            this.addAvatarOption(avatarSelect, '🐂', animals.TORO);
+            this.addAvatarOption(avatarSelect, '🐄', animals.MUCCA);
+            this.addAvatarOption(avatarSelect, '🐎', animals.CAVALLO);
+            this.addAvatarOption(avatarSelect, '🐖', animals.MAIALE);
+            this.addAvatarOption(avatarSelect, '🐏', animals.ARIETE);
+            this.addAvatarOption(avatarSelect, '🐑', animals.PECORA);
+            this.addAvatarOption(avatarSelect, '🦙', animals.LAMA);
+            this.addAvatarOption(avatarSelect, '🐐', animals.CAPRA);
+            this.addAvatarOption(avatarSelect, '🦌', animals.CERVO);
+            this.addAvatarOption(avatarSelect, '🐕', animals.CANE);
+            this.addAvatarOption(avatarSelect, '🐩', animals.BARBONCINO);
+            this.addAvatarOption(avatarSelect, '🦮', animals.CANE_GUIDA);
+            this.addAvatarOption(avatarSelect, '🐕‍🦺', animals.CANE_SERVIZIO);
+            this.addAvatarOption(avatarSelect, '🐈', animals.GATTO);
+            this.addAvatarOption(avatarSelect, '🐈‍⬛', animals.GATTO_NERO);
+            this.addAvatarOption(avatarSelect, '🐓', animals.GALLO);
+            this.addAvatarOption(avatarSelect, '🐔', animals.GALLINA);
+            this.addAvatarOption(avatarSelect, '🐣', animals.PULCINO);
+            this.addAvatarOption(avatarSelect, '🐤', animals.PULCINO);
+            this.addAvatarOption(avatarSelect, '🐥', animals.PULCINO);
+            this.addAvatarOption(avatarSelect, '🦆', animals.ANATRA);
+            this.addAvatarOption(avatarSelect, '🦢', animals.CIGNO);
+            this.addAvatarOption(avatarSelect, '🦅', animals.AQUILA);
+            this.addAvatarOption(avatarSelect, '🦉', animals.GUFO);
+            this.addAvatarOption(avatarSelect, '🦚', animals.PAVONE);
+            this.addAvatarOption(avatarSelect, '🦜', animals.PAPPAGALLO);
+            this.addAvatarOption(avatarSelect, '🪿', animals.OCA);
+            this.addAvatarOption(avatarSelect, '🐧', animals.PINGUINO);
+            this.addAvatarOption(avatarSelect, '🕊️', animals.COLOMBA);
+            this.addAvatarOption(avatarSelect, '🦇', animals.PIPISTRELLO);
+            this.addAvatarOption(avatarSelect, '🐺', animals.LUPO);
+            this.addAvatarOption(avatarSelect, '🦔', animals.RICCIO);
+            this.addAvatarOption(avatarSelect, '🦝', animals.PROCIONE);
+            this.addAvatarOption(avatarSelect, '🐿️', animals.SCOIATTOLO);
+        }
+
+        // Add Food & Drinks section
+        if (categories.FOOD_DRINKS) {
+            const food = categories.FOOD_DRINKS;
+            this.addAvatarOption(avatarSelect, '🍎', food.MELA);
+            this.addAvatarOption(avatarSelect, '🍊', food.ARANCIA);
+            this.addAvatarOption(avatarSelect, '🍌', food.BANANA);
+            this.addAvatarOption(avatarSelect, '🍓', food.FRAGOLA);
+            this.addAvatarOption(avatarSelect, '🫐', food.MIRTILLI);
+            this.addAvatarOption(avatarSelect, '🍇', food.UVA);
+            this.addAvatarOption(avatarSelect, '🥝', food.KIWI);
+            this.addAvatarOption(avatarSelect, '🍉', food.ANGURIA);
+            this.addAvatarOption(avatarSelect, '🍑', food.CILIEGIE);
+            this.addAvatarOption(avatarSelect, '🍒', food.CILIEGIA);
+            this.addAvatarOption(avatarSelect, '🥭', food.MANGO);
+            this.addAvatarOption(avatarSelect, '🍍', food.ANANAS);
+            this.addAvatarOption(avatarSelect, '🥥', food.COCCO);
+            this.addAvatarOption(avatarSelect, '🥕', food.CAROTA);
+            this.addAvatarOption(avatarSelect, '🌶️', food.PEPERONCINO);
+            this.addAvatarOption(avatarSelect, '🫒', food.OLIVA);
+            this.addAvatarOption(avatarSelect, '🥑', food.AVOCADO);
+            this.addAvatarOption(avatarSelect, '🍆', food.MELANZANA);
+            this.addAvatarOption(avatarSelect, '🥔', food.PATATA);
+            this.addAvatarOption(avatarSelect, '🥖', food.BAGUETTE);
+            this.addAvatarOption(avatarSelect, '🥯', food.BAGEL);
+            this.addAvatarOption(avatarSelect, '🧀', food.FORMAGGIO);
+            this.addAvatarOption(avatarSelect, '🥩', food.CARNE);
+            this.addAvatarOption(avatarSelect, '🥓', food.BACON);
+            this.addAvatarOption(avatarSelect, '🍔', food.HAMBURGER);
+            this.addAvatarOption(avatarSelect, '🍟', food.PATATINE);
+            this.addAvatarOption(avatarSelect, '🍕', food.PIZZA);
+            this.addAvatarOption(avatarSelect, '🌭', food.HOT_DOG);
+            this.addAvatarOption(avatarSelect, '🥪', food.SANDWICH);
+            this.addAvatarOption(avatarSelect, '🌮', food.TACO);
+            this.addAvatarOption(avatarSelect, '🌯', food.BURRITO);
+            this.addAvatarOption(avatarSelect, '🥗', food.INSALATA);
+            this.addAvatarOption(avatarSelect, '🍜', food.RAMEN);
+            this.addAvatarOption(avatarSelect, '🍝', food.PASTA);
+            this.addAvatarOption(avatarSelect, '🍲', food.STUFATO);
+            this.addAvatarOption(avatarSelect, '🍛', food.CURRY);
+            this.addAvatarOption(avatarSelect, '🍣', food.SUSHI);
+            this.addAvatarOption(avatarSelect, '🍤', food.GAMBERO);
+            this.addAvatarOption(avatarSelect, '🍰', food.TORTA);
+            this.addAvatarOption(avatarSelect, '🧁', food.CUPCAKE);
+            this.addAvatarOption(avatarSelect, '🍭', food.LECCA_LECCA);
+            this.addAvatarOption(avatarSelect, '🍬', food.CARAMELLA);
+            this.addAvatarOption(avatarSelect, '🍫', food.CIOCCOLATO);
+            this.addAvatarOption(avatarSelect, '🍩', food.DONUT);
+            this.addAvatarOption(avatarSelect, '🍪', food.BISCOTTO);
+            this.addAvatarOption(avatarSelect, '🥛', food.LATTE);
+            this.addAvatarOption(avatarSelect, '☕', food.CAFFE);
+            this.addAvatarOption(avatarSelect, '🧃', food.SUCCO);
+            this.addAvatarOption(avatarSelect, '🥤', food.BIBITA);
+            this.addAvatarOption(avatarSelect, '🧋', food.BUBBLE_TEA);
+            this.addAvatarOption(avatarSelect, '🍺', food.BIRRA);
+            this.addAvatarOption(avatarSelect, '🍷', food.VINO);
+            this.addAvatarOption(avatarSelect, '🍸', food.COCKTAIL);
+            this.addAvatarOption(avatarSelect, '🍹', food.DRINK);
+            this.addAvatarOption(avatarSelect, '🥃', food.WHISKY);
+        }
+
+        // Add Objects & Symbols section
+        if (categories.OBJECTS_SYMBOLS) {
+            const objects = categories.OBJECTS_SYMBOLS;
+            this.addAvatarOption(avatarSelect, '💩', objects.CACCA);
+            this.addAvatarOption(avatarSelect, '⭐', objects.STELLA);
+            this.addAvatarOption(avatarSelect, '🌟', objects.STELLA_BRILLANTE);
+            this.addAvatarOption(avatarSelect, '✨', objects.BRILLANTINI);
+            this.addAvatarOption(avatarSelect, '💫', objects.COMETA);
+            this.addAvatarOption(avatarSelect, '🔥', objects.FUOCO);
+            this.addAvatarOption(avatarSelect, '⚡', objects.FULMINE);
+            this.addAvatarOption(avatarSelect, '💎', objects.DIAMANTE);
+            this.addAvatarOption(avatarSelect, '👑', objects.CORONA);
+            this.addAvatarOption(avatarSelect, '🎯', objects.BERSAGLIO);
+            this.addAvatarOption(avatarSelect, '🎲', objects.DADO);
+            this.addAvatarOption(avatarSelect, '🎮', objects.GAMING);
+            this.addAvatarOption(avatarSelect, '🕹️', objects.JOYSTICK);
+            this.addAvatarOption(avatarSelect, '🎭', objects.TEATRO);
+            this.addAvatarOption(avatarSelect, '🎪', objects.CIRCO);
+            this.addAvatarOption(avatarSelect, '🎨', objects.ARTE);
+            this.addAvatarOption(avatarSelect, '🎬', objects.CINEMA);
+            this.addAvatarOption(avatarSelect, '🎤', objects.MICROFONO);
+            this.addAvatarOption(avatarSelect, '🎧', objects.CUFFIE);
+            this.addAvatarOption(avatarSelect, '🎵', objects.MUSICA);
+            this.addAvatarOption(avatarSelect, '🎶', objects.NOTE);
+            this.addAvatarOption(avatarSelect, '🎸', objects.CHITARRA);
+            this.addAvatarOption(avatarSelect, '🥁', objects.TAMBURO);
+            this.addAvatarOption(avatarSelect, '🎺', objects.TROMBA);
+            this.addAvatarOption(avatarSelect, '🎷', objects.SAX);
+            this.addAvatarOption(avatarSelect, '🚀', objects.RAZZO);
+            this.addAvatarOption(avatarSelect, '🛸', objects.UFO);
+            this.addAvatarOption(avatarSelect, '🌈', objects.ARCOBALENO);
+            this.addAvatarOption(avatarSelect, '🎈', objects.PALLONCINO);
+            this.addAvatarOption(avatarSelect, '🎉', objects.FESTA);
+            this.addAvatarOption(avatarSelect, '🎊', objects.CORIANDOLI);
+            this.addAvatarOption(avatarSelect, '🎁', objects.REGALO);
+            this.addAvatarOption(avatarSelect, '🎀', objects.FIOCCO);
+            this.addAvatarOption(avatarSelect, '💝', objects.DONO);
+            this.addAvatarOption(avatarSelect, '💖', objects.CUORE_ROSA);
+            this.addAvatarOption(avatarSelect, '💕', objects.DUE_CUORI);
+            this.addAvatarOption(avatarSelect, '💗', objects.CUORE_CRESCENTE);
+            this.addAvatarOption(avatarSelect, '💓', objects.CUORE_BATTENTE);
+            this.addAvatarOption(avatarSelect, '💘', objects.CUPIDO);
+            this.addAvatarOption(avatarSelect, '❤️', objects.CUORE_ROSSO);
+            this.addAvatarOption(avatarSelect, '🧡', objects.CUORE_ARANCIONE);
+            this.addAvatarOption(avatarSelect, '💛', objects.CUORE_GIALLO);
+            this.addAvatarOption(avatarSelect, '💚', objects.CUORE_VERDE);
+            this.addAvatarOption(avatarSelect, '💙', objects.CUORE_BLU);
+            this.addAvatarOption(avatarSelect, '💜', objects.CUORE_VIOLA);
+            this.addAvatarOption(avatarSelect, '🖤', objects.CUORE_NERO);
+            this.addAvatarOption(avatarSelect, '🤍', objects.CUORE_BIANCO);
+            this.addAvatarOption(avatarSelect, '🤎', objects.CUORE_MARRONE);
+        }
+
+        // Restore selection if it still exists
+        if (currentValue && avatarSelect.querySelector(`option[value="${currentValue}"]`)) {
+            avatarSelect.value = currentValue;
+        } else if (avatarSelect.options.length > 0) {
+            // Select first option if current value doesn't exist
+            avatarSelect.value = avatarSelect.options[0].value;
+        }
+
+        console.log('✅ Avatar options updated successfully');
+    }
+
+    // Helper method to add avatar option
+    addAvatarOption(select, emoji, label) {
+        if (label) {
+            const option = document.createElement('option');
+            option.value = emoji;
+            option.textContent = `${emoji} ${label}`;
+            select.appendChild(option);
+        }
     }
 
     // Method to update text for a specific element

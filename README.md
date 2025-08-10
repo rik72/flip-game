@@ -14,6 +14,28 @@ A web application for managing family games leaderboards with scoring system, st
 - **Multi-Language Support**: 🇮🇹 Italian and 🇺🇸 English interfaces
 - **Responsive Design**: Modern and mobile-friendly interface
 
+## 📸 Screenshots
+
+### 🏆 Leaderboard & Podium
+![Leaderboard](screenshots/leaderboard.png)
+*Dynamic leaderboard with podium display and performance statistics*
+
+### 👥 Player Management
+![Players](screenshots/players.png)
+*Player list with custom avatars and statistics*
+
+### 🎮 Game Management
+![Add Game](screenshots/add-game.png)
+*Adding new games with type categorization*
+
+### 🎯 Match Recording
+![Matches](screenshots/matches.png)
+*Recording match results with participant selection*
+
+### 👤 Adding Players
+![Add Player](screenshots/add-player.png)
+*Creating new players with emoji avatar selection*
+
 ## 📁 Project Structure
 
 ```
