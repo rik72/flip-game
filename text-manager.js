@@ -6,7 +6,13 @@ class TextManager {
 
     // Initialize text content throughout the application
     initialize() {
-        if (this.initialized) return;
+        console.log('🔄 TextManager: Updating all text content...');
+        
+        // Check if CONSTANTS is available
+        if (typeof window.CONSTANTS === 'undefined') {
+            console.error('❌ CONSTANTS not available, cannot initialize TextManager');
+            return;
+        }
         
         this.updatePageTitle();
         this.updateNavigationText();
@@ -20,8 +26,12 @@ class TextManager {
         this.updateAlertMessages();
         this.updateAvatarOptions();
         
-        this.initialized = true;
-        console.log('✅ TextManager initialized successfully');
+        if (!this.initialized) {
+            this.initialized = true;
+            console.log('✅ TextManager initialized successfully');
+        } else {
+            console.log('✅ TextManager text updated successfully');
+        }
     }
 
     // Update page title
@@ -175,12 +185,17 @@ class TextManager {
 
     // Update footer text
     updateFooterText() {
-        // Backup dropdown
-        this.updateElementText('#backup-dropdown-text', CONSTANTS.FOOTER.BACKUP);
+        // Settings dropdown headers
+        this.updateElementText('#settings-backup-header', CONSTANTS.FOOTER.BACKUP);
+        this.updateElementText('#settings-language-header', CONSTANTS.FOOTER.LANGUAGE);
 
         // Backup dropdown items
         this.updateElementText('#export-backup-text', CONSTANTS.FOOTER.EXPORT_BACKUP);
         this.updateElementText('#import-backup-text', CONSTANTS.FOOTER.IMPORT_BACKUP);
+
+        // Language dropdown items
+        this.updateElementText('#language-italian-text', CONSTANTS.FOOTER.ITALIAN);
+        this.updateElementText('#language-english-text', CONSTANTS.FOOTER.ENGLISH);
 
         // GitHub link title
         const githubLink = document.querySelector('#github-link');
@@ -210,6 +225,8 @@ class TextManager {
         const element = document.querySelector(selector);
         if (element) {
             element.textContent = text;
+        } else {
+            console.warn(`⚠️ Element not found: ${selector}`);
         }
     }
 
@@ -271,4 +288,4 @@ class TextManager {
 }
 
 // Create global instance
-const textManager = new TextManager(); 
+window.textManager = new TextManager(); 

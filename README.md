@@ -1,284 +1,304 @@
-# Hall of Fame - Classifica Giochi Famiglia 🏆
+# Hall of Fame - Family Games Leaderboard 🏆
 
-Un'applicazione web per gestire classifiche di giochi familiari con sistema di punteggi, statistiche e backup dei dati.
+A web application for managing family games leaderboards with scoring system, statistics, and data backup.
 
-## 🚀 Caratteristiche Principali
+**Available Languages:** 🇮🇹 Italian | 🇺🇸 English
 
-- **Gestione Giocatori**: Aggiunta, modifica ed eliminazione giocatori con avatar personalizzati
-- **Catalogo Giochi**: Organizzazione giochi per tipologia (tavolo, carte, giardino, sport)
-- **Registrazione Partite**: Sistema di punteggi con posizioni (Vincitore: 2pt, Piazzamento: 1pt, Ultimo: 0pt)
-- **Classifica Dinamica**: Podio e ranking completo con calcolo performance
-- **Backup/Restore**: Esportazione e importazione dati in formato .hof
-- **Design Responsive**: Interfaccia moderna e mobile-friendly
+## 🚀 Key Features
 
-## 📁 Struttura del Progetto
+- **Player Management**: Add, edit, and delete players with custom avatars
+- **Game Catalog**: Organize games by type (board, card, garden, sport)
+- **Match Recording**: Scoring system with positions (Winner: 2pt, Placement: 1pt, Last: 0pt)
+- **Dynamic Leaderboard**: Podium and complete ranking with performance calculation
+- **Backup/Restore**: Export and import data in .hof format
+- **Multi-Language Support**: 🇮🇹 Italian and 🇺🇸 English interfaces
+- **Responsive Design**: Modern and mobile-friendly interface
+
+## 📁 Project Structure
 
 ```
 halloffame/
-├── index.html                 # Interfaccia utente principale
-├── constants.js               # Costanti e configurazioni centrali
-├── utils.js                   # Funzioni di utilità e validazioni
-├── modal-manager.js           # Gestione modali standardizzata
-├── html-builder.js            # Generazione HTML riutilizzabile
-├── display-manager.js         # Pattern di visualizzazione comuni
-├── managers/                  # 📁 Manager specializzati (architettura modulare)
-│   ├── storage-manager.js     # 🆕 Gestione localStorage centralizzata
-│   ├── navigation-manager.js  # 🆕 Navigazione sezioni con callback
-│   ├── backup-manager.js      # 🆕 Import/export dati avanzato
-│   ├── avatar-manager.js      # 🆕 Sistema avatar e filtri
-│   ├── player-manager.js      # 🆕 CRUD giocatori e statistiche
-│   ├── stats-manager.js       # 🆕 Calcolo ranking e podio
-│   ├── game-manager.js        # 🆕 CRUD giochi e statistiche
-│   └── match-manager.js       # 🆕 CRUD partite e partecipanti
-├── hall-of-fame.js            # Controller principale (architettura manager)
-├── app-bridge.js              # Funzioni globali e inizializzazione
-├── validate-compliance.js     # Script validazione compliance automatica
-├── styles.css                 # Stili CSS consolidati  
-├── README.md                  # Documentazione progetto
-├── CODE_INSTRUCTIONS.md       # Istruzioni tecniche dettagliate
-├── AI-README.md               # Setup automatico per AI assistant
-├── .ai-development-rules.md   # Regole obbligatorie per AI development
-└── .gitignore                 # File da escludere dal versioning
+├── index.html                 # Main user interface
+├── constants-it.js            # 🇮🇹 Italian constants and configurations
+├── constants-en.js            # 🇺🇸 English constants and configurations
+├── text-manager.js            # Multi-language text management system
+├── utils.js                   # Utility functions and validations
+├── modal-manager.js           # Standardized modal management
+├── html-builder.js            # Reusable HTML generation
+├── display-manager.js         # Common display patterns
+├── managers/                  # 📁 Specialized managers (modular architecture)
+│   ├── storage-manager.js     # 🆕 Centralized localStorage management
+│   ├── navigation-manager.js  # 🆕 Section navigation with callbacks
+│   ├── backup-manager.js      # 🆕 Advanced data import/export
+│   ├── avatar-manager.js      # 🆕 Avatar system and filters
+│   ├── player-manager.js      # 🆕 Player CRUD and statistics
+│   ├── stats-manager.js       # 🆕 Ranking and podium calculations
+│   ├── game-manager.js        # 🆕 Game CRUD and statistics
+│   └── match-manager.js       # 🆕 Match CRUD and participants
+├── hall-of-fame.js            # Main controller (manager architecture)
+├── app-bridge.js              # Global functions and initialization
+├── validate-compliance.js     # Automatic compliance validation script
+├── styles.css                 # Consolidated CSS styles
+├── README.md                  # Project documentation
+├── CODE_INSTRUCTIONS.md       # Detailed technical instructions
+├── AI-README.md               # Automatic setup for AI assistant
+├── .ai-development-rules.md   # Mandatory rules for AI development
+└── .gitignore                 # Files to exclude from versioning
 ```
 
-## 🏗️ Architettura del Codice
+## 🏗️ Code Architecture
 
-### **Architettura Manager (Modularizzata):**
+### **Multi-Language Architecture:**
 ```javascript
-constants.js → utils.js → modal-manager.js → html-builder.js → display-manager.js → 
-storage-manager.js → navigation-manager.js → backup-manager.js → 
-avatar-manager.js → player-manager.js → stats-manager.js → 
+constants-it.js/constants-en.js → text-manager.js → utils.js → modal-manager.js → 
+html-builder.js → display-manager.js → storage-manager.js → navigation-manager.js → 
+backup-manager.js → avatar-manager.js → player-manager.js → stats-manager.js → 
 hall-of-fame.js → app-bridge.js
 ```
 
-**Manager Specializzati (Nuova Architettura - `/managers/`):**
-- **`managers/storage-manager.js`**: Gestione localStorage centralizzata e sicura
-- **`managers/navigation-manager.js`**: Navigazione sezioni con sistema callback
-- **`managers/backup-manager.js`**: Import/export avanzato con validazione dati
-- **`managers/avatar-manager.js`**: Sistema avatar, filtri dinamici, preview
-- **`managers/player-manager.js`**: CRUD giocatori, statistiche, validazioni
-- **`managers/stats-manager.js`**: Calcolo ranking, performance, podio dinamico
-- **`managers/game-manager.js`**: CRUD giochi, statistiche, tipologie
-- **`managers/match-manager.js`**: CRUD partite, partecipanti, ordinamento
+**Multi-Language System:**
+- **`constants-it.js`**: 🇮🇹 Italian text constants and configurations
+- **`constants-en.js`**: 🇺🇸 English text constants and configurations  
+- **`text-manager.js`**: Dynamic language switching and text management
+- **`managers/language-manager.js`**: Language selection and initialization
 
-**Moduli Base (Invariati):**
-- **`constants.js`**: Configurazioni centrali e messaggi
-- **`utils.js`**: Funzioni di utilità (validazioni, modali)  
-- **`modal-manager.js`**: Gestione unificata modali add/edit
-- **`html-builder.js`**: Generazione HTML standardizzata
-- **`display-manager.js`**: Pattern comuni di visualizzazione
-- **`hall-of-fame.js`**: **Controller principale** che coordina i manager
-- **`app-bridge.js`**: Funzioni globali e inizializzazione app
+**Specialized Managers (New Architecture - `/managers/`):**
+- **`managers/storage-manager.js`**: Centralized and secure localStorage management
+- **`managers/navigation-manager.js`**: Section navigation with callback system
+- **`managers/backup-manager.js`**: Advanced import/export with data validation
+- **`managers/avatar-manager.js`**: Avatar system, dynamic filters, preview
+- **`managers/player-manager.js`**: Player CRUD, statistics, validations
+- **`managers/stats-manager.js`**: Ranking calculations, performance, dynamic podium
+- **`managers/game-manager.js`**: Game CRUD, statistics, types
+- **`managers/match-manager.js`**: Match CRUD, participants, sorting
 
-### **🏆 Benefici della Nuova Architettura:**
-- ✅ **Separation of Concerns**: Ogni manager ha responsabilità specifiche
-- ✅ **Testabilità**: Manager individuali completamente testabili
-- ✅ **Manutenibilità**: Modifiche isolate senza impact trasversali
-- ✅ **Scalabilità**: Facile aggiungere nuovi manager o funzionalità
-- ✅ **Riusabilità**: Manager utilizzabili in altri contesti
-- ✅ **Performance**: Caricamento ottimizzato e gestione memoria
-- ✅ **Debugging**: Errori localizzati nei manager specifici
+**Base Modules (Unchanged):**
+- **`constants-it.js/constants-en.js`**: Central configurations and messages
+- **`text-manager.js`**: Multi-language text management system
+- **`utils.js`**: Utility functions (validations, modals)
+- **`modal-manager.js`**: Unified add/edit modal management
+- **`html-builder.js`**: Standardized HTML generation
+- **`display-manager.js`**: Common display patterns
+- **`hall-of-fame.js`**: **Main controller** that coordinates managers
+- **`app-bridge.js`**: Global functions and app initialization
 
-## 🤖 Sistema di Compliance Automatico per AI
+### **🏆 Benefits of the New Architecture:**
+- ✅ **Separation of Concerns**: Each manager has specific responsibilities
+- ✅ **Multi-Language Support**: Dynamic language switching with fallbacks
+- ✅ **Testability**: Individual managers completely testable
+- ✅ **Maintainability**: Isolated changes without cross-impact
+- ✅ **Scalability**: Easy to add new managers or features
+- ✅ **Reusability**: Managers usable in other contexts
+- ✅ **Performance**: Optimized loading and memory management
+- ✅ **Debugging**: Errors localized in specific managers
 
-Questo progetto include un **sistema avanzato di compliance automatico** che garantisce che qualsiasi AI assistant segua automaticamente le regole architetturali senza intervento manuale.
+## 🤖 Automatic AI Compliance System
 
-### **File di Configurazione AI:**
+This project includes an **advanced automatic compliance system** that ensures any AI assistant automatically follows architectural rules without manual intervention.
+
+### **AI Configuration Files:**
 ```
-.ai-context.md              # Contesto immediato per AI (lettura obbligatoria)
-.ai-development-rules.md     # Regole complete non negoziabili
-.ai-assistant-config.json    # Configurazione machine-readable
-.cursor-rules               # Regole specifiche per Cursor AI
-validate-compliance.js      # Script validazione automatica
-AI-README.md                # Guida completa per setup AI
+.ai-context.md              # Immediate context for AI (mandatory reading)
+.ai-development-rules.md     # Complete non-negotiable rules
+.ai-assistant-config.json    # Machine-readable configuration
+.cursor-rules               # Specific rules for Cursor AI
+validate-compliance.js      # Automatic validation script
+AI-README.md                # Complete AI setup guide
 ```
 
-### **Benefici per AI Assistant:**
-- ✅ **Compliance automatica** senza istruzioni manuali
-- ✅ **Zero duplicazioni** garantite dall'architettura
-- ✅ **Pattern enforcement** automatico
-- ✅ **Validazione real-time** del codice
-- ✅ **Regole self-enforcing** per qualsiasi AI
+### **Benefits for AI Assistant:**
+- ✅ **Automatic compliance** without manual instructions
+- ✅ **Zero duplications** guaranteed by architecture
+- ✅ **Pattern enforcement** automatic
+- ✅ **Real-time validation** of code
+- ✅ **Self-enforcing rules** for any AI
 
-### **Comandi di Validazione:**
+### **Validation Commands:**
 ```bash
-npm run validate          # Validazione compliance completa
-npm run check-compliance  # Controllo veloce + conferma
-npm run start            # Validazione + avvio server
+npm run validate          # Complete compliance validation
+npm run check-compliance  # Quick check + confirmation
+npm run start            # Validation + server start
 ```
 
-## 🚀 Avvio Rapido
+## 🚀 Quick Start
 
-### **Prerequisiti**
-- Browser moderno (Chrome, Firefox, Safari, Edge)
-- Node.js 14+ (per validazione compliance)
-- Server web locale (opzionale per sviluppo)
+### **Prerequisites**
+- Modern browser (Chrome, Firefox, Safari, Edge)
+- Node.js 14+ (for compliance validation)
+- Local web server (optional for development)
 
-### **Installazione**
+### **Installation**
 ```bash
-# Clona il repository
+# Clone the repository
 git clone https://github.com/rik72/hall-of-fame.git
 
-# Entra nella directory
+# Enter the directory
 cd hall-of-fame
 
-# Installa dipendenze (opzionale, per validazione)
+# Install dependencies (optional, for validation)
 npm install
 
-# Avvia con validazione automatica
+# Start with automatic validation
 npm start
 
-# Oppure solo il server web
+# Or just the web server
 python3 -m http.server 8088
 ```
 
-### **Utilizzo**
-1. Apri `index.html` nel browser o vai su `http://localhost:8088`
-2. Aggiungi giocatori dalla sezione "Giocatori"
-3. Aggiungi giochi dalla sezione "Giochi"
-4. Registra partite dalla sezione "Partite"
-5. Visualizza la classifica nel "Podium"
+### **Usage**
+1. Open `index.html` in browser or go to `http://localhost:8088`
+2. Add players from the "Players" section
+3. Add games from the "Games" section
+4. Record matches from the "Matches" section
+5. View the leaderboard in the "Podium"
 
-## 💾 Sistema di Backup
+### **Language Selection**
+- The application automatically detects your browser language
+- You can manually switch between 🇮🇹 Italian and 🇺🇸 English
+- Language preference is saved in your browser
 
-### **Esportazione**
-- Clicca su "Backup" → "Esporta Backup"
-- Viene creato un file `.hof` con tutti i dati
-- Il file contiene: giocatori, giochi, partite + metadati
+## 💾 Backup System
 
-### **Importazione**
-- Clicca su "Backup" → "Importa Backup"
-- Seleziona un file `.hof` precedentemente esportato
-- Conferma la sostituzione dei dati attuali
+### **Export**
+- Click on "Backup" → "Export Backup"
+- A `.hof` file is created with all data
+- The file contains: players, games, matches + metadata
 
-## 🛠️ Sviluppo
+### **Import**
+- Click on "Backup" → "Import Backup"
+- Select a previously exported `.hof` file
+- Confirm replacement of current data
 
-### **Per Sviluppatori**
-1. **Leggi** `CODE_INSTRUCTIONS.md` per l'architettura completa
-2. **Segui** `.ai-development-rules.md` per standard di sviluppo
-3. **Usa sempre** i moduli utility esistenti (zero duplicazioni!)
-4. **Testa** le modifiche con `npm run validate`
+## 🛠️ Development
 
-### **Per AI Assistant**
-1. **Leggi automaticamente** `.ai-context.md` al primo accesso
-2. **Carica configurazione** da `.ai-assistant-config.json`
-3. **Applica regole** da `.ai-development-rules.md`
-4. **Valida sempre** con `validate-compliance.js`
+### **For Developers**
+1. **Read** `CODE_INSTRUCTIONS.md` for complete architecture
+2. **Follow** `.ai-development-rules.md` for development standards
+3. **Always use** existing utility modules (zero duplications!)
+4. **Test** changes with `npm run validate`
 
-### **Aggiunta Nuove Funzionalità**
+### **For AI Assistant**
+1. **Automatically read** `.ai-context.md` on first access
+2. **Load configuration** from `.ai-assistant-config.json`
+3. **Apply rules** from `.ai-development-rules.md`
+4. **Always validate** with `validate-compliance.js`
+
+### **Adding New Features**
 ```javascript
-// 1. Aggiungi configurazioni in constants-it.js
-CONSTANTS.MESSAGES.NEW_FEATURE = 'Messaggio per nuova feature';
+// 1. Add configurations in constants-it.js and constants-en.js
+CONSTANTS.MESSAGES.NEW_FEATURE = 'Message for new feature';
 
-// 2. Usa utility modules esistenti
-Utils.validateName(name, items, id, 'entity');           // da utils.js
-ModalManager.setupModal('entity', false);                // da modal-manager.js
-HtmlBuilder.createButton('Azione', 'btn-primary', callback); // da html-builder.js
+// 2. Use existing utility modules
+Utils.validateName(name, items, id, 'entity');           // from utils.js
+ModalManager.setupModal('entity', false);                // from modal-manager.js
+HtmlBuilder.createButton('Action', 'btn-primary', callback); // from html-builder.js
 
-// 3. Segui i pattern consolidati
-DisplayManager.renderEmptyState(container, message);     // da display-manager.js
+// 3. Follow consolidated patterns
+DisplayManager.renderEmptyState(container, message);     // from display-manager.js
 
-// 4. Valida compliance
+// 4. Validate compliance
 npm run validate
 ```
 
-### **Tecnologie Utilizzate**
+### **Technologies Used**
 - **Frontend**: Vanilla JavaScript ES6+, HTML5, CSS3
-- **Framework CSS**: Bootstrap 5.3.3
-- **Icone**: Bootstrap Icons 1.11.3
+- **CSS Framework**: Bootstrap 5.3.3
+- **Icons**: Bootstrap Icons 1.11.3
 - **Backup**: JSZip 3.10.1
 - **Storage**: LocalStorage API
-- **Compliance**: Node.js per validazione automatica
+- **Multi-Language**: Dynamic text management system
+- **Compliance**: Node.js for automatic validation
 
-## 📊 Sistema di Punteggi
+## 📊 Scoring System
 
-### **Posizioni e Punti**
-- 🏆 **Vincitore**: 2 punti
-- 🥈 **Piazzamento**: 1 punto  
-- 😞 **Ultimo posto**: 0 punti
+### **Positions and Points**
+- 🏆 **Winner**: 2 points
+- 🥈 **Placement**: 1 point  
+- 😞 **Last place**: 0 points
 
 ### **Performance**
-Calcolata come percentuale dei punti ottenuti sul massimo possibile:
+Calculated as percentage of points earned vs maximum possible:
 ```
-Performance = (Punti Totali / (Partite × 2)) × 100
+Performance = (Total Points / (Matches × 2)) × 100
 ```
 
-### **Classifica**
-- **Ordinamento primario**: Punti totali
-- **Ordinamento secondario**: Numero vittorie
-- **Ordinamento terziario**: Partite giocate (meno = meglio)
+### **Ranking**
+- **Primary sorting**: Total points
+- **Secondary sorting**: Number of wins
+- **Tertiary sorting**: Matches played (fewer = better)
 
-## 🎨 Personalizzazione
+## 🎨 Customization
 
-### **Avatar Giocatori**
-- Oltre 400 emoji disponibili
-- Filtro di ricerca per categoria
-- Anteprima in tempo reale
-- Supporto emoji con toni di pelle
+### **Player Avatars**
+- Over 400 emojis available
+- Category-based search filter
+- Real-time preview
+- Skin tone emoji support
 
-### **Temi e Stili**
-- Gradiente di sfondo personalizzabile
-- Animazioni fluide e moderne
-- Design responsive mobile-first
+### **Themes and Styles**
+- Customizable background gradient
+- Smooth and modern animations
+- Mobile-first responsive design
 - Dark/Light mode ready (CSS variables)
 
-## 🤝 Contribuzione
+## 🤝 Contributing
 
-### **Come Contribuire**
-1. **Fork** del repository
-2. **Crea** branch per la feature: `git checkout -b feature/nuova-feature`
-3. **Segui** le regole in `.ai-development-rules.md`
-4. **Testa** le modifiche con `npm run validate`
-5. **Commit** con messaggi descrittivi
-6. **Push** e crea Pull Request
+### **How to Contribute**
+1. **Fork** the repository
+2. **Create** feature branch: `git checkout -b feature/new-feature`
+3. **Follow** rules in `.ai-development-rules.md`
+4. **Test** changes with `npm run validate`
+5. **Commit** with descriptive messages
+6. **Push** and create Pull Request
 
-### **Standard di Qualità**
-- ✅ Zero duplicazioni nel codice
-- ✅ Uso obbligatorio dei moduli utility
-- ✅ Messaggi centralizzati in constants-it.js
-- ✅ Rispetto dell'architettura modulare
-- ✅ Validazione compliance automatica
+### **Quality Standards**
+- ✅ Zero code duplications
+- ✅ Mandatory use of utility modules
+- ✅ Centralized messages in constants-it.js and constants-en.js
+- ✅ Respect for modular architecture
+- ✅ Automatic compliance validation
 
 ## 📈 Roadmap
 
-### **Versione Attuale: 1.0** ✅
-- [x] Gestione completa giocatori, giochi, partite
-- [x] Sistema classifiche e statistiche
-- [x] Backup/restore completo
-- [x] Architettura modulare
-- [x] Sistema compliance automatico per AI
-- [x] Documentazione completa
+### **Current Version: 1.0** ✅
+- [x] Complete player, game, match management
+- [x] Leaderboard and statistics system
+- [x] Complete backup/restore
+- [x] Modular architecture
+- [x] Automatic AI compliance system
+- [x] Multi-language support (🇮🇹 Italian, 🇺🇸 English)
+- [x] Complete documentation
 
-### **Versione 1.1** 🔄
-- [ ] Sistema tornei multi-round
-- [ ] Grafici statistiche avanzate
-- [ ] Esportazione PDF classifiche
-- [ ] Modalità offline completa
+### **Version 1.1** 🔄
+- [ ] Multi-round tournament system
+- [ ] Advanced statistics charts
+- [ ] PDF leaderboard export
+- [ ] Complete offline mode
 
-### **Versione 2.0** 📋
+### **Version 2.0** 📋
 - [ ] Multi-database support
-- [ ] Sync cloud opzionale
+- [ ] Optional cloud sync
 - [ ] Progressive Web App
-- [ ] Internazionalizzazione
+- [ ] Additional languages (🇪🇸 Spanish, 🇫🇷 French, etc.)
 
-## 📄 Licenza
+## 📄 License
 
-Questo progetto è rilasciato sotto licenza MIT. Vedi il file `LICENSE` per i dettagli.
+This project is released under MIT license. See the `LICENSE` file for details.
 
-## 🙏 Riconoscimenti
+## 🙏 Acknowledgments
 
-- **Bootstrap Team** per il framework CSS
-- **JSZip** per la gestione file compressi
-- **Emojipedia** per la documentazione emoji
-- **Community GitHub** per feedback e contributi
+- **Bootstrap Team** for the CSS framework
+- **JSZip** for compressed file management
+- **Emojipedia** for emoji documentation
+- **GitHub Community** for feedback and contributions
 
 ---
 
-## 📞 Supporto
+## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/rik72/hall-of-fame/issues)
-- **Documentazione**: `CODE_INSTRUCTIONS.md`
-- **Regole AI**: `.ai-development-rules.md`
-- **Setup AI**: `AI-README.md`
+- **Documentation**: `CODE_INSTRUCTIONS.md`
+- **AI Rules**: `.ai-development-rules.md`
+- **AI Setup**: `AI-README.md`
 
 **Developed with ❤️ for family gaming fun! 🎮** 

@@ -7,13 +7,13 @@ class HtmlBuilder {
 
     static createActionButtons(itemId, itemType, additionalButtons = []) {
         const deleteButton = this.createButton(
-            'Elimina', 
+            window.CONSTANTS?.UI_TEXT?.ELIMINA || 'Delete', 
             'btn-danger', 
             `app.delete${itemType}(${itemId})`,
             'bi-trash'
         );
         const editButton = this.createButton(
-            'Modifica', 
+            window.CONSTANTS?.UI_TEXT?.MODIFICA || 'Edit', 
             'btn-primary', 
             `app.showEdit${itemType}Modal(${itemId})`,
             'bi-pencil'
@@ -51,7 +51,7 @@ class HtmlBuilder {
         const positionOptions = [
             { value: 'winner', label: '🏆 Vincitore (2 punti)', selected: selectedPosition === 'winner' },
             { value: 'participant', label: '🥈 Piazzamento (1 punto)', selected: selectedPosition === 'participant' },
-            { value: 'last', label: '😞 Ultimo posto (0 punti)', selected: selectedPosition === 'last' }
+            { value: 'last', label: `😞 ${window.CONSTANTS?.UI_TEXT?.ULTIMO_POSTO || 'Last place'} (0 punti)`, selected: selectedPosition === 'last' }
         ].map(opt => 
             `<option value="${opt.value}" ${opt.selected ? 'selected' : ''}>${opt.label}</option>`
         ).join('');

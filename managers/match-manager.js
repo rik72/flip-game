@@ -355,7 +355,7 @@ class MatchManager {
         }
         
         if (this.matches.length === 0) {
-            DisplayManager.renderEmptyState(container, 'Nessuna partita registrata. Inizia registrando le prime partite!');
+            DisplayManager.renderEmptyState(container, window.CONSTANTS?.UI_TEXT?.NESSUNA_PARTITA || 'No matches recorded. Start by recording the first matches!');
             return;
         }
         
@@ -369,7 +369,7 @@ class MatchManager {
                     <div class="card-base match-card">
                         <div class="match-header mb-3">
                             <div>
-                                <h5 class="mb-1">${game ? game.name : 'Gioco eliminato'}</h5>
+                                <h5 class="mb-1">${game ? game.name : (window.CONSTANTS?.UI_TEXT?.GIOCO_ELIMINATO || 'Game deleted')}</h5>
                                 <small class="text-muted">${new Date(match.date).toLocaleDateString('it-IT')}</small>
                             </div>
                         </div>
@@ -381,7 +381,7 @@ class MatchManager {
                                     <div class="participant-item">
                                         <div class="d-flex align-items-center">
                                             ${player ? this.avatarManager.createAvatar(player.avatar || '😊').outerHTML : ''}
-                                            <span class="ms-2 flex-grow-1">${player ? player.name : 'Giocatore eliminato'}</span>
+                                            <span class="ms-2 flex-grow-1">${player ? player.name : (window.CONSTANTS?.UI_TEXT?.GIOCATORE_ELIMINATO || 'Player deleted')}</span>
                                         </div>
                                         <span class="badge ${this.getPositionBadgeClass(p.position)}">
                                             ${this.getPositionLabel(p.position)} (+${points} pt)
@@ -419,8 +419,8 @@ class MatchManager {
             // Then sort by player name
             const playerA = this.players.find(p => p.id === a.playerId);
             const playerB = this.players.find(p => p.id === b.playerId);
-            const nameA = playerA ? playerA.name : 'Giocatore eliminato';
-            const nameB = playerB ? playerB.name : 'Giocatore eliminato';
+            const nameA = playerA ? playerA.name : (window.CONSTANTS?.UI_TEXT?.GIOCATORE_ELIMINATO || 'Player deleted');
+const nameB = playerB ? playerB.name : (window.CONSTANTS?.UI_TEXT?.GIOCATORE_ELIMINATO || 'Player deleted');
             
             return nameA.localeCompare(nameB, 'it', { sensitivity: 'base' });
         });
@@ -596,8 +596,8 @@ class MatchManager {
                 case 'game':
                     const gameA = this.games.find(g => g.id === a.gameId);
                     const gameB = this.games.find(g => g.id === b.gameId);
-                    const nameA = gameA ? gameA.name : 'Gioco eliminato';
-                    const nameB = gameB ? gameB.name : 'Gioco eliminato';
+                    const nameA = gameA ? gameA.name : (window.CONSTANTS?.UI_TEXT?.GIOCO_ELIMINATO || 'Game deleted');
+const nameB = gameB ? gameB.name : (window.CONSTANTS?.UI_TEXT?.GIOCO_ELIMINATO || 'Game deleted');
                     return multiplier * nameA.localeCompare(nameB, 'it');
                 case 'participants':
                     return multiplier * (a.participants.length - b.participants.length);

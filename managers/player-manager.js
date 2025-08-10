@@ -318,9 +318,9 @@ class PlayerManager {
      * @returns {string} - HTML per il badge
      */
     createFirstPlaceBadge() {
-        return `<span class="badge badge-first-place me-1" title="Podio nella classifica dei punteggi completa" data-bs-toggle="tooltip" data-bs-placement="top">
-            <i class="bi bi-trophy-fill me-1"></i>Primo posto
-        </span>`;
+        return `<span class="badge badge-first-place me-1" title="${window.CONSTANTS?.UI_TEXT?.PODIO_CLASSIFICA_PUNTEGGI || 'Podium in the complete score leaderboard'}" data-bs-toggle="tooltip" data-bs-placement="top">
+                <i class="bi bi-trophy-fill me-1"></i>${window.CONSTANTS?.UI_TEXT?.PRIMO_POSTO || 'First place'}
+            </span>`;
     }
 
     /**
@@ -329,7 +329,7 @@ class PlayerManager {
      */
     createFirstPerformanceBadge() {
         return `<span class="badge badge-first-performance me-1" title="Performance: Percentuale dei punti vinti sul massimo possibile (2 per ogni partita)" data-bs-toggle="tooltip" data-bs-placement="top">
-            <i class="bi bi-graph-up-arrow me-1"></i>Miglior performance
+            <i class="bi bi-graph-up-arrow me-1"></i>${window.CONSTANTS?.UI_TEXT?.MIGLIOR_PERFORMANCE || 'Best performance'}
         </span>`;
     }
 
@@ -339,7 +339,7 @@ class PlayerManager {
      */
     createSecondPlaceBadge() {
         return `<span class="badge badge-second-place me-1" title="Podio nella classifica dei punteggi completa" data-bs-toggle="tooltip" data-bs-placement="top">
-            <i class="bi bi-trophy-fill me-1"></i>Secondo posto
+            <i class="bi bi-trophy-fill me-1"></i>${window.CONSTANTS?.UI_TEXT?.SECONDO_POSTO || 'Second place'}
         </span>`;
     }
 
@@ -349,7 +349,7 @@ class PlayerManager {
      */
     createThirdPlaceBadge() {
         return `<span class="badge badge-third-place me-1" title="Podio nella classifica dei punteggi completa" data-bs-toggle="tooltip" data-bs-placement="top">
-            <i class="bi bi-trophy-fill me-1"></i>Terzo posto
+            <i class="bi bi-trophy-fill me-1"></i>${window.CONSTANTS?.UI_TEXT?.TERZO_POSTO || 'Third place'}
         </span>`;
     }
 
@@ -374,7 +374,7 @@ class PlayerManager {
         
         const badges = bestGames.map(game => {
             const badgeClass = getGameTypeBadgeClass(game.type);
-            return `<span class="badge ${badgeClass} me-1 mb-1">Primo posto a ${game.name}</span>`;
+            return `<span class="badge ${badgeClass} me-1 mb-1">${window.CONSTANTS?.UI_TEXT?.PRIMO_POSTO_GIOCO || 'First place in'} ${game.name}</span>`;
         }).join('');
         
         return `

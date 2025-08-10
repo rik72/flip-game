@@ -709,23 +709,31 @@
         </div>
     </div>
 
-    <!-- Sticky Footer with Backup Dropdown -->
+    <!-- Sticky Footer with Settings Dropdown -->
     <div class="sticky-footer">
         <div class="footer-actions">
             <a href="https://github.com/rik72/hall-of-fame" target="_blank" rel="noopener noreferrer" class="github-link" id="github-link" title="">
                 <i class="bi bi-github"></i>
             </a>
-            <div class="backup-dropdown dropdown">
-                <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="backup-dropdown-toggle">
-                    <i class="bi bi-cloud"></i>
-                    <span id="backup-dropdown-text"></span>
+            <div class="settings-dropdown dropdown">
+                <a class="dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="settings-dropdown-toggle">
+                    <i class="bi bi-gear"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header" id="settings-backup-header"></h6></li>
                     <li><a class="dropdown-item" href="#" onclick="app.exportData()" id="export-backup-item">
                         <i class="bi bi-download me-2"></i><span id="export-backup-text"></span>
                     </a></li>
                     <li><a class="dropdown-item" href="#" onclick="app.showImportModal()" id="import-backup-item">
                         <i class="bi bi-upload me-2"></i><span id="import-backup-text"></span>
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header" id="settings-language-header"></h6></li>
+                    <li><a class="dropdown-item" href="#" onclick="app.setLanguage('it')" id="language-italian-item">
+                        <i class="bi bi-translate me-2"></i><span id="language-italian-text"></span>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="app.setLanguage('en')" id="language-english-item">
+                        <i class="bi bi-translate me-2"></i><span id="language-english-text"></span>
                     </a></li>
                 </ul>
             </div>
@@ -735,6 +743,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="constants-it.js"></script>
+    <script src="constants-en.js"></script>
     <script src="text-manager.js"></script>
     <script src="utils.js"></script>
     <script src="modal-manager.js"></script>
@@ -744,6 +753,7 @@
     <script src="managers/navigation-manager.js"></script>
     <script src="managers/backup-manager.js"></script>
     <script src="managers/avatar-manager.js"></script>
+    <script src="managers/language-manager.js"></script>
     <script src="managers/player-manager.js"></script>
     <script src="managers/stats-manager.js"></script>
     <script src="managers/game-manager.js"></script>

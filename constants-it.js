@@ -1,5 +1,5 @@
 // ===== CONSTANTS =====
-const CONSTANTS = {
+window.CONSTANTS_IT_OBJ = window.CONSTANTS_IT_OBJ || {
     // Page and Application Titles
     PAGE_TITLE: 'Hall of Fame - Classifica Giochi Famiglia',
     APP_TITLE: {
@@ -96,7 +96,33 @@ const CONSTANTS = {
         BACKUP: 'Backup',
         EXPORT_BACKUP: 'Esporta Backup (.hof)',
         IMPORT_BACKUP: 'Importa Backup',
-        GITHUB_TITLE: 'View on GitHub'
+        GITHUB_TITLE: 'View on GitHub',
+        SETTINGS: 'Impostazioni',
+        LANGUAGE: 'Lingua',
+        ITALIAN: 'Italiano',
+        ENGLISH: 'English'
+    },
+
+    // Additional UI Text
+    UI_TEXT: {
+        PARTITA: 'partita',
+        PARTITE: 'partite',
+        PARTITE_GIOCATE: 'Partite giocate',
+        CLASSIFICA: 'Classifica',
+        PRIMO_POSTO: 'Primo posto',
+        ULTIMO_POSTO: 'Ultimo posto',
+        ELIMINA: 'Elimina',
+        MODIFICA: 'Modifica',
+        NESSUN_GIOCATORE_CLASSIFICA: 'Nessun giocatore in classifica',
+        NESSUNA_PARTITA: 'Nessuna partita registrata. Inizia registrando le prime partite!',
+        AGGIUNGI_PARTITE_CLASSIFICA: 'Aggiungi giocatori e registra le prime partite per vedere la classifica',
+        GIOCO_ELIMINATO: 'Gioco eliminato',
+        GIOCATORE_ELIMINATO: 'Giocatore eliminato',
+        PODIO_CLASSIFICA_PUNTEGGI: 'Podio nella classifica dei punteggi completa',
+        PRIMO_POSTO_GIOCO: 'Primo posto a',
+        SECONDO_POSTO: 'Secondo posto',
+        TERZO_POSTO: 'Terzo posto',
+        MIGLIOR_PERFORMANCE: 'Miglior performance'
     },
 
     // Avatar Categories and Labels

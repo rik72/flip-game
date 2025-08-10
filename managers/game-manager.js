@@ -205,7 +205,7 @@ class GameManager {
                         <div class="card-header">
                             <h5 class="mb-0">${game.name}</h5>
                             ${HtmlBuilder.createButton(
-                                'Classifica',
+                                window.CONSTANTS?.UI_TEXT?.CLASSIFICA || 'Leaderboard',
                                 'btn-info btn-sm',
                                 `app.showGameRankingModal(${game.id}, '${game.name}')`,
                                 'bi-trophy'
@@ -213,7 +213,7 @@ class GameManager {
                         </div>
                         <p class="text-muted small mb-3">${this.getGameTypeLabel(game.type)}</p>
                         <div class="text-muted small mb-3">
-                            Partite giocate: <strong>${this.getGameMatchCount(game.id)}</strong>
+                            ${window.CONSTANTS?.UI_TEXT?.PARTITE_GIOCATE || 'Matches played'}: <strong>${this.getGameMatchCount(game.id)}</strong>
                         </div>
                         <div class="card-actions">
                             ${HtmlBuilder.createActionButtons(game.id, 'Game')}
@@ -236,7 +236,7 @@ class GameManager {
         return `
             <div class="best-player-info mb-3">
                 <div class="best-player-label text-muted small mb-1">
-                    <i class="bi bi-trophy-fill text-warning me-1"></i>Primo posto:
+                    <i class="bi bi-trophy-fill text-warning me-1"></i>${window.CONSTANTS?.UI_TEXT?.PRIMO_POSTO || 'First place'}:
                 </div>
                 <div class="best-player-details d-flex align-items-center">
                     <div class="best-player-avatar me-2">

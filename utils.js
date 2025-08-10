@@ -35,7 +35,7 @@ class Utils {
     }
 
     static pluralizeMatches(count, capitalize = false) {
-        const word = count === 1 ? 'partita' : 'partite';
+        const word = count === 1 ? (window.CONSTANTS?.UI_TEXT?.PARTITA || 'match') : (window.CONSTANTS?.UI_TEXT?.PARTITE || 'matches');
         return capitalize ? word.charAt(0).toUpperCase() + word.slice(1) : word;
     }
 } 

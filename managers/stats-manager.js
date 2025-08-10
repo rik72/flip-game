@@ -177,7 +177,7 @@ class StatsManager {
             container.innerHTML = `
                 <div class="text-center">
                     <h3 class="text-muted">Il podio è ancora vuoto!</h3>
-                    <p class="text-muted">Aggiungi giocatori e registra le prime partite per vedere la classifica</p>
+                    <p class="text-muted">${window.CONSTANTS?.UI_TEXT?.AGGIUNGI_PARTITE_CLASSIFICA || 'Add players and record the first matches to see the leaderboard'}</p>
                 </div>
             `;
             return;
@@ -291,7 +291,7 @@ class StatsManager {
         const ranking = this.getRanking(this.currentSortOrder);
         
         if (ranking.length === 0) {
-            container.innerHTML = '<p class="my-2 text-center text-muted">Nessun giocatore in classifica</p>';
+            container.innerHTML = `<p class="my-2 text-center text-muted">${window.CONSTANTS?.UI_TEXT?.NESSUN_GIOCATORE_CLASSIFICA || 'No players in leaderboard'}</p>`;
             return;
         }
         

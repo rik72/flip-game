@@ -1,5 +1,5 @@
 // ===== CONSTANTS =====
-const CONSTANTS = {
+window.CONSTANTS_EN_OBJ = window.CONSTANTS_EN_OBJ || {
     // Page and Application Titles
     PAGE_TITLE: 'Hall of Fame - Family Games Leaderboard',
     APP_TITLE: {
@@ -96,7 +96,33 @@ const CONSTANTS = {
         BACKUP: 'Backup',
         EXPORT_BACKUP: 'Export Backup (.hof)',
         IMPORT_BACKUP: 'Import Backup',
-        GITHUB_TITLE: 'View on GitHub'
+        GITHUB_TITLE: 'View on GitHub',
+        SETTINGS: 'Settings',
+        LANGUAGE: 'Language',
+        ITALIAN: 'Italiano',
+        ENGLISH: 'English'
+    },
+
+    // Additional UI Text
+    UI_TEXT: {
+        PARTITA: 'match',
+        PARTITE: 'matches',
+        PARTITE_GIOCATE: 'Matches played',
+        CLASSIFICA: 'Leaderboard',
+        PRIMO_POSTO: 'First place',
+        ULTIMO_POSTO: 'Last place',
+        ELIMINA: 'Delete',
+        MODIFICA: 'Edit',
+        NESSUN_GIOCATORE_CLASSIFICA: 'No players in leaderboard',
+        NESSUNA_PARTITA: 'No matches recorded. Start by recording the first matches!',
+        AGGIUNGI_PARTITE_CLASSIFICA: 'Add players and record the first matches to see the leaderboard',
+        GIOCO_ELIMINATO: 'Game deleted',
+        GIOCATORE_ELIMINATO: 'Player deleted',
+        PODIO_CLASSIFICA_PUNTEGGI: 'Podium in the complete score leaderboard',
+        PRIMO_POSTO_GIOCO: 'First place in',
+        SECONDO_POSTO: 'Second place',
+        TERZO_POSTO: 'Third place',
+        MIGLIOR_PERFORMANCE: 'Best performance'
     },
 
     // Avatar Categories and Labels
@@ -557,4 +583,6 @@ const CONSTANTS = {
         }
         return text;
     }
-}; 
+};
+
+// Constants object created - will be copied by language manager 

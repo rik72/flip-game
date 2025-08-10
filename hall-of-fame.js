@@ -6,6 +6,7 @@ class HallOfFameApp {
         this.navigationManager = new NavigationManager();
         this.backupManager = new BackupManager(this.storageManager);
         this.avatarManager = new AvatarManager();
+        this.languageManager = window.languageManager; // Use the global instance
         
         // Carica i dati dall'archiviazione
         this.players = this.storageManager.load('players') || [];
@@ -408,7 +409,12 @@ class HallOfFameApp {
             this.statsManager.displayGameRanking(parseInt(gameId), gameName, sortBy);
         }
     }
+
+    // ===== LANGUAGE FUNCTIONALITY =====
+    setLanguage(languageCode) {
+        this.languageManager.setLanguage(languageCode);
+    }
 }
 
 // HallOfFameApp class - now refactored with modular managers
-// Uses StorageManager, NavigationManager, BackupManager, AvatarManager, PlayerManager, StatsManager, GameManager, and MatchManager for better separation of concerns 
+// Uses StorageManager, NavigationManager, BackupManager, AvatarManager, PlayerManager, StatsManager, GameManager, MatchManager, and LanguageManager for better separation of concerns 
