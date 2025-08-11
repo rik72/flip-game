@@ -113,17 +113,15 @@ class StorageManager {
     /**
      * Salva il progresso del gioco
      * @param {number} level - Livello completato
-     * @param {number} score - Punteggio totale
      */
-    saveGameProgress(level, score) {
+    saveGameProgress(level) {
         const progress = {
             level: level,
-            score: score,
             timestamp: Date.now()
         };
         
         this.save('progress', progress);
-        this.save(`level_${level}`, { completed: true, score: score });
+        this.save(`level_${level}`, { completed: true });
     }
 
     /**
@@ -143,14 +141,7 @@ class StorageManager {
         return progress ? progress.level : 0;
     }
 
-    /**
-     * Ottiene il punteggio totale
-     * @returns {number} - Punteggio totale
-     */
-    getTotalScore() {
-        const progress = this.loadGameProgress();
-        return progress ? progress.score : 0;
-    }
+
 
     /**
      * Salva le impostazioni del gioco

@@ -21,8 +21,6 @@ const CONSTANTS = {
         
         // Informational messages
         LOADING: 'Loading...',
-        PAUSED: 'Game paused',
-        RESUME: 'Resume game',
         NEW_LEVEL: 'New level!',
         
         // Validation messages
@@ -49,13 +47,7 @@ const CONSTANTS = {
             title: 'Level Information',
             closeButton: 'Close'
         },
-        PAUSE: {
-            name: 'pause',
-            title: 'Game Paused',
-            resumeButton: 'Resume',
-            settingsButton: 'Settings',
-            exitButton: 'Exit'
-        }
+
     },
 
     // Game configurations
@@ -63,8 +55,6 @@ const CONSTANTS = {
         // General configurations
         DEFAULT_LEVEL: 1,
         MAX_LEVEL: 50,
-        POINTS_PER_LEVEL: 100,
-        BONUS_POINTS: 50,
         
         // Player configurations
         PLAYER_RADIUS: 15,

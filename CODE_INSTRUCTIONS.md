@@ -60,7 +60,7 @@ Oggetto centralizzato per tutte le configurazioni:
 - `load(key)`: Caricamento con deserializzazione JSON
 - `remove(key)`, `exists(key)`, `clearAll()`: Operazioni gestione dati
 - `getStorageInfo()`: Informazioni utilizzo spazio
-- `saveGameProgress(level, score)`: Salvataggio progresso gioco
+- `saveGameProgress(level)`: Salvataggio progresso gioco
 - `loadGameProgress()`: Caricamento progresso gioco
 
 #### **GameManager** - Logica di Gioco

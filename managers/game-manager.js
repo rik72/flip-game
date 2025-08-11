@@ -8,10 +8,7 @@ class GameManager {
         this.storageManager = storageManager;
         this.currentLevel = 1;
         this.gameState = {
-            isPlaying: false,
-            isPaused: false,
-            score: 0,
-            moves: 0
+            isPlaying: false
         };
         this.canvas = null;
         this.ctx = null;
@@ -128,7 +125,6 @@ class GameManager {
         if (this.player.x !== clampedX || this.player.y !== clampedY) {
             this.player.x = clampedX;
             this.player.y = clampedY;
-            this.gameState.moves++;
             this.render();
             // Don't check win condition during drag - only when released
         }
@@ -145,7 +141,6 @@ class GameManager {
     loadLevel(levelNumber) {
         this.currentLevel = levelNumber;
         this.gameState.isPlaying = true;
-        this.gameState.moves = 0;
         
         console.log('Loading level:', levelNumber);
         console.log('Canvas available:', !!this.canvas);
@@ -238,10 +233,9 @@ class GameManager {
 
     levelCompleted() {
         this.gameState.isPlaying = false;
-        this.gameState.score += 100;
         
         // Save progress
-        this.storageManager.saveGameProgress(this.currentLevel, this.gameState.score);
+        this.storageManager.saveGameProgress(this.currentLevel);
         
         // Show completion message (can be enhanced with animations)
         setTimeout(() => {
@@ -362,14 +356,7 @@ class GameManager {
         this.ctx.fill();
     }
 
-    pause() {
-        this.gameState.isPaused = true;
-    }
 
-    resume() {
-        this.gameState.isPaused = false;
-        this.render();
-    }
 
     getGameState() {
         return {

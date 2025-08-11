@@ -58,9 +58,6 @@ class HtmlBuilder {
                 <div class="game-header">
                     <div class="level-display" id="levelDisplay"></div>
                     <div class="game-controls">
-                        <button class="btn btn-sm btn-outline-light" onclick="app.pauseGame()">
-                            <i class="bi bi-pause"></i>
-                        </button>
                         <button class="btn btn-sm btn-outline-light" onclick="app.resetLevel()">
                             <i class="bi bi-arrow-clockwise"></i>
                         </button>
@@ -70,10 +67,6 @@ class HtmlBuilder {
                     <canvas id="gameCanvas" class="game-canvas"></canvas>
                 </div>
                 <div class="game-footer">
-                    <div class="game-info">
-                        <span class="moves-counter" id="movesCounter">Moves: 0</span>
-                        <span class="score-display" id="scoreDisplay">Score: 0</span>
-                    </div>
                     <div class="game-menu-button">
                         <button class="btn btn-sm btn-outline-light" onclick="app.showMenu()">
                             <i class="bi bi-three-dots"></i>
@@ -92,9 +85,6 @@ class HtmlBuilder {
         return `
             <div class="game-menu" id="gameMenu">
                 <div class="menu-content">
-                    <button class="menu-item" onclick="app.resumeGame()">
-                        <i class="bi bi-play"></i> Resume
-                    </button>
                     <button class="menu-item" onclick="app.showSettings()">
                         <i class="bi bi-gear"></i> Settings
                     </button>
@@ -146,7 +136,7 @@ class HtmlBuilder {
         `;
     }
 
-    static createLevelCompleteModal(level, score, moves) {
+    static createLevelCompleteModal(level) {
         return `
             <div class="modal fade" id="levelCompleteModal" tabindex="-1">
                 <div class="modal-dialog">
@@ -156,8 +146,7 @@ class HtmlBuilder {
                         </div>
                         <div class="modal-body">
                             <div class="completion-stats">
-                                <p>Score: ${score}</p>
-                                <p>Moves: ${moves}</p>
+                                <p>Great job! Level ${level} completed!</p>
                             </div>
                         </div>
                         <div class="modal-footer">

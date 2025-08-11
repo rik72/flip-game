@@ -159,19 +159,14 @@ body {
     right: 0;
     height: 60px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     padding: 0 20px;
     z-index: 100;
     background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
 }
 
-.game-info {
-    display: flex;
-    gap: 20px;
-    font-size: 14px;
-    color: #ffffff;
-}
+
 
 .game-menu-button .btn {
     width: 44px;
@@ -335,10 +330,7 @@ body {
         font-size: 24px;
     }
     
-    .game-info {
-        font-size: 12px;
-        gap: 15px;
-    }
+
     
     .menu-content {
         min-width: 180px;
@@ -364,9 +356,7 @@ body {
         font-size: 20px;
     }
     
-    .game-info {
-        font-size: 12px;
-    }
+
 }
 
 /* High DPI Displays */

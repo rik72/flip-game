@@ -22,17 +22,9 @@ window.FlipgameApp = {
     },
 
     // Game control functions
-    pauseGame: function() {
-        if (appInstance) {
-            appInstance.pauseGame();
-        }
-    },
 
-    resumeGame: function() {
-        if (appInstance) {
-            appInstance.resumeGame();
-        }
-    },
+
+
 
     resetLevel: function() {
         if (appInstance) {

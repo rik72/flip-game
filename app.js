@@ -11,10 +11,7 @@ class App {
         
         this.currentLevel = 1;
         this.gameState = {
-            isPlaying: false,
-            isPaused: false,
-            score: 0,
-            moves: 0
+            isPlaying: false
         };
         
         this.init();
@@ -25,7 +22,6 @@ class App {
         const progress = this.storageManager.loadGameProgress();
         if (progress) {
             this.currentLevel = progress.level;
-            this.gameState.score = progress.score;
         }
         
         // Initialize game UI first
@@ -56,12 +52,7 @@ class App {
             }
         });
 
-        // Handle visibility change (pause when app goes to background)
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                this.pauseGame();
-            }
-        });
+
 
         // Handle beforeunload (save progress before leaving)
         window.addEventListener('beforeunload', () => {
@@ -72,43 +63,26 @@ class App {
     loadLevel(levelNumber) {
         this.currentLevel = levelNumber;
         this.gameState.isPlaying = true;
-        this.gameState.isPaused = false;
         
         if (this.gameManager) {
             this.gameManager.loadLevel(levelNumber);
         }
         
         // Update UI
-        DisplayManager.updateGameProgress(this.currentLevel, this.gameState.score, this.gameState.moves);
+        DisplayManager.updateGameProgress(this.currentLevel);
     }
 
-    pauseGame() {
-        this.gameState.isPaused = true;
-        if (this.gameManager) {
-            this.gameManager.pause();
-        }
-        DisplayManager.showGameMenu();
-    }
 
-    resumeGame() {
-        this.gameState.isPaused = false;
-        if (this.gameManager) {
-            this.gameManager.resume();
-        }
-        DisplayManager.hideGameMenu();
-    }
 
     resetLevel() {
         if (this.gameManager) {
             this.gameManager.resetLevel();
         }
-        this.gameState.moves = 0;
-        DisplayManager.updateGameProgress(this.currentLevel, this.gameState.score, this.gameState.moves);
+        DisplayManager.updateGameProgress(this.currentLevel);
     }
 
     nextLevel() {
         this.currentLevel++;
-        this.gameState.score += CONSTANTS.GAME_CONFIG.POINTS_PER_LEVEL;
         
         if (this.currentLevel > CONSTANTS.GAME_CONFIG.MAX_LEVEL) {
             this.gameCompleted();
@@ -157,8 +131,6 @@ class App {
         if (confirm(CONSTANTS.MESSAGES.RESET_CONFIRM)) {
             this.storageManager.clearAll();
             this.currentLevel = 1;
-            this.gameState.score = 0;
-            this.gameState.moves = 0;
             this.loadLevel(this.currentLevel);
             this.hideMenu();
         }
@@ -174,19 +146,17 @@ class App {
 
     restartGame() {
         this.currentLevel = 1;
-        this.gameState.score = 0;
-        this.gameState.moves = 0;
         this.loadLevel(this.currentLevel);
         Utils.hideModal('gameOverModal');
     }
 
     saveProgress() {
-        this.storageManager.saveGameProgress(this.currentLevel, this.gameState.score);
+        this.storageManager.saveGameProgress(this.currentLevel);
     }
 
     // Handle touch events (delegated to GameManager)
     handleTouch(x, y) {
-        if (this.gameManager && this.gameState.isPlaying && !this.gameState.isPaused) {
+        if (this.gameManager && this.gameState.isPlaying) {
             this.gameManager.handleTouch(x, y);
         }
     }

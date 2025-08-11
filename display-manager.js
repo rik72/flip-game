@@ -43,18 +43,7 @@ class DisplayManager {
         }
     }
 
-    static renderGameStats(score, moves) {
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const movesCounter = document.getElementById('movesCounter');
-        
-        if (scoreDisplay) {
-            scoreDisplay.textContent = `Score: ${score}`;
-        }
-        
-        if (movesCounter) {
-            movesCounter.textContent = `Moves: ${moves}`;
-        }
-    }
+
 
     static renderGameMenu() {
         const menuContainer = document.getElementById('gameMenu');
@@ -70,10 +59,10 @@ class DisplayManager {
         }
     }
 
-    static renderLevelCompleteModal(level, score, moves) {
+    static renderLevelCompleteModal(level) {
         const modalContainer = document.getElementById('levelCompleteModal');
         if (modalContainer) {
-            modalContainer.innerHTML = HtmlBuilder.createLevelCompleteModal(level, score, moves);
+            modalContainer.innerHTML = HtmlBuilder.createLevelCompleteModal(level);
         }
     }
 
@@ -98,8 +87,7 @@ class DisplayManager {
         }
     }
 
-    static updateGameProgress(level, score, moves) {
+    static updateGameProgress(level) {
         this.renderLevelNumber(level);
-        this.renderGameStats(score, moves);
     }
 } 
