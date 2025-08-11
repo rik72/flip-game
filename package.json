@@ -1,22 +1,24 @@
 {
-  "name": "hall-of-fame",
+  "name": "flipgame",
   "version": "1.0.0",
-  "description": "Hall of Fame - Family game ranking system with modular architecture",
+  "description": "Flipgame - Mobile puzzle game with touch gestures and level-based progression",
   "main": "app.js",
   "scripts": {
     "validate": "node validate-compliance.js",
-    "serve": "python3 -m http.server 8088",
-    "check-compliance": "node validate-compliance.js && echo '✅ Code is compliant with Hall of Fame standards'",
+    "serve": "python3 -m http.server 8099",
+    "check-compliance": "node validate-compliance.js && echo '✅ Code is compliant with Flipgame standards'",
     "start": "npm run check-compliance && npm run serve"
   },
   "keywords": [
-    "hall-of-fame",
-    "games",
-    "ranking",
-    "family",
-    "modular-architecture"
+    "flipgame",
+    "puzzle",
+    "mobile",
+    "touch",
+    "canvas",
+    "level-based",
+    "game"
   ],
-  "author": "Hall of Fame Project",
+  "author": "Flipgame Project",
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"

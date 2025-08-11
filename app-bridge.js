@@ -1,81 +1,110 @@
-// ===== GLOBAL BRIDGE FUNCTIONS =====
-let app;
+/**
+ * App Bridge - Bridge functions for Flipgame
+ * Provides global access to app functions and utilities
+ */
+
+// Global app instance
+let appInstance = null;
+
+// Bridge functions for global access
+window.FlipgameApp = {
+    // Initialize app
+    init: function() {
+        if (!appInstance) {
+            appInstance = new App();
+        }
+        return appInstance;
+    },
+
+    // Get app instance
+    getApp: function() {
+        return appInstance;
+    },
+
+    // Game control functions
+    pauseGame: function() {
+        if (appInstance) {
+            appInstance.pauseGame();
+        }
+    },
+
+    resumeGame: function() {
+        if (appInstance) {
+            appInstance.resumeGame();
+        }
+    },
+
+    resetLevel: function() {
+        if (appInstance) {
+            appInstance.resetLevel();
+        }
+    },
+
+    nextLevel: function() {
+        if (appInstance) {
+            appInstance.nextLevel();
+        }
+    },
+
+    showMenu: function() {
+        if (appInstance) {
+            appInstance.showMenu();
+        }
+    },
+
+    hideMenu: function() {
+        if (appInstance) {
+            appInstance.hideMenu();
+        }
+    },
+
+    showSettings: function() {
+        if (appInstance) {
+            appInstance.showSettings();
+        }
+    },
+
+    saveSettings: function() {
+        if (appInstance) {
+            appInstance.saveSettings();
+        }
+    },
+
+    resetProgress: function() {
+        if (appInstance) {
+            appInstance.resetProgress();
+        }
+    },
+
+    exitGame: function() {
+        if (appInstance) {
+            appInstance.exitGame();
+        }
+    },
+
+    restartGame: function() {
+        if (appInstance) {
+            appInstance.restartGame();
+        }
+    },
+
+    // Utility functions
+    getGameState: function() {
+        if (appInstance) {
+            return appInstance.getGameState();
+        }
+        return null;
+    },
+
+    // Touch handling
+    handleTouch: function(x, y) {
+        if (appInstance) {
+            appInstance.handleTouch(x, y);
+        }
+    }
+};
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait for all scripts to be loaded
-    setTimeout(() => {
-        // Initialize LanguageManager first to set the correct language
-        if (window.languageManager) {
-            window.languageManager.init();
-        } else {
-            console.error('❌ LanguageManager not found!');
-        }
-    }, 200);
-});
-
-// Listen for language ready event
-window.addEventListener('languageReady', (event) => {
-    // Initialize TextManager with the correct language
-    if (window.textManager) {
-        window.textManager.initialize();
-    } else {
-        console.error('❌ TextManager not found!');
-    }
-    
-    // Then initialize the main app
-    app = new App();
-});
-
-// Global functions for HTML onclick handlers
-function showSection(section, element = null) {
-    app.showSection(section, element);
-}
-
-function showAddPlayerModal() {
-    app.showAddPlayerModal();
-}
-
-function addPlayer() {
-    app.addPlayer();
-}
-
-function savePlayer() {
-    app.savePlayer();
-}
-
-function showAddGameModal() {
-    app.showAddGameModal();
-}
-
-function addGame() {
-    app.addGame();
-}
-
-function saveGame() {
-    app.saveGame();
-}
-
-function showAddMatchModal() {
-    app.showAddMatchModal();
-}
-
-function addParticipant() {
-    app.addParticipant();
-}
-
-function addMatch() {
-    app.addMatch();
-}
-
-function saveMatch() {
-    app.saveMatch();
-}
-
-function updateRankingSortOrder(sortBy) {
-    app.updateRankingSortOrder(sortBy);
-}
-
-function setLanguage(languageCode) {
-    app.setLanguage(languageCode);
-} 
+    appInstance = FlipgameApp.init();
+}); 

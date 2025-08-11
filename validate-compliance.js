@@ -20,7 +20,6 @@ class ComplianceValidator {
         this.violations = [];
         this.warnings = [];
         this.moduleFiles = {
-            constantsIt: 'constants-it.js',
             constantsEn: 'constants-en.js',
             utils: 'utils.js',
             modalManager: 'modal-manager.js',
@@ -71,13 +70,9 @@ class ComplianceValidator {
     validateArchitecture(moduleContents) {
         console.log('🏗️  Checking architecture compliance...');
         
-        // Check if multi-language constants structure exists in both constants files
-        if (!moduleContents.constantsIt.includes('window.CONSTANTS_IT_OBJ')) {
-            this.addViolation('CRITICAL', 'Multi-language constants structure not found in constants-it.js');
-        }
-        
-        if (!moduleContents.constantsEn.includes('window.CONSTANTS_EN_OBJ')) {
-            this.addViolation('CRITICAL', 'Multi-language constants structure not found in constants-en.js');
+        // Check if constants structure exists in constants file
+        if (!moduleContents.constantsEn.includes('window.CONSTANTS_IT_OBJ')) {
+            this.addViolation('CRITICAL', 'Constants structure not found in constants-en.js');
         }
 
         // Check required classes exist in their respective files
@@ -172,13 +167,6 @@ class ComplianceValidator {
         // Check if multi-language constants structure is proper in both constants files
         const requiredSections = ['MESSAGES', 'MODAL_TYPES', 'POSITION_POINTS', 'GAME_TYPE_LABELS'];
         
-        // Validate constants-it.js
-        requiredSections.forEach(section => {
-            if (!moduleContents.constantsIt.includes(`${section}:`)) {
-                this.addViolation('MEDIUM', `Missing required CONSTANTS section: ${section} in constants-it.js`);
-            }
-        });
-
         // Validate constants-en.js
         requiredSections.forEach(section => {
             if (!moduleContents.constantsEn.includes(`${section}:`)) {
@@ -186,10 +174,9 @@ class ComplianceValidator {
             }
         });
 
-        // Check that constants are not redefined in other files (except language manager)
+        // Check that constants are not redefined in other files
         for (const [module, content] of Object.entries(moduleContents)) {
-            if (module !== 'constantsIt' && module !== 'constantsEn' && 
-                (content.includes('window.CONSTANTS_IT_OBJ = {') || content.includes('window.CONSTANTS_EN_OBJ = {'))) {
+            if (module !== 'constantsEn' && content.includes('window.CONSTANTS_IT_OBJ = {')) {
                 this.addViolation('HIGH', `Constants should not be redefined in ${this.moduleFiles[module]} - they are in constants files`);
             }
         }
@@ -217,8 +204,7 @@ class ComplianceValidator {
 
         // Check that each module contains only its expected content
         const moduleExpectations = {
-            constantsIt: ['window.CONSTANTS_IT_OBJ'],
-            constantsEn: ['window.CONSTANTS_EN_OBJ'],
+            constantsEn: ['window.CONSTANTS_IT_OBJ'],
             utils: ['class Utils'],
             modalManager: ['class ModalManager'],
             htmlBuilder: ['class HtmlBuilder'],

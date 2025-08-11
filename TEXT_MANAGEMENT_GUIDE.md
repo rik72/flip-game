@@ -15,7 +15,7 @@ The Hall of Fame application now uses a centralized text management system that 
 ### Files Structure
 
 ```
-constants-it.js       - Central text constants repository (Italian)
+
 text-manager.js       - TextManager class for dynamic text updates
 index.html           - HTML with minimal hardcoded text
 app-bridge.js        - Initializes TextManager on page load
@@ -23,7 +23,7 @@ app-bridge.js        - Initializes TextManager on page load
 
 ### Loading Order
 
-1. `constants-it.js` - Loads all text constants (Italian)
+1. `constants-en.js` - Loads all text constants
 2. `text-manager.js` - Creates TextManager class
 3. `app-bridge.js` - Initializes TextManager on DOM ready
 4. Other application files
@@ -148,11 +148,11 @@ textManager.setTextFromPath('#my-button', 'BUTTONS.ADD_PLAYER');
 ### 1. Adding New Text Constants
 
 ```javascript
-// In constants-it.js
+// In constants-en.js
 CONSTANTS.NEW_SECTION = {
-    TITLE: 'Nuova Sezione',
-    DESCRIPTION: 'Descrizione della nuova sezione',
-    BUTTON: 'Aggiungi Nuovo'
+    TITLE: 'New Section',
+    DESCRIPTION: 'Description of the new section',
+    BUTTON: 'Add New'
 };
 
 // In your JavaScript
@@ -282,7 +282,7 @@ function setLanguage(lang) {
 ### From Hardcoded Text to Constants
 
 1. **Identify hardcoded text** in HTML
-2. **Add to constants-it.js** in appropriate category
+2. **Add to constants-en.js** in appropriate category
 3. **Update HTML** to use data attributes or IDs
 4. **Use TextManager** to populate text programmatically
 
@@ -297,8 +297,8 @@ function setLanguage(lang) {
 ```
 
 ```javascript
-// In constants-it.js
-CONSTANTS.BUTTONS.ADD_PLAYER = 'Aggiungi Giocatore';
+// In constants-en.js
+CONSTANTS.BUTTONS.ADD_PLAYER = 'Add Player';
 
 // In JavaScript
 textManager.setTextFromPath('#add-player-btn', 'BUTTONS.ADD_PLAYER');
@@ -309,9 +309,9 @@ textManager.setTextFromPath('#add-player-btn', 'BUTTONS.ADD_PLAYER');
 ### Common Issues
 
 1. **Text not updating**: Check if TextManager is initialized
-2. **Constants not found**: Verify path exists in constants-it.js
+2. **Constants not found**: Verify path exists in constants-en.js
 3. **Element not found**: Check selector is correct
-4. **Loading order**: Ensure constants-it.js loads before text-manager.js
+4. **Loading order**: Ensure constants-en.js loads before text-manager.js
 
 ### Debug Methods
 

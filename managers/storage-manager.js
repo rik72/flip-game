@@ -1,8 +1,8 @@
 // ===== STORAGE MANAGER =====
-// Gestisce tutte le operazioni di localStorage per l'applicazione Hall of Fame
+// Gestisce tutte le operazioni di localStorage per l'applicazione Flipgame
 
 class StorageManager {
-    constructor(prefix = 'halloffame') {
+    constructor(prefix = 'flipgame') {
         this.prefix = prefix;
     }
 
@@ -108,5 +108,86 @@ class StorageManager {
         });
 
         return info;
+    }
+
+    /**
+     * Salva il progresso del gioco
+     * @param {number} level - Livello completato
+     * @param {number} score - Punteggio totale
+     */
+    saveGameProgress(level, score) {
+        const progress = {
+            level: level,
+            score: score,
+            timestamp: Date.now()
+        };
+        
+        this.save('progress', progress);
+        this.save(`level_${level}`, { completed: true, score: score });
+    }
+
+    /**
+     * Carica il progresso del gioco
+     * @returns {object|null} - Progresso salvato o null
+     */
+    loadGameProgress() {
+        return this.load('progress');
+    }
+
+    /**
+     * Ottiene il livello più alto completato
+     * @returns {number} - Livello più alto completato
+     */
+    getHighestLevel() {
+        const progress = this.loadGameProgress();
+        return progress ? progress.level : 0;
+    }
+
+    /**
+     * Ottiene il punteggio totale
+     * @returns {number} - Punteggio totale
+     */
+    getTotalScore() {
+        const progress = this.loadGameProgress();
+        return progress ? progress.score : 0;
+    }
+
+    /**
+     * Salva le impostazioni del gioco
+     * @param {object} settings - Impostazioni da salvare
+     */
+    saveGameSettings(settings) {
+        this.save('settings', settings);
+    }
+
+    /**
+     * Carica le impostazioni del gioco
+     * @returns {object} - Impostazioni salvate o default
+     */
+    loadGameSettings() {
+        const settings = this.load('settings');
+        return settings || {
+            soundEnabled: true,
+            vibrationEnabled: true,
+            difficulty: 'normal'
+        };
+    }
+
+    /**
+     * Salva i dati di un livello specifico
+     * @param {number} levelNumber - Numero del livello
+     * @param {object} levelData - Dati del livello
+     */
+    saveLevelData(levelNumber, levelData) {
+        this.save(`level_${levelNumber}`, levelData);
+    }
+
+    /**
+     * Carica i dati di un livello specifico
+     * @param {number} levelNumber - Numero del livello
+     * @returns {object|null} - Dati del livello o null
+     */
+    loadLevelData(levelNumber) {
+        return this.load(`level_${levelNumber}`);
     }
 } 

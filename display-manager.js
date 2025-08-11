@@ -14,15 +14,92 @@ class DisplayManager {
     }
 
     static createStatsDisplay(stats) {
-        const winsStats = HtmlBuilder.createStatsBadge('🏆', stats.wins, 'Vittorie');
-        const participantsStats = HtmlBuilder.createStatsBadge('🥈', stats.participants, 'Piazzamenti');
-        const lastsStats = HtmlBuilder.createStatsBadge('😞', stats.lasts, 'Ultimi posti');
+        const winsStats = HtmlBuilder.createStatsBadge('🏆', stats.wins, 'Wins');
+        const participantsStats = HtmlBuilder.createStatsBadge('🥈', stats.participants, 'Placements');
+        const lastsStats = HtmlBuilder.createStatsBadge('😞', stats.lasts, 'Last places');
         
         return `
             <div class="stats-single-line">
-                <span class="me-3">${Utils.pluralizeMatches(stats.gamesPlayed, true)}: <strong>${stats.gamesPlayed}</strong></span>
+                <span class="me-3">Games played: <strong>${stats.gamesPlayed}</strong></span>
                 <span>${winsStats} ${participantsStats} ${lastsStats}</span>
             </div>
         `;
+    }
+
+    // Game-specific methods
+    static renderGameState(container, gameState) {
+        if (!gameState) {
+            return false;
+        }
+        
+        container.innerHTML = HtmlBuilder.createGameUI();
+        return true;
+    }
+
+    static renderLevelNumber(level) {
+        const levelDisplay = document.getElementById('levelDisplay');
+        if (levelDisplay) {
+            levelDisplay.innerHTML = HtmlBuilder.createLevelNumber(level);
+        }
+    }
+
+    static renderGameStats(score, moves) {
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const movesCounter = document.getElementById('movesCounter');
+        
+        if (scoreDisplay) {
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+        
+        if (movesCounter) {
+            movesCounter.textContent = `Moves: ${moves}`;
+        }
+    }
+
+    static renderGameMenu() {
+        const menuContainer = document.getElementById('gameMenu');
+        if (menuContainer) {
+            menuContainer.innerHTML = HtmlBuilder.createGameMenu();
+        }
+    }
+
+    static renderSettingsModal() {
+        const modalContainer = document.getElementById('settingsModal');
+        if (modalContainer) {
+            modalContainer.innerHTML = HtmlBuilder.createSettingsModal();
+        }
+    }
+
+    static renderLevelCompleteModal(level, score, moves) {
+        const modalContainer = document.getElementById('levelCompleteModal');
+        if (modalContainer) {
+            modalContainer.innerHTML = HtmlBuilder.createLevelCompleteModal(level, score, moves);
+        }
+    }
+
+    static renderGameOverModal() {
+        const modalContainer = document.getElementById('gameOverModal');
+        if (modalContainer) {
+            modalContainer.innerHTML = HtmlBuilder.createGameOverModal();
+        }
+    }
+
+    static showGameMenu() {
+        const menu = document.getElementById('gameMenu');
+        if (menu) {
+            menu.style.display = 'block';
+        }
+    }
+
+    static hideGameMenu() {
+        const menu = document.getElementById('gameMenu');
+        if (menu) {
+            menu.style.display = 'none';
+        }
+    }
+
+    static updateGameProgress(level, score, moves) {
+        this.renderLevelNumber(level);
+        this.renderGameStats(score, moves);
     }
 } 

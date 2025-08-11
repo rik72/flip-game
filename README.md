@@ -1,322 +1,221 @@
-# Hall of Fame - Family Games Leaderboard 🏆
+# Flipgame
 
-A web application for managing family games leaderboards with scoring system, statistics, and data backup.
+A minimalistic mobile puzzle game built with HTML5 Canvas and touch gestures.
 
-**Available Languages:** 🇮🇹 Italian | 🇺🇸 English
+## 🎮 Game Overview
 
-## 🚀 Key Features
+Flipgame is a level-based puzzle game designed exclusively for mobile devices. Players navigate a circle through various board layouts by dragging it along permitted paths, with the goal of reaching the end point of each level.
 
-- **Player Management**: Add, edit, and delete players with custom avatars
-- **Game Catalog**: Organize games by type (board, card, garden, sport)
-- **Match Recording**: Scoring system with positions (Winner: 2pt, Placement: 1pt, Last: 0pt)
-- **Dynamic Leaderboard**: Podium and complete ranking with performance calculation
-- **Backup/Restore**: Export and import data in .hof format
-- **Multi-Language Support**: 🇮🇹 Italian and 🇺🇸 English interfaces
-- **Responsive Design**: Modern and mobile-friendly interface
+### Key Features
 
-## 📸 Screenshots
+- **Mobile-First Design**: Optimized for touch interactions and mobile screens
+- **Level-Based Progression**: Solve puzzles to unlock new levels
+- **Board Manipulation**: Flip and rotate game boards for new perspectives
+- **Touch Gestures**: Intuitive drag and tap controls
+- **No Text UI**: Clean, visual-only interface with level numbers displayed graphically
+- **Progress Saving**: Automatic save/load of game progress
 
-### 🏆 Leaderboard & Podium
-![Leaderboard](screenshots/leaderboard.png)
-*Dynamic leaderboard with podium display and performance statistics*
+## 🏗️ Architecture
 
-### 👥 Player Management
-![Players](screenshots/players.png)
-*Player list with custom avatars and statistics*
-
-### 🎮 Game Management
-![Add Game](screenshots/add-game.png)
-*Adding new games with type categorization*
-
-### 🎯 Match Recording
-![Matches](screenshots/matches.png)
-*Recording match results with participant selection*
-
-### 👤 Adding Players
-![Add Player](screenshots/add-player.png)
-*Creating new players with emoji avatar selection*
-
-## 📁 Project Structure
+The project follows a modular architecture with clear separation of concerns:
 
 ```
-<root>/
-├── index.html                 # Main user interface
-├── constants-it.js            # 🇮🇹 Italian constants and configurations
-├── constants-en.js            # 🇺🇸 English constants and configurations
-├── text-manager.js            # Multi-language text management system
-├── utils.js                   # Utility functions and validations
-├── modal-manager.js           # Standardized modal management
-├── html-builder.js            # Reusable HTML generation
-├── display-manager.js         # Common display patterns
-├── managers/                  # 📁 Specialized managers (modular architecture)
-│   ├── storage-manager.js     # 🆕 Centralized localStorage management
-│   ├── navigation-manager.js  # 🆕 Section navigation with callbacks
-│   ├── backup-manager.js      # 🆕 Advanced data import/export
-│   ├── avatar-manager.js      # 🆕 Avatar system and filters
-│   ├── player-manager.js      # 🆕 Player CRUD and statistics
-│   ├── stats-manager.js       # 🆕 Ranking and podium calculations
-│   ├── game-manager.js        # 🆕 Game CRUD and statistics
-│   └── match-manager.js       # 🆕 Match CRUD and participants
-├── app.js                     # Main controller (manager architecture)
-├── app-bridge.js              # Global functions and initialization
-├── validate-compliance.js     # Automatic compliance validation script
-├── styles.css                 # Consolidated CSS styles
-├── README.md                  # Project documentation
-├── CODE_INSTRUCTIONS.md       # Detailed technical instructions
-├── AI-README.md               # Automatic setup for AI assistant
-├── .ai-development-rules.md   # Mandatory rules for AI development
-└── .gitignore                 # Files to exclude from versioning
+CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → 
+StorageManager → BackupManager → GameManager → App
 ```
 
-## 🏗️ Code Architecture
+### Core Components
 
-### **Multi-Language Architecture:**
-```javascript
-constants-it.js/constants-en.js → text-manager.js → utils.js → modal-manager.js → 
-html-builder.js → display-manager.js → storage-manager.js → navigation-manager.js → 
-backup-manager.js → avatar-manager.js → player-manager.js → stats-manager.js → 
-app.js → app-bridge.js
-```
+- **GameManager**: Handles game logic, level management, and touch interactions
+- **StorageManager**: Manages game progress and settings persistence
+- **DisplayManager**: Renders game UI and manages display states
+- **HtmlBuilder**: Generates HTML components for the game interface
+- **Utils**: Provides utility functions for validation and calculations
 
-**Multi-Language System:**
-- **`constants-it.js`**: 🇮🇹 Italian text constants and configurations
-- **`constants-en.js`**: 🇺🇸 English text constants and configurations  
-- **`text-manager.js`**: Dynamic language switching and text management
-- **`managers/language-manager.js`**: Language selection and initialization
+## 🚀 Getting Started
 
-**Specialized Managers (New Architecture - `/managers/`):**
-- **`managers/storage-manager.js`**: Centralized and secure localStorage management
-- **`managers/navigation-manager.js`**: Section navigation with callback system
-- **`managers/backup-manager.js`**: Advanced import/export with data validation
-- **`managers/avatar-manager.js`**: Avatar system, dynamic filters, preview
-- **`managers/player-manager.js`**: Player CRUD, statistics, validations
-- **`managers/stats-manager.js`**: Ranking calculations, performance, dynamic podium
-- **`managers/game-manager.js`**: Game CRUD, statistics, types
-- **`managers/match-manager.js`**: Match CRUD, participants, sorting
+### Prerequisites
 
-**Base Modules (Unchanged):**
-- **`constants-it.js/constants-en.js`**: Central configurations and messages
-- **`text-manager.js`**: Multi-language text management system
-- **`utils.js`**: Utility functions (validations, modals)
-- **`modal-manager.js`**: Unified add/edit modal management
-- **`html-builder.js`**: Standardized HTML generation
-- **`display-manager.js`**: Common display patterns
-- **`app.js`**: **Main controller** that coordinates managers
-- **`app-bridge.js`**: Global functions and app initialization
+- Modern web browser with HTML5 Canvas support
+- Touch-enabled device (recommended) or mouse for desktop testing
 
-### **🏆 Benefits of the New Architecture:**
-- ✅ **Separation of Concerns**: Each manager has specific responsibilities
-- ✅ **Multi-Language Support**: Dynamic language switching with fallbacks
-- ✅ **Testability**: Individual managers completely testable
-- ✅ **Maintainability**: Isolated changes without cross-impact
-- ✅ **Scalability**: Easy to add new managers or features
-- ✅ **Reusability**: Managers usable in other contexts
-- ✅ **Performance**: Optimized loading and memory management
-- ✅ **Debugging**: Errors localized in specific managers
+### Installation
 
-## 🤖 Automatic AI Compliance System
-
-This project includes an **advanced automatic compliance system** that ensures any AI assistant automatically follows architectural rules without manual intervention.
-
-### **AI Configuration Files:**
-```
-.ai-context.md              # Immediate context for AI (mandatory reading)
-.ai-development-rules.md     # Complete non-negotiable rules
-.ai-assistant-config.json    # Machine-readable configuration
-.cursor-rules               # Specific rules for Cursor AI
-validate-compliance.js      # Automatic validation script
-AI-README.md                # Complete AI setup guide
-```
-
-### **Benefits for AI Assistant:**
-- ✅ **Automatic compliance** without manual instructions
-- ✅ **Zero duplications** guaranteed by architecture
-- ✅ **Pattern enforcement** automatic
-- ✅ **Real-time validation** of code
-- ✅ **Self-enforcing rules** for any AI
-
-### **Validation Commands:**
+1. Clone the repository:
 ```bash
-npm run validate          # Complete compliance validation
-npm run check-compliance  # Quick check + confirmation
-npm run start            # Validation + server start
+git clone <repository-url>
+cd flipgame
 ```
 
-## 🚀 Quick Start
-
-### **Prerequisites**
-- Modern browser (Chrome, Firefox, Safari, Edge)
-- Node.js 14+ (for compliance validation)
-- Local web server (optional for development)
-
-### **Installation**
+2. Open `index.html` in a web browser or serve locally:
 ```bash
-# Clone the repository
-git clone https://github.com/rik72/hall-of-fame.git
+# Using Python
+python3 -m http.server 8099
 
-# Enter the directory
-cd hall-of-fame
+# Using Node.js
+npx serve .
 
-# Install dependencies (optional, for validation)
-npm install
-
-# Start with automatic validation
-npm start
-
-# Or just the web server
-python3 -m http.server 8088
+# Using PHP
+php -S localhost:8099
 ```
 
-### **Usage**
-1. Open `index.html` in browser or go to `http://localhost:8088`
-2. Add players from the "Players" section
-3. Add games from the "Games" section
-4. Record matches from the "Matches" section
-5. View the leaderboard in the "Podium"
+3. Access the game at `http://localhost:8099`
 
-### **Language Selection**
-- The application automatically detects your browser language
-- You can manually switch between 🇮🇹 Italian and 🇺🇸 English
-- Language preference is saved in your browser
+### Development
 
-## 💾 Backup System
+The project uses vanilla JavaScript with no build process required. Key files:
 
-### **Export**
-- Click on "Backup" → "Export Backup"
-- A `.hof` file is created with all data
-- The file contains: players, games, matches + metadata
+- `index.html` - Main HTML structure
+- `app.js` - Main application controller
+- `managers/game-manager.js` - Game logic and mechanics
+- `styles.css` - Game styling and mobile optimizations
+- `constants-*.js` - Game configuration and messages
 
-### **Import**
-- Click on "Backup" → "Import Backup"
-- Select a previously exported `.hof` file
-- Confirm replacement of current data
+## 🎯 Game Mechanics
 
-## 🛠️ Development
+### Core Gameplay
 
-### **For Developers**
-1. **Read** `CODE_INSTRUCTIONS.md` for complete architecture
-2. **Follow** `.ai-development-rules.md` for development standards
-3. **Always use** existing utility modules (zero duplications!)
-4. **Test** changes with `npm run validate`
+1. **Level Loading**: Each level presents a unique board layout
+2. **Player Movement**: Drag the white circle to move along permitted paths
+3. **Goal Achievement**: Reach the green end point to complete the level
+4. **Board Manipulation**: Use rotation and flip mechanics to find new solutions
+5. **Progression**: Complete levels to unlock new challenges
 
-### **For AI Assistant**
-1. **Automatically read** `.ai-context.md` on first access
-2. **Load configuration** from `.ai-assistant-config.json`
-3. **Apply rules** from `.ai-development-rules.md`
-4. **Always validate** with `validate-compliance.js`
+### Board Types
 
-### **Adding New Features**
-```javascript
-// 1. Add configurations in constants-it.js and constants-en.js
-CONSTANTS.MESSAGES.NEW_FEATURE = 'Message for new feature';
+- **Square Lattice**: Traditional grid-based layouts with 90° rotation
+- **Triangular Lattice**: Hexagonal-based layouts with 60° rotation
 
-// 2. Use existing utility modules
-Utils.validateName(name, items, id, 'entity');           // from utils.js
-ModalManager.setupModal('entity', false);                // from modal-manager.js
-HtmlBuilder.createButton('Action', 'btn-primary', callback); // from html-builder.js
+### Cell Types
 
-// 3. Follow consolidated patterns
-DisplayManager.renderEmptyState(container, message);     // from display-manager.js
+- **Empty**: Free movement space
+- **Path**: Permitted movement corridors
+- **Wall**: Blocked areas
+- **Teleport**: Instant movement between points
+- **Switch**: Interactive elements that change board state
+- **Collectible**: Optional items that enhance gameplay
 
-// 4. Validate compliance
-npm run validate
-```
+## 📱 Mobile Optimization
 
-### **Technologies Used**
-- **Frontend**: Vanilla JavaScript ES6+, HTML5, CSS3
-- **CSS Framework**: Bootstrap 5.3.3
-- **Icons**: Bootstrap Icons 1.11.3
-- **Backup**: JSZip 3.10.1
-- **Storage**: LocalStorage API
-- **Multi-Language**: Dynamic text management system
-- **Compliance**: Node.js for automatic validation
+### Touch Handling
 
-## 📊 Scoring System
+- **Touch Events**: Optimized for mobile touch interactions
+- **Gesture Recognition**: Support for drag, tap, and multi-touch
+- **Responsive Design**: Adapts to different screen sizes and orientations
+- **Performance**: 60fps target for smooth gameplay
 
-### **Positions and Points**
-- 🏆 **Winner**: 2 points
-- 🥈 **Placement**: 1 point  
-- 😞 **Last place**: 0 points
+### Accessibility
 
-### **Performance**
-Calculated as percentage of points earned vs maximum possible:
-```
-Performance = (Total Points / (Matches × 2)) × 100
-```
-
-### **Ranking**
-- **Primary sorting**: Total points
-- **Secondary sorting**: Number of wins
-- **Tertiary sorting**: Matches played (fewer = better)
+- **Touch Targets**: Minimum 44px for all interactive elements
+- **Visual Feedback**: Clear visual indicators for all game states
+- **Reduced Motion**: Respects user preferences for motion sensitivity
 
 ## 🎨 Customization
 
-### **Player Avatars**
-- Over 400 emojis available
-- Category-based search filter
-- Real-time preview
-- Skin tone emoji support
+### Adding New Levels
 
-### **Themes and Styles**
-- Customizable background gradient
-- Smooth and modern animations
-- Mobile-first responsive design
-- Dark/Light mode ready (CSS variables)
+Levels are defined in the `GameManager` with the following structure:
 
-## 🤝 Contributing
+```javascript
+{
+    board: {
+        width: 800,
+        height: 600,
+        cells: [
+            { type: 'path', x: 100, y: 100, width: 50, height: 50 },
+            // ... more cells
+        ]
+    },
+    start: { x: 100, y: 100 },
+    end: { x: 700, y: 500 },
+    obstacles: [],
+    powerUps: [],
+    timeLimit: null
+}
+```
 
-### **How to Contribute**
-1. **Fork** the repository
-2. **Create** feature branch: `git checkout -b feature/new-feature`
-3. **Follow** rules in `.ai-development-rules.md`
-4. **Test** changes with `npm run validate`
-5. **Commit** with descriptive messages
-6. **Push** and create Pull Request
+### Styling
 
-### **Quality Standards**
-- ✅ Zero code duplications
-- ✅ Mandatory use of utility modules
-- ✅ Centralized messages in constants-it.js and constants-en.js
-- ✅ Respect for modular architecture
-- ✅ Automatic compliance validation
+The game uses CSS custom properties for easy theming:
 
-## 📈 Roadmap
+```css
+:root {
+    --background-color: #000000;
+    --player-color: #ffffff;
+    --goal-color: #00ff00;
+    --path-color: #666666;
+}
+```
 
-### **Current Version: 1.0** ✅
-- [x] Complete player, game, match management
-- [x] Leaderboard and statistics system
-- [x] Complete backup/restore
-- [x] Modular architecture
-- [x] Automatic AI compliance system
-- [x] Multi-language support (🇮🇹 Italian, 🇺🇸 English)
-- [x] Complete documentation
+## 🔧 Development Guidelines
 
-### **Version 1.1** 🔄
-- [ ] Advanced statistics charts
-- [ ] Complete offline mode
+### Code Standards
 
-### **Version 2.0** 📋
-- [ ] Optional cloud sync
-- [ ] Progressive Web App
-- [ ] Additional languages (🇪🇸 Spanish, 🇫🇷 French, etc.)
+- **Zero Duplication**: No code or message duplication allowed
+- **Constants First**: All text and configuration in constants files
+- **Modular Architecture**: Clear separation of concerns
+- **Mobile Performance**: Optimize for 60fps on target devices
+
+### File Structure
+
+```
+flipgame/
+├── index.html              # Main HTML file
+├── app.js                  # Main application controller
+├── app-bridge.js           # Global bridge functions
+├── styles.css              # Game styling
+├── constants-en.js         # English constants
+
+├── utils.js                # Utility functions
+├── modal-manager.js        # Modal management
+├── html-builder.js         # HTML component generation
+├── display-manager.js      # Display state management
+├── managers/
+│   ├── storage-manager.js  # Data persistence
+│   ├── backup-manager.js   # Import/export functionality
+│   └── game-manager.js     # Game logic and mechanics
+└── levels/                 # Level definitions (future)
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Canvas not rendering**: Check browser compatibility and JavaScript console
+2. **Touch not working**: Ensure device supports touch events
+3. **Performance issues**: Check for background processes affecting frame rate
+4. **Progress not saving**: Verify localStorage is enabled in browser
+
+### Debug Mode
+
+Enable debug logging by setting:
+
+```javascript
+localStorage.setItem('flipgame_debug', 'true');
+```
 
 ## 📄 License
 
-This project is released under MIT license. See the `LICENSE` file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🤝 Contributing
 
-- **Bootstrap Team** for the CSS framework
-- **JSZip** for compressed file management
-- **Emojipedia** for emoji documentation
+1. Fork the repository
+2. Create a feature branch
+3. Follow the coding standards and architecture guidelines
+4. Test on mobile devices
+5. Submit a pull request
 
----
+## 🎯 Roadmap
+
+- [ ] Additional level types and mechanics
+- [ ] Sound effects and background music
+- [ ] Particle effects and animations
+- [ ] Level editor for custom puzzles
+- [ ] Multiplayer features
+- [ ] Progressive Web App (PWA) support
+- [ ] Social sharing and leaderboards
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/rik72/hall-of-fame/issues)
-- **Documentation**: `CODE_INSTRUCTIONS.md`
-- **AI Rules**: `.ai-development-rules.md`
-- **AI Setup**: `AI-README.md`
-
-**Developed with ❤️ for family gaming fun! 🎮** 
+For questions or issues, please check the documentation or create an issue in the repository. 
