@@ -209,13 +209,38 @@ class GameManager {
         this.touchAnimationState = {};
     }
 
+    // Radius helpers to keep balls and graphics proportional to the board
+    getLogicalBallRadius() {
+        // Base logical radius used for bounds and goals (independent of touch animation)
+        return this.gridSize * 0.375; // 37.5% of a cell; tweak as desired
+    }
+
+    getVisualScale(ball) {
+        return typeof ball.touchScale === 'number' ? ball.touchScale : this.restScale;
+    }
+
+    getVisualBallRadius(ball) {
+        return this.getLogicalBallRadius() * this.getVisualScale(ball);
+    }
+
+    // Goal ring radii helpers (keep visuals proportional and reusable)
+    getGoalInnerRadius() {
+        const base = this.getLogicalBallRadius();
+        return base + Math.max(1, this.gridSize * 0.02);
+    }
+
+    getGoalOuterRadius() {
+        const base = this.getLogicalBallRadius();
+        return base + Math.max(5, this.gridSize * 0.125);
+    }
+
     showTouchFeedback(ball) {
         // Initialize animation state for this ball
         const ballId = this.balls.indexOf(ball);
-                this.touchAnimationState[ballId] = {
+        this.touchAnimationState[ballId] = {
             isAnimating: true,
             startTime: Date.now(),
-            duration: 300, // 300ms animation
+            duration: 150, // 150ms fade-in
             opacity: 0.0,
             scale: this.restScale
         };
@@ -256,8 +281,10 @@ class GameManager {
             if (state.fadeOut) {
                 // Fade out animation
                 state.opacity = 1.0 - progress;
-                // Shrink back towards restScale
-                state.scale = this.restScale + (0.45 * (1.0 - progress));
+                // Shrink back towards restScale from the goal inner radius scale
+                const logical = this.getLogicalBallRadius();
+                const targetScaleAtPeak = this.getGoalInnerRadius() / logical;
+                state.scale = targetScaleAtPeak - (targetScaleAtPeak - this.restScale) * progress;
                 
                 if (progress >= 1.0) {
                     state.isAnimating = false;
@@ -268,12 +295,14 @@ class GameManager {
             } else {
                 // Fade in animation
                 state.opacity = progress;
-                // Grow from restScale to restScale + 0.45 (equivalent to 1.2 when restScale=0.75)
-                state.scale = this.restScale + (0.45 * progress);
+                // Scale so that at peak the visual ball radius equals goal inner radius
+                const logical = this.getLogicalBallRadius();
+                const targetScaleAtPeak = this.getGoalInnerRadius() / logical;
+                state.scale = this.restScale + (targetScaleAtPeak - this.restScale) * progress;
                 
                 if (progress >= 1.0) {
                     state.opacity = 1.0;
-                    state.scale = this.restScale + 0.45;
+                    state.scale = targetScaleAtPeak;
                 }
             }
 
@@ -299,6 +328,9 @@ class GameManager {
         
         const ball = this.balls[this.selectedBallIndex];
         
+        // Use logical radius for bounds checks
+        const logicalRadius = this.getLogicalBallRadius();
+        
         // Snap to grid relative to board position
         const relativeX = x - this.boardStartX;
         const relativeY = y - this.boardStartY;
@@ -311,12 +343,12 @@ class GameManager {
         
         // Ensure the ball stays within board bounds
         const clampedX = Math.max(
-            this.boardStartX + ball.radius, 
-            Math.min(snappedX, this.boardStartX + this.boardWidth - ball.radius)
+            this.boardStartX + logicalRadius, 
+            Math.min(snappedX, this.boardStartX + this.boardWidth - logicalRadius)
         );
         const clampedY = Math.max(
-            this.boardStartY + ball.radius, 
-            Math.min(snappedY, this.boardStartY + this.boardHeight - ball.radius)
+            this.boardStartY + logicalRadius, 
+            Math.min(snappedY, this.boardStartY + this.boardHeight - logicalRadius)
         );
         
         // Only update if position actually changed
@@ -418,6 +450,7 @@ class GameManager {
                 const ball = {
                     x: this.boardStartX + (ballData.start[0] * this.gridSize),
                     y: this.boardStartY + (ballData.start[1] * this.gridSize),
+                    // radius kept for legacy but not used in rendering; dynamic radius derives from gridSize
                     radius: CONSTANTS.GAME_CONFIG.BALL_RADIUS,
                     color: ballData.color || 'white',
                     isTouched: false, // Touch feedback state
@@ -642,27 +675,28 @@ class GameManager {
             
             // Add touch feedback glow effect with animation
             if (ball.isTouched && ball.touchOpacity > 0) {
-                // Draw single inner glow with animated opacity
-                const glowSize = (ball.radius * this.restScale) + 8;
-                const glowOpacity = Math.floor((ball.touchOpacity || 1.0) * 64).toString(16).padStart(2, '0');
-                this.ctx.fillStyle = colorHex + glowOpacity;
+                // Ensure halo is always larger than the current visual ball radius
+                        const visualBallRadius = this.getVisualBallRadius(ball);
+        const haloRadius = visualBallRadius + Math.max(6, this.getLogicalBallRadius() * 0.4);
+                
+                // Use globalAlpha for reliable alpha on all browsers
+                this.ctx.save();
+                this.ctx.globalAlpha = Math.min(1, Math.max(0, (ball.touchOpacity || 1.0) * 0.35));
+                this.ctx.fillStyle = colorHex;
                 this.ctx.beginPath();
-                this.ctx.arc(ball.x, ball.y, glowSize, 0, 2 * Math.PI);
+                this.ctx.arc(ball.x, ball.y, haloRadius, 0, 2 * Math.PI);
                 this.ctx.fill();
+                this.ctx.restore();
             }
             
             // Draw the ball with subtle scale animation around restScale
-            const visualScale = (typeof ball.touchScale === 'number') ? ball.touchScale : this.restScale;
-            const ballRadius = ball.radius * visualScale;
+            const ballRadius = this.getVisualBallRadius(ball);
             this.ctx.fillStyle = colorHex;
             this.ctx.beginPath();
             this.ctx.arc(ball.x, ball.y, ballRadius, 0, 2 * Math.PI);
             this.ctx.fill();
             
-            // Add subtle border for better visibility
-            this.ctx.strokeStyle = '#333333';
-            this.ctx.lineWidth = 1;
-            this.ctx.stroke();
+
         });
     }
 
@@ -677,8 +711,8 @@ class GameManager {
             const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
             
             // Draw ring: inner radius = ball radius + 1, outer radius = ball radius + 5
-            const innerRadius = ball.radius + 1;
-            const outerRadius = ball.radius + 5;
+            const innerRadius = this.getGoalInnerRadius();
+            const outerRadius = this.getGoalOuterRadius();
             
             this.ctx.fillStyle = colorHex;
             this.ctx.beginPath();
