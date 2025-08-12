@@ -109,41 +109,56 @@ const CONSTANTS = {
         // Default level structure
         DEFAULT_STRUCTURE: {
             board: {
-                width: 800,
-                height: 600,
-                cells: []
+                cells: [
+                    "........",
+                    "........",
+                    "........",
+                    "........",
+                    "........",
+                    "........",
+                    "........",
+                    "........"
+                ]
             },
-            start: {
-                x: 100,
-                y: 100
-            },
-            end: {
-                x: 700,
-                y: 500
-            },
-            obstacles: [],
-            powerUps: [],
-            timeLimit: null
+            balls: [
+                {
+                    start: [2, 2],
+                    end: [6, 6],
+                    color: 'white'
+                }
+            ]
         },
         
-        // Cell types
+        // Cell types (string-based)
         CELL_TYPES: {
-            EMPTY: 'empty',
-            PATH: 'path',
-            WALL: 'wall',
-            TELEPORT: 'teleport',
-            SWITCH: 'switch',
-            COLLECTIBLE: 'collectible'
+            EMPTY: '.',
+            PATH: '#',
+            WALL: 'X',
+            TELEPORT: 'T',
+            SWITCH: 'S',
+            COLLECTIBLE: 'C'
         },
         
-        // Cell colors
+        // Cell colors (only for square cells, circles use their own colors)
         CELL_COLORS: {
-            empty: '#000000',
-            path: '#666666',
-            wall: '#FF0000',
-            teleport: '#0000FF',
-            switch: '#FFFF00',
-            collectible: '#FF00FF'
+            '.': '#000000',  // Empty
+            '#': '#666666',  // Path
+            'X': '#FF0000',  // Wall
+            'T': '#0000FF',  // Teleport
+            'S': '#FFFF00',  // Switch
+            'C': '#FF00FF'   // Collectible
+        },
+        
+        // Ball colors mapping
+        BALL_COLORS: {
+            'white': '#FFFFFF',
+            'red': '#FF0000',
+            'green': '#00FF00',
+            'blue': '#0000FF',
+            'yellow': '#FFFF00',
+            'purple': '#FF00FF',
+            'orange': '#FFA500',
+            'pink': '#FFC0CB'
         }
     },
 

@@ -93,6 +93,35 @@ window.FlipgameApp = {
         if (appInstance) {
             appInstance.handleTouch(x, y);
         }
+    },
+
+    // Testing functions
+    testLevelFormat: function() {
+        if (appInstance && appInstance.gameManager) {
+            return appInstance.gameManager.testLevelFormat();
+        }
+        console.error('❌ Game manager not available for testing');
+        return false;
+    },
+
+    testGameReachability: function() {
+        return Utils.testGameReachability();
+    },
+
+    validateCurrentLevel: function() {
+        if (appInstance && appInstance.gameManager && appInstance.gameManager.levelData) {
+            try {
+                Utils.validateLevelData(appInstance.gameManager.levelData);
+                console.log('✅ Current level validation passed');
+                return true;
+            } catch (error) {
+                console.error('❌ Current level validation failed:', error.message);
+                return false;
+            }
+        } else {
+            console.error('❌ No level data available for validation');
+            return false;
+        }
     }
 };
 

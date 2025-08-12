@@ -40,11 +40,60 @@ class Utils {
             throw new Error(CONSTANTS.MESSAGES.LEVEL_DATA_REQUIRED);
         }
         
-        if (!levelData.board || !levelData.start || !levelData.end) {
+        if (!levelData.board || !levelData.board.cells || !Array.isArray(levelData.board.cells)) {
             throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
         }
         
+        // Check if cells array is not empty
+        if (levelData.board.cells.length === 0) {
+            throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+        }
+        
+        // Check if all rows have the same length
+        const firstRowLength = levelData.board.cells[0].length;
+        for (let i = 1; i < levelData.board.cells.length; i++) {
+            if (levelData.board.cells[i].length !== firstRowLength) {
+                throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+            }
+        }
+        
+        // Check if level has balls with start and end positions
+        if (!levelData.balls || !Array.isArray(levelData.balls) || levelData.balls.length === 0) {
+            throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+        }
+        
+        // Validate each ball has start and end positions
+        for (const ball of levelData.balls) {
+            if (!ball.start || !Array.isArray(ball.start) || ball.start.length !== 2) {
+                throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+            }
+            if (!ball.end || !Array.isArray(ball.end) || ball.end.length !== 2) {
+                throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+            }
+        }
+        
         return true;
+    }
+
+    // Testing and validation methods
+    static async testGameReachability() {
+        try {
+            const response = await fetch('http://localhost:8099', {
+                method: 'HEAD',
+                mode: 'no-cors'
+            });
+            return true;
+        } catch (error) {
+            console.warn('Game not reachable at localhost:8099:', error);
+            return false;
+        }
+    }
+
+    static requireGameServer() {
+        const isReachable = this.testGameReachability();
+        if (!isReachable) {
+            throw new Error('Game server not reachable at localhost:8099. Please start the server with: python3 -m http.server 8099');
+        }
     }
 
     static validateMove(fromX, fromY, toX, toY, board) {

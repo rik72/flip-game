@@ -14,11 +14,8 @@ class GameManager {
         this.ctx = null;
         this.board = null;
         this.levelData = null; // Store current level data
-        this.player = {
-            x: 0,
-            y: 0,
-            radius: 15
-        };
+        this.balls = []; // Array of ball objects
+        this.selectedBallIndex = -1; // Index of currently selected ball
         this.touchStartPos = null;
         this.isDragging = false;
         this.gridSize = 40; // Grid cell size for snapping
@@ -81,14 +78,19 @@ class GameManager {
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
-        // Check if touch is near the player
-        const distanceToPlayer = Math.sqrt(
-            Math.pow(x - this.player.x, 2) + Math.pow(y - this.player.y, 2)
-        );
-        
-        if (distanceToPlayer <= this.player.radius * 2) {
-            this.touchStartPos = { x, y };
-            this.isDragging = true;
+        // Check if touch is near any ball
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            const distanceToBall = Math.sqrt(
+                Math.pow(x - ball.x, 2) + Math.pow(y - ball.y, 2)
+            );
+            
+            if (distanceToBall <= ball.radius * 2) {
+                this.selectedBallIndex = i;
+                this.touchStartPos = { x, y };
+                this.isDragging = true;
+                break;
+            }
         }
     }
 
@@ -100,42 +102,47 @@ class GameManager {
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
-        // Move player directly to pointer position with grid snapping
-        this.movePlayerToPosition(x, y);
+        // Move ball directly to pointer position with grid snapping
+        this.moveBallToPosition(x, y);
     }
 
     handleTouchEnd(e) {
         this.touchStartPos = null;
         this.isDragging = false;
+        this.selectedBallIndex = -1; // Reset selected ball
         
         // Check win condition when drag is released
         this.checkWinCondition();
     }
 
-    movePlayerToPosition(x, y) {
+    moveBallToPosition(x, y) {
+        if (this.selectedBallIndex === -1) return;
+        
+        const ball = this.balls[this.selectedBallIndex];
+        
         // Snap to grid
         const snappedX = Math.round(x / this.gridSize) * this.gridSize;
         const snappedY = Math.round(y / this.gridSize) * this.gridSize;
         
         // Ensure the ball stays within bounds
-        const clampedX = Math.max(this.player.radius, Math.min(snappedX, this.canvas.width - this.player.radius));
-        const clampedY = Math.max(this.player.radius, Math.min(snappedY, this.canvas.height - this.player.radius));
+        const clampedX = Math.max(ball.radius, Math.min(snappedX, this.canvas.width - ball.radius));
+        const clampedY = Math.max(ball.radius, Math.min(snappedY, this.canvas.height - ball.radius));
         
         // Only update if position actually changed
-        if (this.player.x !== clampedX || this.player.y !== clampedY) {
-            this.player.x = clampedX;
-            this.player.y = clampedY;
+        if (ball.x !== clampedX || ball.y !== clampedY) {
+            ball.x = clampedX;
+            ball.y = clampedY;
             this.render();
             // Don't check win condition during drag - only when released
         }
     }
 
-    isValidMove(x, y) {
+    isValidMove(x, y, ballRadius = CONSTANTS.GAME_CONFIG.PLAYER_RADIUS) {
         // Basic boundary check - can be enhanced with board validation
-        return x >= this.player.radius && 
-               x <= this.canvas.width - this.player.radius &&
-               y >= this.player.radius && 
-               y <= this.canvas.height - this.player.radius;
+        return x >= ballRadius && 
+               x <= this.canvas.width - ballRadius &&
+               y >= ballRadius && 
+               y <= this.canvas.height - ballRadius;
     }
 
     loadLevel(levelNumber) {
@@ -152,81 +159,131 @@ class GameManager {
         this.levelData = storedLevel || this.getDefaultLevel(levelNumber);
         
         // Ensure we have valid level data
-        if (!this.levelData || !this.levelData.end) {
+        if (!this.levelData || !this.levelData.board || !this.levelData.board.cells) {
             console.warn('Invalid level data, creating default');
             this.levelData = this.getDefaultLevel(levelNumber);
         }
         
         // Final safety check - create a minimal level if everything else fails
-        if (!this.levelData || !this.levelData.end) {
+        if (!this.levelData || !this.levelData.board || !this.levelData.board.cells) {
             console.error('Failed to create level data, using emergency fallback');
             this.levelData = {
-                board: { width: 800, height: 600, cells: [] },
-                start: { x: 40, y: 40 },
-                end: { x: 760, y: 560 }
+                board: {
+                    cells: [
+                        "........",
+                        "..s.....",
+                        "........",
+                        ".....e..",
+                        "........"
+                    ]
+                }
             };
         }
         
         console.log('Level data created:', this.levelData);
-        console.log('Level data end position:', this.levelData?.end);
+        console.log('Board:', this.levelData.board);
+        console.log('Balls:', this.levelData.balls);
         
         this.board = this.levelData.board;
         
-        // Set player starting position with proper fallbacks
-        const canvasWidth = this.canvas ? this.canvas.width : 800;
-        const canvasHeight = this.canvas ? this.canvas.height : 600;
-        
-        this.player.x = this.levelData.start && this.levelData.start.x ? this.levelData.start.x : canvasWidth / 2;
-        this.player.y = this.levelData.start && this.levelData.start.y ? this.levelData.start.y : canvasHeight / 2;
+        // Initialize balls array from level data
+        this.initializeBalls();
         
         this.render();
     }
 
     getDefaultLevel(levelNumber) {
-        // Simple default level structure
-        const canvasWidth = this.canvas ? this.canvas.width : 800;
-        const canvasHeight = this.canvas ? this.canvas.height : 600;
-        
-        // Snap start and end positions to grid
-        const startX = Math.round(100 / this.gridSize) * this.gridSize;
-        const startY = Math.round(100 / this.gridSize) * this.gridSize;
-        const endX = Math.round((canvasWidth - 100) / this.gridSize) * this.gridSize;
-        const endY = Math.round((canvasHeight - 100) / this.gridSize) * this.gridSize;
-        
-        console.log('Creating default level with canvas size:', canvasWidth, canvasHeight);
-        console.log('Start position:', startX, startY);
-        console.log('End position:', endX, endY);
-        
+        // Default level structure with string-based cells
         return {
             board: {
-                width: canvasWidth,
-                height: canvasHeight,
-                cells: []
+                cells: [
+                    "........",
+                    "........",
+                    "........",
+                    "........",
+                    "........",
+                    "........",
+                    "........",
+                    "........"
+                ]
             },
-            start: {
-                x: startX,
-                y: startY
-            },
-            end: {
-                x: endX,
-                y: endY
-            }
+            balls: [
+                {
+                    start: [2, 2],
+                    end: [6, 6],
+                    color: 'red'
+                },
+                {
+                    start: [2, 6],
+                    end: [6, 2],
+                    color: 'blue'
+                }
+                // Additional balls can be added here for multi-ball levels
+                // {
+                //     start: [3, 3],
+                //     end: [5, 5],
+                //     color: 'red'
+                // }
+            ]
         };
     }
 
+    initializeBalls() {
+        console.log('Initializing balls from level data:', this.levelData);
+        
+        this.balls = [];
+        
+        if (this.levelData.balls && this.levelData.balls.length > 0) {
+            this.levelData.balls.forEach((ballData, index) => {
+                console.log(`Initializing ball ${index}:`, ballData);
+                
+                const ball = {
+                    x: ballData.start[0] * this.gridSize,
+                    y: ballData.start[1] * this.gridSize,
+                    radius: CONSTANTS.GAME_CONFIG.PLAYER_RADIUS,
+                    color: ballData.color || 'white',
+                    endPosition: {
+                        x: ballData.end[0] * this.gridSize,
+                        y: ballData.end[1] * this.gridSize
+                    }
+                };
+                
+                this.balls.push(ball);
+                console.log(`Ball ${index} initialized:`, ball);
+            });
+        } else {
+            console.warn('No balls found in level data, creating default ball');
+            // Create a default ball
+            const defaultBall = {
+                x: 2 * this.gridSize,
+                y: 2 * this.gridSize,
+                radius: CONSTANTS.GAME_CONFIG.PLAYER_RADIUS,
+                color: 'white',
+                endPosition: {
+                    x: 6 * this.gridSize,
+                    y: 6 * this.gridSize
+                }
+            };
+            this.balls.push(defaultBall);
+        }
+        
+        console.log('Balls array initialized:', this.balls);
+    }
+
     checkWinCondition() {
-        if (!this.canvas || !this.levelData) return;
+        if (!this.canvas || this.balls.length === 0) return;
         
-        const endX = this.levelData.end.x;
-        const endY = this.levelData.end.y;
+        // Check if all balls are at their respective end positions
+        const allBallsAtGoal = this.balls.every(ball => {
+            const ballGridX = Math.round(ball.x / this.gridSize);
+            const ballGridY = Math.round(ball.y / this.gridSize);
+            const goalGridX = Math.round(ball.endPosition.x / this.gridSize);
+            const goalGridY = Math.round(ball.endPosition.y / this.gridSize);
+            
+            return ballGridX === goalGridX && ballGridY === goalGridY;
+        });
         
-        // Check if player is on the same grid position as the goal
-        const playerGridX = Math.round(this.player.x / this.gridSize);
-        const playerGridY = Math.round(this.player.y / this.gridSize);
-        const goalGridX = Math.round(endX / this.gridSize);
-        const goalGridY = Math.round(endY / this.gridSize);
-        
-        if (playerGridX === goalGridX && playerGridY === goalGridY) {
+        if (allBallsAtGoal) {
             this.levelCompleted();
         }
     }
@@ -287,11 +344,11 @@ class GameManager {
         // Draw board
         this.renderBoard();
         
-        // Draw end goal
-        this.renderEndGoal();
+        // Draw end goals
+        this.renderEndGoals();
         
-        // Draw player LAST (on top of everything)
-        this.renderPlayer();
+        // Draw balls LAST (on top of everything)
+        this.renderBalls();
     }
 
     renderGrid() {
@@ -325,35 +382,60 @@ class GameManager {
     renderBoard() {
         // Draw board cells if they exist
         if (this.board && this.board.cells) {
-            this.board.cells.forEach(cell => {
-                this.ctx.fillStyle = cell.color || '#333333';
-                this.ctx.fillRect(cell.x, cell.y, cell.width, cell.height);
-            });
+            const cells = this.board.cells;
+            
+            for (let row = 0; row < cells.length; row++) {
+                const rowString = cells[row];
+                for (let col = 0; col < rowString.length; col++) {
+                    const cellType = rowString[col];
+                    
+                    // Only render path cells as squares, skip start/end (they're rendered as circles)
+                    if (cellType === '#') {
+                        this.ctx.fillStyle = CONSTANTS.LEVEL_CONFIG.CELL_COLORS[cellType] || '#666666';
+                        this.ctx.fillRect(
+                            col * this.gridSize,
+                            row * this.gridSize,
+                            this.gridSize,
+                            this.gridSize
+                        );
+                    }
+                }
+            }
         }
     }
 
-    renderPlayer() {
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.beginPath();
-        this.ctx.arc(this.player.x, this.player.y, this.player.radius, 0, 2 * Math.PI);
-        this.ctx.fill();
+    renderBalls() {
+        this.balls.forEach((ball, index) => {
+            // Use ball color from ball data, fallback to white
+            const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+            
+            this.ctx.fillStyle = colorHex;
+            this.ctx.beginPath();
+            this.ctx.arc(ball.x, ball.y, ball.radius, 0, 2 * Math.PI);
+            this.ctx.fill();
+        });
     }
 
-    renderEndGoal() {
-        if (!this.levelData || !this.levelData.end) {
-            console.warn('Level data or end position not available');
-            return;
-        }
-        
-        const endX = this.levelData.end.x;
-        const endY = this.levelData.end.y;
-        
-        console.log('Rendering goal at:', endX, endY, 'Canvas size:', this.canvas.width, this.canvas.height);
-        
-        this.ctx.fillStyle = '#00FF00';
-        this.ctx.beginPath();
-        this.ctx.arc(endX, endY, 20, 0, 2 * Math.PI);
-        this.ctx.fill();
+    renderEndGoals() {
+        this.balls.forEach((ball, index) => {
+            const endX = ball.endPosition.x;
+            const endY = ball.endPosition.y;
+            
+            console.log(`Rendering goal ${index} at:`, endX, endY, 'Canvas size:', this.canvas.width, this.canvas.height);
+            
+            // Use the same color as the ball for the ring
+            const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+            
+            // Draw ring: inner radius = ball radius + 1, outer radius = ball radius + 5
+            const innerRadius = ball.radius + 1;
+            const outerRadius = ball.radius + 5;
+            
+            this.ctx.fillStyle = colorHex;
+            this.ctx.beginPath();
+            this.ctx.arc(endX, endY, outerRadius, 0, 2 * Math.PI);
+            this.ctx.arc(endX, endY, innerRadius, 0, 2 * Math.PI, true); // true = counterclockwise for hole
+            this.ctx.fill();
+        });
     }
 
 
@@ -362,7 +444,32 @@ class GameManager {
         return {
             ...this.gameState,
             currentLevel: this.currentLevel,
-            player: { ...this.player }
+            balls: this.balls.map(ball => ({ ...ball }))
         };
+    }
+
+    // Testing method for new level format
+    testLevelFormat() {
+        try {
+            // Test the current level data
+            if (this.levelData) {
+                Utils.validateLevelData(this.levelData);
+                console.log('✅ Level format validation passed');
+                
+                // Test ball initialization
+                console.log('✅ Balls initialized:', this.balls.length);
+                this.balls.forEach((ball, index) => {
+                    console.log(`✅ Ball ${index}:`, ball);
+                });
+                
+                return true;
+            } else {
+                console.error('❌ No level data available for testing');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Level format validation failed:', error.message);
+            return false;
+        }
     }
 } 

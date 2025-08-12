@@ -119,20 +119,39 @@ Levels are defined in the `GameManager` with the following structure:
 ```javascript
 {
     board: {
-        width: 800,
-        height: 600,
         cells: [
-            { type: 'path', x: 100, y: 100, width: 50, height: 50 },
-            // ... more cells
+            "........",
+            "........",
+            "........",
+            "........",
+            "........",
+            "........",
+            "........",
+            "........"
         ]
     },
-    start: { x: 100, y: 100 },
-    end: { x: 700, y: 500 },
-    obstacles: [],
-    powerUps: [],
-    timeLimit: null
+    balls: [
+        {
+            start: [2, 2],
+            end: [6, 6],
+            color: 'white'
+        }
+    ]
 }
 ```
+
+#### Cell Types (String-based)
+- `.` - Empty space
+- `#` - Path (movement allowed)
+- `X` - Wall (blocked)
+- `T` - Teleport
+- `S` - Switch
+- `C` - Collectible
+
+#### Ball Properties
+- `start: [x, y]` - Starting grid position
+- `end: [x, y]` - Goal grid position
+- `color` - Ball color (optional)
 
 ### Styling
 
