@@ -1,4 +1,4 @@
-# Changelog - Hall of Fame
+# Changelog - Flipgame
 
 Tutte le modifiche importanti a questo progetto saranno documentate in questo file.
 
@@ -23,23 +23,19 @@ Tutte le modifiche importanti a questo progetto saranno documentate in questo fi
 - `confirmDelete(message)`: Conferma eliminazione standardizzata
 - `showModal(modalId)` / `hideModal(modalId)`: Gestione modali Bootstrap
 
-##### **Classe ModalManager**
-- `setupModal(type, isEdit, data)`: Setup universale per modali add/edit
-- `setupPlayerModal(isEdit, data)`: Configurazione specifica player
-- `setupGameModal(isEdit, data)`: Configurazione specifica game
-- Gestione unificata per tutte le modali del sistema
+
 
 ##### **Classe HtmlBuilder**
 - `createButton(text, className, onClick, icon)`: Bottoni standardizzati
 - `createActionButtons(itemId, itemType)`: Bottoni Modifica/Elimina
-- `createStatsBadge(icon, value, title)`: Badge con tooltip
+
 - `createEmptyStateMessage(message)`: Messaggi stato vuoto
-- `createParticipantSelector(players, selected...)`: Selettore partecipanti
+
 
 ##### **Classe DisplayManager**
 - `renderEmptyState(container, message)`: Rendering stati vuoti
 - `renderItemList(container, items, renderFunction)`: Rendering liste
-- `createStatsDisplay(stats)`: Display statistiche con tooltip
+
 
 ##### **CSS Utility Classes**
 - `.card-base`: Stile base per tutte le card
@@ -64,32 +60,11 @@ Tutte le modifiche importanti a questo progetto saranno documentate in questo fi
 
 ##### **Pattern Implementati**
 
-**Player Management:**
-```javascript
-// Gestione unificata modali
-showAddPlayerModal() {
-    ModalManager.setupModal('player', false);
-    this.populateAvatarSelect(this.allAvatarOptions);
-    this.updateAvatarPreview();
-}
-```
 
-**Validation Logic:**
-```javascript
-// Validazione centralizzata
-try {
-    Utils.validateName(name, this.players, null, 'giocatore');
-} catch (error) {
-    alert(error.message);
-    return;
-}
-```
 
-**HTML Generation:**
-```javascript
-// Generazione HTML standardizzata
-const html = HtmlBuilder.createActionButtons(player.id, 'Player');
-```
+
+
+
 
 ##### **CSS Consolidation**
 - Performance classes con base comune
@@ -102,7 +77,7 @@ const html = HtmlBuilder.createActionButtons(player.id, 'Player');
 ##### **Separation of Concerns**
 - **CONSTANTS**: Solo configurazioni e costanti
 - **Utils**: Solo funzioni di utilità generiche
-- **ModalManager**: Solo gestione modali
+
 - **HtmlBuilder**: Solo generazione HTML
 - **DisplayManager**: Solo pattern di visualizzazione
 - **App**: Solo logica business

@@ -1,4 +1,4 @@
-# Cursor AI Rules - Hall of Fame Project
+# Cursor AI Rules - Flipgame Project
 
 ## MANDATORY: Read .ai-context.md FIRST
 
@@ -11,7 +11,7 @@ Before ANY code modification, you MUST read and follow:
 
 This project uses STRICT modular architecture:
 ```
-constants.js → utils.js → modal-manager.js → html-builder.js → display-manager.js → app.js → app-bridge.js
+constants.js → utils.js → html-builder.js → display-manager.js → app.js → app-bridge.js
 ```
 
 ## ZERO TOLERANCE RULES
@@ -19,7 +19,7 @@ constants.js → utils.js → modal-manager.js → html-builder.js → display-m
 ### ❌ NEVER DO:
 - Duplicate any code, messages, or HTML templates
 - Hardcode text strings outside constants.js/CONSTANTS.MESSAGES
-- Create manual modal setup - use ModalManager.setupModal()
+
 - Write inline HTML templates - use HtmlBuilder methods
 - Handle empty states manually - use DisplayManager.renderEmptyState()
 - Create validation logic - use Utils.validateName()
@@ -45,11 +45,7 @@ try {
 }
 ```
 
-### Modals:
-```javascript
-ModalManager.setupModal('entity', false);  // Add
-ModalManager.setupModal('entity', true, data);  // Edit
-```
+
 
 ### HTML Generation:
 ```javascript

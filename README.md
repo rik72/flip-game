@@ -4,7 +4,7 @@ A minimalistic mobile puzzle game built with HTML5 Canvas and touch gestures.
 
 ## 🎮 Game Overview
 
-Flipgame is a level-based puzzle game designed exclusively for mobile devices. Players navigate a circle through various board layouts by dragging it along permitted paths, with the goal of reaching the end point of each level.
+Flipgame is a level-based puzzle game designed exclusively for mobile devices. The user navigates a ball through various board layouts by dragging it along permitted paths, with the goal of reaching the end point of each level.
 
 ### Key Features
 
@@ -20,8 +20,8 @@ Flipgame is a level-based puzzle game designed exclusively for mobile devices. P
 The project follows a modular architecture with clear separation of concerns:
 
 ```
-CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → 
-StorageManager → BackupManager → GameManager → App
+CONSTANTS → Utils → HtmlBuilder → DisplayManager → 
+StorageManager → GameManager → App
 ```
 
 ### Core Components
@@ -76,7 +76,7 @@ The project uses vanilla JavaScript with no build process required. Key files:
 ### Core Gameplay
 
 1. **Level Loading**: Each level presents a unique board layout
-2. **Player Movement**: Drag the white circle to move along permitted paths
+2. **Ball Movement**: Drag the white ball to move along permitted paths
 3. **Goal Achievement**: Reach the green end point to complete the level
 4. **Board Manipulation**: Use rotation and flip mechanics to find new solutions
 5. **Progression**: Complete levels to unlock new challenges
@@ -119,7 +119,7 @@ Levels are defined in the `GameManager` with the following structure:
 ```javascript
 {
     board: {
-        cells: [
+        nodes: [
             "........",
             "........",
             "........",
@@ -140,7 +140,7 @@ Levels are defined in the `GameManager` with the following structure:
 }
 ```
 
-#### Cell Types (String-based)
+#### Node Types (String-based)
 - `.` - Empty space
 - `#` - Path (movement allowed)
 - `X` - Wall (blocked)
@@ -160,7 +160,7 @@ The game uses CSS custom properties for easy theming:
 ```css
 :root {
     --background-color: #000000;
-    --player-color: #ffffff;
+    --ball-color: #ffffff;
     --goal-color: #00ff00;
     --path-color: #666666;
 }
@@ -183,15 +183,15 @@ flipgame/
 ├── app.js                  # Main application controller
 ├── app-bridge.js           # Global bridge functions
 ├── styles.css              # Game styling
-├── constants-en.js         # English constants
+├── constants.js            # Constants
 
 ├── utils.js                # Utility functions
-├── modal-manager.js        # Modal management
+
 ├── html-builder.js         # HTML component generation
 ├── display-manager.js      # Display state management
 ├── managers/
 │   ├── storage-manager.js  # Data persistence
-│   ├── backup-manager.js   # Import/export functionality
+
 │   └── game-manager.js     # Game logic and mechanics
 └── levels/                 # Level definitions (future)
 ```
@@ -231,7 +231,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Sound effects and background music
 - [ ] Particle effects and animations
 - [ ] Level editor for custom puzzles
-- [ ] Multiplayer features
+
 - [ ] Progressive Web App (PWA) support
 - [ ] Social sharing and leaderboards
 

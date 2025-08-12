@@ -34,10 +34,7 @@ class HtmlBuilder {
         return buttons;
     }
 
-    static createStatsBadge(icon, value, title = '') {
-        const titleAttr = title ? `title="${title}" data-bs-toggle="tooltip" data-bs-placement="top"` : '';
-        return `<span ${titleAttr}>${icon} ${value}</span>`;
-    }
+
 
     static createEmptyStateMessage(message) {
         return `<div class="col-12 text-center"><p class="text-muted">${message}</p></div>`;
@@ -56,7 +53,6 @@ class HtmlBuilder {
         return `
             <div class="game-container">
                 <div class="game-header">
-                    <div class="level-display" id="levelDisplay"></div>
                     <div class="game-controls">
                         <button class="btn btn-sm btn-outline-light" onclick="app.resetLevel()">
                             <i class="bi bi-arrow-clockwise"></i>
@@ -78,7 +74,7 @@ class HtmlBuilder {
     }
 
     static createLevelNumber(level) {
-        return `<div class="level-number">${level}</div>`;
+        return `<div class="level-number">#${level}</div>`;
     }
 
     static createGameMenu() {

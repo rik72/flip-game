@@ -1,8 +1,8 @@
-# 🚀 Roadmap Miglioramenti - Hall of Fame
+# 🚀 Roadmap Miglioramenti - Flipgame
 
 ## 📋 Panoramica
 
-Questo documento contiene una roadmap strutturata per miglioramenti al progetto Hall of Fame, basata sull'analisi di compliance delle guidelines architetturali. Gli elementi sono organizzati per priorità e complessità di implementazione.
+Questo documento contiene una roadmap strutturata per miglioramenti al progetto Flipgame, basata sull'analisi di compliance delle guidelines architetturali. Gli elementi sono organizzati per priorità e complessità di implementazione.
 
 ---
 
@@ -69,21 +69,13 @@ Questo documento contiene una roadmap strutturata per miglioramenti al progetto 
 
 ## 🔮 **PRIORITÀ BASSA - Evoluzioni Future**
 
-### 1. **Modularizzazione Stats Manager** 🏗️
-**File**: `managers/stats-manager.js` (26KB)  
+  
 **Tempo stimato**: 4-6 ore  
 **Impatto**: Manutenibilità, separazione responsabilità  
 
 **Obiettivo**: Splittare in moduli più specifici
 
-**Proposta di Split**:
-```
-📁 managers/stats/
-├── stats-calculator.js     # Calcoli statistiche base
-├── ranking-manager.js      # Gestione ranking e ordinamenti
-├── podium-renderer.js      # Rendering podio e classifiche
-└── performance-analyzer.js # Analisi performance avanzate
-```
+
 
 ### 2. **Sistema di Testing Automatico** 🧪
 **File**: Nuovi file in `/tests/`  
@@ -159,7 +151,7 @@ Questo documento contiene una roadmap strutturata per miglioramenti al progetto 
 ✅ Performance audit  
 
 ### **Fase 3: Architecture Evolution** (1-2 mesi)
-✅ Stats manager modularization  
+  
 ✅ Testing framework setup  
 ✅ PWA implementation  
 

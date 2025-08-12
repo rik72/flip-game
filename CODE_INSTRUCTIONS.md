@@ -13,14 +13,14 @@ Tutti i manager sono organizzati nella cartella **`/managers/`** per una struttu
 
 ```javascript
 // Ordine di caricamento e dipendenze:
-CONSTANTS → Utils → ModalManager → HtmlBuilder → DisplayManager → 
-managers/StorageManager → managers/BackupManager → managers/GameManager → App
+CONSTANTS → Utils → HtmlBuilder → DisplayManager → 
+managers/StorageManager → managers/GameManager → App
 ```
 
 #### **Manager Specializzati (in `/managers/`):**
 
 - **StorageManager**: Gestione localStorage centralizzata per salvataggio progresso
-- **BackupManager**: Import/export dati con validazione
+
 - **GameManager**: Logica di gioco, gestione livelli, meccaniche puzzle
 
 #### **App**: Controller principale che coordina i manager
@@ -28,7 +28,7 @@ managers/StorageManager → managers/BackupManager → managers/GameManager → 
 #### **CONSTANTS**
 Oggetto centralizzato per tutte le configurazioni:
 - `MESSAGES`: Tutti i messaggi di errore e notifiche
-- `MODAL_TYPES`: Configurazioni per modali (impostazioni, info livello)
+
 - `GAME_CONFIG`: Configurazioni di gioco (livelli, meccaniche, difficoltà)
 - `CANVAS_CONFIG`: Configurazioni canvas (dimensioni, performance)
 - `TOUCH_CONFIG`: Configurazioni touch (sensitivity, gesture recognition)
@@ -37,12 +37,9 @@ Oggetto centralizzato per tutte le configurazioni:
 - `formatMessage(template, type)`: Formattazione messaggi con placeholder
 - `validateLevelData(levelData)`: Validazione dati livello
 - `confirmAction(message)`: Conferma azioni importanti
-- `showModal(modalId)` / `hideModal(modalId)`: Gestione modali Bootstrap
 
-#### **ModalManager** - Gestione Modali Unificata
-- `setupModal(type, isEdit, data)`: Setup universale per modali
-- `setupSettingsModal(isEdit, data)`: Configurazione specifica per impostazioni
-- `setupLevelInfoModal(isEdit, data)`: Configurazione specifica per info livello
+
+
 
 #### **HtmlBuilder** - Generazione HTML
 - `createButton(text, className, onClick, icon)`: Bottoni standardizzati
@@ -166,7 +163,7 @@ static handlePowerUp(type, position) {
 3. **Usa pattern standard:**
 ```javascript
 activatePowerUp(type) {
-    GameManager.handlePowerUp(type, this.playerPosition);
+    
 }
 ```
 
@@ -256,7 +253,7 @@ canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 ### **Punti di Controllo**
 1. **Costanti**: Verificare che tutti i testi siano in `CONSTANTS`
 2. **Validazioni**: Controllare che usino `Utils`
-3. **Modali**: Verificare che usino `ModalManager.setupModal()`
+
 4. **HTML**: Controllare che usino `HtmlBuilder` per elementi comuni
 5. **CSS**: Verificare che le nuove classi estendano quelle base
 6. **Touch**: Testare gesture handling su dispositivi mobili

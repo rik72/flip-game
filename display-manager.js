@@ -13,18 +13,7 @@ class DisplayManager {
         return true;
     }
 
-    static createStatsDisplay(stats) {
-        const winsStats = HtmlBuilder.createStatsBadge('🏆', stats.wins, 'Wins');
-        const participantsStats = HtmlBuilder.createStatsBadge('🥈', stats.participants, 'Placements');
-        const lastsStats = HtmlBuilder.createStatsBadge('😞', stats.lasts, 'Last places');
-        
-        return `
-            <div class="stats-single-line">
-                <span class="me-3">Games played: <strong>${stats.gamesPlayed}</strong></span>
-                <span>${winsStats} ${participantsStats} ${lastsStats}</span>
-            </div>
-        `;
-    }
+
 
     // Game-specific methods
     static renderGameState(container, gameState) {
@@ -36,12 +25,7 @@ class DisplayManager {
         return true;
     }
 
-    static renderLevelNumber(level) {
-        const levelDisplay = document.getElementById('levelDisplay');
-        if (levelDisplay) {
-            levelDisplay.innerHTML = HtmlBuilder.createLevelNumber(level);
-        }
-    }
+
 
 
 
@@ -88,6 +72,6 @@ class DisplayManager {
     }
 
     static updateGameProgress(level) {
-        this.renderLevelNumber(level);
+        // Level number is now rendered directly on canvas, no HTML update needed
     }
 } 

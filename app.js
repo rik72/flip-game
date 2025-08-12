@@ -6,7 +6,6 @@
 class App {
     constructor() {
         this.storageManager = new StorageManager();
-        this.backupManager = new BackupManager(this.storageManager);
         this.gameManager = null; // Will be initialized after UI is created
         
         this.currentLevel = 1;

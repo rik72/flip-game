@@ -40,19 +40,19 @@ class Utils {
             throw new Error(CONSTANTS.MESSAGES.LEVEL_DATA_REQUIRED);
         }
         
-        if (!levelData.board || !levelData.board.cells || !Array.isArray(levelData.board.cells)) {
+        if (!levelData.board || !levelData.board.nodes || !Array.isArray(levelData.board.nodes)) {
             throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
         }
         
-        // Check if cells array is not empty
-        if (levelData.board.cells.length === 0) {
+        // Check if nodes array is not empty
+        if (levelData.board.nodes.length === 0) {
             throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
         }
         
         // Check if all rows have the same length
-        const firstRowLength = levelData.board.cells[0].length;
-        for (let i = 1; i < levelData.board.cells.length; i++) {
-            if (levelData.board.cells[i].length !== firstRowLength) {
+        const firstRowLength = levelData.board.nodes[0].length;
+        for (let i = 1; i < levelData.board.nodes.length; i++) {
+            if (levelData.board.nodes[i].length !== firstRowLength) {
                 throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
             }
         }
@@ -100,7 +100,7 @@ class Utils {
         // Basic move validation - can be enhanced with path finding
         const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
         
-        if (distance > CONSTANTS.GAME_CONFIG.PLAYER_RADIUS * 2) {
+        if (distance > CONSTANTS.GAME_CONFIG.BALL_RADIUS * 2) {
             throw new Error(CONSTANTS.MESSAGES.INVALID_MOVE);
         }
         

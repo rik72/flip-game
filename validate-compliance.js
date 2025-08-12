@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Hall of Fame - Compliance Validation Script
+ * Flipgame - Compliance Validation Script
  * 
  * This script validates that code changes follow the established
  * architectural rules and patterns defined in .ai-development-rules.md
  * 
  * Updated to validate the new modular manager architecture:
- * - StorageManager, NavigationManager, BackupManager
- * - AvatarManager, PlayerManager, StatsManager
+ * - StorageManager
+ 
  * - Proper delegation patterns in App
  */
 
@@ -20,26 +20,20 @@ class ComplianceValidator {
         this.violations = [];
         this.warnings = [];
         this.moduleFiles = {
-            constantsEn: 'constants-en.js',
+            constantsEn: 'constants.js',
             utils: 'utils.js',
-            modalManager: 'modal-manager.js',
+        
             htmlBuilder: 'html-builder.js',
             displayManager: 'display-manager.js',
             storageManager: 'managers/storage-manager.js',
-            navigationManager: 'managers/navigation-manager.js',
-            backupManager: 'managers/backup-manager.js',
-            avatarManager: 'managers/avatar-manager.js',
-            playerManager: 'managers/player-manager.js',
-            statsManager: 'managers/stats-manager.js',
             gameManager: 'managers/game-manager.js',
-            matchManager: 'managers/match-manager.js',
             app: 'app.js',
             appBridge: 'app-bridge.js'
         };
     }
 
     validateCodeCompliance() {
-        console.log('🔍 Validating Hall of Fame code compliance...\n');
+        console.log('🔍 Validating Flipgame code compliance...\n');
         
         // Check all required files exist
         for (const [module, file] of Object.entries(this.moduleFiles)) {
@@ -72,23 +66,17 @@ class ComplianceValidator {
         
         // Check if constants structure exists in constants file
         if (!moduleContents.constantsEn.includes('window.CONSTANTS_IT_OBJ')) {
-            this.addViolation('CRITICAL', 'Constants structure not found in constants-en.js');
+            this.addViolation('CRITICAL', 'Constants structure not found in constants.js');
         }
 
         // Check required classes exist in their respective files
         const requiredClasses = {
             utils: 'class Utils',
-            modalManager: 'class ModalManager',
+        
             htmlBuilder: 'class HtmlBuilder',
             displayManager: 'class DisplayManager',
             storageManager: 'class StorageManager',
-            navigationManager: 'class NavigationManager',
-            backupManager: 'class BackupManager',
-            avatarManager: 'class AvatarManager',
-            playerManager: 'class PlayerManager',
-            statsManager: 'class StatsManager',
             gameManager: 'class GameManager',
-            matchManager: 'class MatchManager',
             app: 'class App'
         };
 
@@ -165,12 +153,12 @@ class ComplianceValidator {
         console.log('📋 Checking CONSTANTS usage...');
         
         // Check if multi-language constants structure is proper in both constants files
-        const requiredSections = ['MESSAGES', 'MODAL_TYPES', 'POSITION_POINTS', 'GAME_TYPE_LABELS'];
+        const requiredSections = ['MESSAGES', 'POSITION_POINTS', 'GAME_TYPE_LABELS'];
         
-        // Validate constants-en.js
+        // Validate constants.js
         requiredSections.forEach(section => {
             if (!moduleContents.constantsEn.includes(`${section}:`)) {
-                this.addViolation('MEDIUM', `Missing required CONSTANTS section: ${section} in constants-en.js`);
+                this.addViolation('MEDIUM', `Missing required CONSTANTS section: ${section} in constants.js`);
             }
         });
 
@@ -206,17 +194,11 @@ class ComplianceValidator {
         const moduleExpectations = {
             constantsEn: ['window.CONSTANTS_IT_OBJ'],
             utils: ['class Utils'],
-            modalManager: ['class ModalManager'],
+    
             htmlBuilder: ['class HtmlBuilder'],
             displayManager: ['class DisplayManager'],
             storageManager: ['class StorageManager'],
-            navigationManager: ['class NavigationManager'],
-            backupManager: ['class BackupManager'],
-            avatarManager: ['class AvatarManager'],
-            playerManager: ['class PlayerManager'],
-            statsManager: ['class StatsManager'],
-            gameManager: ['class GameManager'],
-            matchManager: ['class MatchManager'],
+                        gameManager: ['class GameManager'],
             app: ['class App'],
             appBridge: ['let app', 'document.addEventListener', 'function showSection']
         };
@@ -236,7 +218,7 @@ class ComplianceValidator {
             const sizeKB = Math.round(stats.size / 1024);
             
             // Manager modules can be larger as they contain specialized business logic
-            const managerModules = ['storageManager', 'navigationManager', 'backupManager', 'avatarManager', 'playerManager', 'statsManager', 'gameManager', 'matchManager'];
+            const managerModules = ['storageManager', 'gameManager'];
             
             if (module === 'app' && sizeKB > 30) {
                 this.addWarning(`${file} is quite large (${sizeKB}KB) - main app class should be mostly delegation now`);
@@ -256,36 +238,12 @@ class ComplianceValidator {
         // Check that managers follow the expected patterns
         const managerValidations = {
             storageManager: {
-                methods: ['save', 'load', 'remove', 'exists'],
+                methods: ['saveGameProgress', 'loadGameProgress', 'saveGameSettings', 'loadGameSettings'],
                 patterns: ['localStorage']
             },
-            navigationManager: {
-                methods: ['showSection', 'registerSectionCallback', 'getCurrentSection'],
-                patterns: ['sectionCallbacks']
-            },
-            backupManager: {
-                methods: ['exportData', 'importData', 'showImportModal'],
-                patterns: ['JSZip', 'async']
-            },
-            avatarManager: {
-                methods: ['createAvatar', 'updateAvatarPreview', 'filterAvatars'],
-                patterns: ['emoji', 'avatar']
-            },
-            playerManager: {
-                methods: ['addPlayer', 'editPlayer', 'deletePlayer', 'displayPlayers'],
-                patterns: ['onDataChange', 'storageManager']
-            },
-            statsManager: {
-                methods: ['calculatePlayerStats', 'getRanking', 'displayPodium', 'displayFullRanking'],
-                patterns: ['performance', 'totalPoints']
-            },
             gameManager: {
-                methods: ['addGame', 'editGame', 'deleteGame', 'displayGames'],
-                patterns: ['onDataChange', 'storageManager']
-            },
-            matchManager: {
-                methods: ['addMatch', 'editMatch', 'deleteMatch', 'displayMatches'],
-                patterns: ['onDataChange', 'storageManager', 'avatarManager']
+                methods: ['loadLevel', 'resetLevel', 'nextLevel', 'checkWinCondition'],
+                patterns: ['canvas', 'touch']
             }
         };
 
@@ -318,13 +276,7 @@ class ComplianceValidator {
         const appContent = moduleContents.app;
         const expectedDelegations = [
             'this.storageManager',
-            'this.navigationManager', 
-            'this.backupManager',
-            'this.avatarManager',
-            'this.playerManager',
-            'this.statsManager',
-            'this.gameManager',
-            'this.matchManager'
+            'this.gameManager'
         ];
 
         for (const delegation of expectedDelegations) {

@@ -1,4 +1,4 @@
-# AI Assistant Setup - Hall of Fame Project
+# AI Assistant Setup - Flipgame Project
 
 ## 🚨 AUTOMATED COMPLIANCE SYSTEM
 
@@ -103,16 +103,12 @@ Utilizzare `.ai-assistant-config.json` per:
 
 ### **Durante Modifica (Enforcement):**
 - [ ] ✅ Uso `Utils.validateName()` per validazioni
-- [ ] ✅ Uso `ModalManager.setupModal()` per modali
+
 - [ ] ✅ Uso `HtmlBuilder.*` per HTML
 - [ ] ✅ Uso `DisplayManager.*` per stati vuoti
 - [ ] ✅ Uso manager appropriati per business logic:
   - `StorageManager` per localStorage
-  - `NavigationManager` per navigazione sezioni
-  - `BackupManager` per import/export
-  - `AvatarManager` per sistema avatar
-  - `PlayerManager` per CRUD giocatori
-  - `StatsManager` per statistiche e ranking
+  - `GameManager` per logica di gioco
 - [ ] ✅ Delego operazioni a manager invece di codice diretto
 - [ ] ✅ Aggiungo messaggi in `CONSTANTS.MESSAGES`
 
@@ -146,7 +142,7 @@ const validator = new ComplianceValidator();
 const isCompliant = validator.validateCodeCompliance();
 
 if (!isCompliant) {
-    throw new Error('Code modifications violate Hall of Fame standards');
+    throw new Error('Code modifications violate Flipgame standards');
 }
 ```
 
@@ -184,7 +180,7 @@ Aggiorna `.ai-context.md` per:
 - ✅ **Scalabilità** garantita
 
 ### **Risultato finale:**
-Ogni AI assistant, indipendentemente dal tipo, seguirà automaticamente le regole del progetto Hall of Fame senza necessità di istruzioni manuali ripetute.
+Ogni AI assistant, indipendentemente dal tipo, seguirà automaticamente le regole del progetto Flipgame senza necessità di istruzioni manuali ripetute.
 
 ---
 

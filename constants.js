@@ -34,21 +34,7 @@ const CONSTANTS = {
         ROTATE_BOARD: 'Rotate the board for new perspectives'
     },
 
-    // Modal configurations
-    MODAL_TYPES: {
-        SETTINGS: {
-            name: 'settings',
-            title: 'Settings',
-            saveButton: 'Save',
-            cancelButton: 'Cancel'
-        },
-        LEVEL_INFO: {
-            name: 'level_info',
-            title: 'Level Information',
-            closeButton: 'Close'
-        },
 
-    },
 
     // Game configurations
     GAME_CONFIG: {
@@ -56,10 +42,10 @@ const CONSTANTS = {
         DEFAULT_LEVEL: 1,
         MAX_LEVEL: 50,
         
-        // Player configurations
-        PLAYER_RADIUS: 15,
-        PLAYER_SPEED: 0.1,
-        PLAYER_COLOR: '#FFFFFF',
+            // Ball configurations
+    BALL_RADIUS: 15,
+    BALL_SPEED: 0.1,
+    BALL_COLOR: '#FFFFFF',
         
         // Board configurations
         BOARD_TYPES: {
@@ -109,7 +95,7 @@ const CONSTANTS = {
         // Default level structure
         DEFAULT_STRUCTURE: {
             board: {
-                cells: [
+                nodes: [
                     "........",
                     "........",
                     "........",
@@ -129,8 +115,8 @@ const CONSTANTS = {
             ]
         },
         
-        // Cell types (string-based)
-        CELL_TYPES: {
+        // Node types (string-based)
+        NODE_TYPES: {
             EMPTY: '.',
             PATH: '#',
             WALL: 'X',
@@ -139,8 +125,8 @@ const CONSTANTS = {
             COLLECTIBLE: 'C'
         },
         
-        // Cell colors (only for square cells, circles use their own colors)
-        CELL_COLORS: {
+        // Node colors (only for square nodes, circles use their own colors)
+        NODE_COLORS: {
             '.': '#000000',  // Empty
             '#': '#666666',  // Path
             'X': '#FF0000',  // Wall

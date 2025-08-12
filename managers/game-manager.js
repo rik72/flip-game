@@ -19,6 +19,10 @@ class GameManager {
         this.touchStartPos = null;
         this.isDragging = false;
         this.gridSize = 40; // Grid cell size for snapping
+        this.boardStartX = 0;
+        this.boardStartY = 0;
+        this.boardWidth = 0;
+        this.boardHeight = 0;
         
         this.init();
     }
@@ -120,13 +124,25 @@ class GameManager {
         
         const ball = this.balls[this.selectedBallIndex];
         
-        // Snap to grid
-        const snappedX = Math.round(x / this.gridSize) * this.gridSize;
-        const snappedY = Math.round(y / this.gridSize) * this.gridSize;
+        // Snap to grid relative to board position
+        const relativeX = x - this.boardStartX;
+        const relativeY = y - this.boardStartY;
+        const snappedRelativeX = Math.round(relativeX / this.gridSize) * this.gridSize;
+        const snappedRelativeY = Math.round(relativeY / this.gridSize) * this.gridSize;
         
-        // Ensure the ball stays within bounds
-        const clampedX = Math.max(ball.radius, Math.min(snappedX, this.canvas.width - ball.radius));
-        const clampedY = Math.max(ball.radius, Math.min(snappedY, this.canvas.height - ball.radius));
+        // Convert back to absolute coordinates
+        const snappedX = this.boardStartX + snappedRelativeX;
+        const snappedY = this.boardStartY + snappedRelativeY;
+        
+        // Ensure the ball stays within board bounds
+        const clampedX = Math.max(
+            this.boardStartX + ball.radius, 
+            Math.min(snappedX, this.boardStartX + this.boardWidth - ball.radius)
+        );
+        const clampedY = Math.max(
+            this.boardStartY + ball.radius, 
+            Math.min(snappedY, this.boardStartY + this.boardHeight - ball.radius)
+        );
         
         // Only update if position actually changed
         if (ball.x !== clampedX || ball.y !== clampedY) {
@@ -137,12 +153,12 @@ class GameManager {
         }
     }
 
-    isValidMove(x, y, ballRadius = CONSTANTS.GAME_CONFIG.PLAYER_RADIUS) {
-        // Basic boundary check - can be enhanced with board validation
-        return x >= ballRadius && 
-               x <= this.canvas.width - ballRadius &&
-               y >= ballRadius && 
-               y <= this.canvas.height - ballRadius;
+    isValidMove(x, y, ballRadius = CONSTANTS.GAME_CONFIG.BALL_RADIUS) {
+        // Check if position is within board bounds
+        return x >= this.boardStartX + ballRadius && 
+               x <= this.boardStartX + this.boardWidth - ballRadius &&
+               y >= this.boardStartY + ballRadius && 
+               y <= this.boardStartY + this.boardHeight - ballRadius;
     }
 
     loadLevel(levelNumber) {
@@ -159,25 +175,15 @@ class GameManager {
         this.levelData = storedLevel || this.getDefaultLevel(levelNumber);
         
         // Ensure we have valid level data
-        if (!this.levelData || !this.levelData.board || !this.levelData.board.cells) {
+        if (!this.levelData || !this.levelData.board || !this.levelData.board.nodes) {
             console.warn('Invalid level data, creating default');
             this.levelData = this.getDefaultLevel(levelNumber);
         }
         
         // Final safety check - create a minimal level if everything else fails
-        if (!this.levelData || !this.levelData.board || !this.levelData.board.cells) {
+        if (!this.levelData || !this.levelData.board || !this.levelData.board.nodes) {
             console.error('Failed to create level data, using emergency fallback');
-            this.levelData = {
-                board: {
-                    cells: [
-                        "........",
-                        "..s.....",
-                        "........",
-                        ".....e..",
-                        "........"
-                    ]
-                }
-            };
+            this.levelData = this.getDefaultLevel(1);
         }
         
         console.log('Level data created:', this.levelData);
@@ -193,10 +199,10 @@ class GameManager {
     }
 
     getDefaultLevel(levelNumber) {
-        // Default level structure with string-based cells
+        // Default level structure with string-based nodes
         return {
             board: {
-                cells: [
+                nodes: [
                     "........",
                     "........",
                     "........",
@@ -218,12 +224,6 @@ class GameManager {
                     end: [6, 2],
                     color: 'blue'
                 }
-                // Additional balls can be added here for multi-ball levels
-                // {
-                //     start: [3, 3],
-                //     end: [5, 5],
-                //     color: 'red'
-                // }
             ]
         };
     }
@@ -238,13 +238,13 @@ class GameManager {
                 console.log(`Initializing ball ${index}:`, ballData);
                 
                 const ball = {
-                    x: ballData.start[0] * this.gridSize,
-                    y: ballData.start[1] * this.gridSize,
-                    radius: CONSTANTS.GAME_CONFIG.PLAYER_RADIUS,
+                    x: this.boardStartX + (ballData.start[0] * this.gridSize),
+                    y: this.boardStartY + (ballData.start[1] * this.gridSize),
+                    radius: CONSTANTS.GAME_CONFIG.BALL_RADIUS,
                     color: ballData.color || 'white',
                     endPosition: {
-                        x: ballData.end[0] * this.gridSize,
-                        y: ballData.end[1] * this.gridSize
+                        x: this.boardStartX + (ballData.end[0] * this.gridSize),
+                        y: this.boardStartY + (ballData.end[1] * this.gridSize)
                     }
                 };
                 
@@ -255,13 +255,13 @@ class GameManager {
             console.warn('No balls found in level data, creating default ball');
             // Create a default ball
             const defaultBall = {
-                x: 2 * this.gridSize,
-                y: 2 * this.gridSize,
-                radius: CONSTANTS.GAME_CONFIG.PLAYER_RADIUS,
+                x: this.boardStartX + (2 * this.gridSize),
+                y: this.boardStartY + (2 * this.gridSize),
+                radius: CONSTANTS.GAME_CONFIG.BALL_RADIUS,
                 color: 'white',
                 endPosition: {
-                    x: 6 * this.gridSize,
-                    y: 6 * this.gridSize
+                    x: this.boardStartX + (6 * this.gridSize),
+                    y: this.boardStartY + (6 * this.gridSize)
                 }
             };
             this.balls.push(defaultBall);
@@ -275,10 +275,10 @@ class GameManager {
         
         // Check if all balls are at their respective end positions
         const allBallsAtGoal = this.balls.every(ball => {
-            const ballGridX = Math.round(ball.x / this.gridSize);
-            const ballGridY = Math.round(ball.y / this.gridSize);
-            const goalGridX = Math.round(ball.endPosition.x / this.gridSize);
-            const goalGridY = Math.round(ball.endPosition.y / this.gridSize);
+            const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+            const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+            const goalGridX = Math.round((ball.endPosition.x - this.boardStartX) / this.gridSize);
+            const goalGridY = Math.round((ball.endPosition.y - this.boardStartY) / this.gridSize);
             
             return ballGridX === goalGridX && ballGridY === goalGridY;
         });
@@ -311,7 +311,7 @@ class GameManager {
 
     rotateBoard(degrees) {
         // Rotate the game board
-        if (this.board && this.board.cells) {
+        if (this.board && this.board.nodes) {
             // Implementation for board rotation
             this.render();
         }
@@ -319,7 +319,7 @@ class GameManager {
 
     flipBoard() {
         // Flip the game board
-        if (this.board && this.board.cells) {
+        if (this.board && this.board.nodes) {
             // Implementation for board flip
             this.render();
         }
@@ -352,22 +352,53 @@ class GameManager {
     }
 
     renderGrid() {
+        if (!this.board || !this.board.nodes) return;
+        
+        const nodes = this.board.nodes;
+        const boardRows = nodes.length;
+        const boardCols = nodes[0] ? nodes[0].length : 0;
+        
+        if (boardRows === 0 || boardCols === 0) return;
+        
+        // Calculate grid size based on available canvas space with margins
+        const margin = 80; // Space for level number and menus
+        const availableWidth = this.canvas.width - (margin * 2);
+        const availableHeight = this.canvas.height - (margin * 2);
+        
+        // Use the smaller dimension to ensure grid fits
+        const gridSize = Math.min(availableWidth / boardCols, availableHeight / boardRows);
+        
+        // Calculate board position to center it
+        const boardWidth = boardCols * gridSize;
+        const boardHeight = boardRows * gridSize;
+        const boardStartX = (this.canvas.width - boardWidth) / 2;
+        const boardStartY = (this.canvas.height - boardHeight) / 2;
+        
+        // Store grid info for other methods to use
+        this.gridSize = gridSize;
+        this.boardStartX = boardStartX;
+        this.boardStartY = boardStartY;
+        this.boardWidth = boardWidth;
+        this.boardHeight = boardHeight;
+        
         this.ctx.strokeStyle = '#333333';
         this.ctx.lineWidth = 1;
         
-        // Draw vertical lines
-        for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
+        // Draw vertical lines for the board area only
+        for (let col = 0; col <= boardCols; col++) {
+            const x = boardStartX + (col * gridSize);
             this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.moveTo(x, boardStartY);
+            this.ctx.lineTo(x, boardStartY + boardHeight);
             this.ctx.stroke();
         }
         
-        // Draw horizontal lines
-        for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
+        // Draw horizontal lines for the board area only
+        for (let row = 0; row <= boardRows; row++) {
+            const y = boardStartY + (row * gridSize);
             this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.moveTo(boardStartX, y);
+            this.ctx.lineTo(boardStartX + boardWidth, y);
             this.ctx.stroke();
         }
     }
@@ -376,25 +407,25 @@ class GameManager {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.font = '24px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(`Level ${this.currentLevel}`, this.canvas.width / 2, 40);
+        this.ctx.fillText(`#${this.currentLevel}`, this.canvas.width / 2, 40);
     }
 
     renderBoard() {
-        // Draw board cells if they exist
-        if (this.board && this.board.cells) {
-            const cells = this.board.cells;
+        // Draw board nodes if they exist
+        if (this.board && this.board.nodes) {
+            const nodes = this.board.nodes;
             
-            for (let row = 0; row < cells.length; row++) {
-                const rowString = cells[row];
+            for (let row = 0; row < nodes.length; row++) {
+                const rowString = nodes[row];
                 for (let col = 0; col < rowString.length; col++) {
-                    const cellType = rowString[col];
+                    const nodeType = rowString[col];
                     
-                    // Only render path cells as squares, skip start/end (they're rendered as circles)
-                    if (cellType === '#') {
-                        this.ctx.fillStyle = CONSTANTS.LEVEL_CONFIG.CELL_COLORS[cellType] || '#666666';
+                    // Only render path nodes as squares, skip start/end (they're rendered as circles)
+                    if (nodeType === '#') {
+                        this.ctx.fillStyle = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType] || '#666666';
                         this.ctx.fillRect(
-                            col * this.gridSize,
-                            row * this.gridSize,
+                            this.boardStartX + (col * this.gridSize),
+                            this.boardStartY + (row * this.gridSize),
                             this.gridSize,
                             this.gridSize
                         );
