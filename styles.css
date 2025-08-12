@@ -77,6 +77,10 @@ body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    /* Mobile-specific optimizations */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Game Container */
@@ -145,6 +149,14 @@ body {
     height: 100%;
     display: block;
     background-color: #000000;
+    /* Mobile touch optimizations */
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: none; /* Hide cursor on mobile */
+    /* Prevent aspect ratio deformation */
+    object-fit: contain;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 /* Game Footer */
@@ -326,7 +338,11 @@ body {
         font-size: 24px;
     }
     
-
+    .game-controls .btn {
+        width: 48px;
+        height: 48px;
+        min-height: 44px; /* Accessibility minimum */
+    }
     
     .menu-content {
         min-width: 180px;
@@ -335,6 +351,12 @@ body {
     .menu-item {
         padding: 12px 15px;
         font-size: 14px;
+        min-height: 44px; /* Accessibility minimum */
+    }
+    
+    /* Ensure canvas takes full touch area */
+    .game-canvas-container {
+        touch-action: none;
     }
 }
 

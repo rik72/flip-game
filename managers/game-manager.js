@@ -17,7 +17,12 @@ class GameManager {
         this.balls = []; // Array of ball objects
         this.selectedBallIndex = -1; // Index of currently selected ball
         this.touchStartPos = null;
+        this.touchOffset = null; // Touch offset for better mobile dragging
+        this.touchStartTime = null; // Touch start time for gesture recognition
         this.isDragging = false;
+        this.animationFrameId = null; // For smooth animations
+        this.touchAnimationState = {}; // Track animation state for each ball
+        this.restScale = 0.75; // Resting visual scale for balls
         this.gridSize = 40; // Grid cell size for snapping
         this.boardStartX = 0;
         this.boardStartY = 0;
@@ -53,25 +58,58 @@ class GameManager {
     }
 
     resizeCanvas() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // Get device pixel ratio for high DPI displays
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        
+        // Get the display size of the canvas
+        const displayWidth = window.innerWidth;
+        const displayHeight = window.innerHeight;
+        
+        // Set the canvas size to match the display size
+        this.canvas.style.width = displayWidth + 'px';
+        this.canvas.style.height = displayHeight + 'px';
+        
+        // Set the actual canvas size accounting for device pixel ratio
+        this.canvas.width = displayWidth * devicePixelRatio;
+        this.canvas.height = displayHeight * devicePixelRatio;
+        
+        // Scale the drawing context to match the device pixel ratio
+        this.ctx.scale(devicePixelRatio, devicePixelRatio);
+        
+        // Store the scale factor for touch calculations
+        this.devicePixelRatio = devicePixelRatio;
+        this.displayWidth = displayWidth;
+        this.displayHeight = displayHeight;
+        
+        console.log(`Canvas resized: display=${displayWidth}x${displayHeight}, actual=${this.canvas.width}x${this.canvas.height}, ratio=${devicePixelRatio}`);
     }
 
     setupTouchEvents() {
         if (!this.canvas) return;
 
+        // Prevent default touch behaviors that might interfere
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             this.handleTouchStart(e);
         }, { passive: false });
 
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             this.handleTouchMove(e);
         }, { passive: false });
 
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
+            e.stopPropagation();
+            this.handleTouchEnd(e);
+        }, { passive: false });
+
+        // Also handle touchcancel for better mobile support
+        this.canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             this.handleTouchEnd(e);
         }, { passive: false });
     }
@@ -79,44 +117,181 @@ class GameManager {
     handleTouchStart(e) {
         const touch = e.touches[0];
         const rect = this.canvas.getBoundingClientRect();
+        
+        // Calculate touch position using CSS coordinates (not scaled by device pixel ratio)
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
-        // Check if touch is near any ball
+        // Debug: log touch coordinates and canvas info
+        console.log(`Touch: clientX=${touch.clientX}, clientY=${touch.clientY}, rect.left=${rect.left}, rect.top=${rect.top}`);
+        console.log(`Calculated: x=${x}, y=${y}`);
+        console.log(`Canvas: width=${this.canvas.width}, height=${this.canvas.height}, style.width=${this.canvas.style.width}, style.height=${this.canvas.style.height}`);
+        console.log(`Display: width=${this.displayWidth}, height=${this.displayHeight}, devicePixelRatio=${this.devicePixelRatio}`);
+        
+        // Use larger touch target for mobile (minimum 44px as per accessibility guidelines)
+        const touchTargetSize = Math.max(CONSTANTS.TOUCH_CONFIG.MIN_TOUCH_SIZE, CONSTANTS.GAME_CONFIG.BALL_RADIUS * 3);
+        
+        // Check if touch is near any ball - find the closest one within touch range
+        let closestBallIndex = -1;
+        let closestDistance = Infinity;
+        
         for (let i = 0; i < this.balls.length; i++) {
             const ball = this.balls[i];
             const distanceToBall = Math.sqrt(
                 Math.pow(x - ball.x, 2) + Math.pow(y - ball.y, 2)
             );
             
-            if (distanceToBall <= ball.radius * 2) {
-                this.selectedBallIndex = i;
-                this.touchStartPos = { x, y };
-                this.isDragging = true;
-                break;
+            if (distanceToBall <= touchTargetSize && distanceToBall < closestDistance) {
+                closestDistance = distanceToBall;
+                closestBallIndex = i;
             }
+        }
+        
+        if (closestBallIndex !== -1) {
+            const selectedBall = this.balls[closestBallIndex];
+            
+            // Prevent accidental touches with a small delay
+            this.touchStartTime = Date.now();
+            
+            this.selectedBallIndex = closestBallIndex;
+            this.touchStartPos = { x, y };
+            this.touchOffset = {
+                x: x - selectedBall.x,
+                y: y - selectedBall.y
+            };
+            this.isDragging = true;
+            
+            // Add visual feedback for touch
+            this.showTouchFeedback(selectedBall);
         }
     }
 
     handleTouchMove(e) {
-        if (!this.isDragging) return;
+        if (!this.isDragging || this.selectedBallIndex === -1) return;
         
         const touch = e.touches[0];
         const rect = this.canvas.getBoundingClientRect();
+        
+        // Calculate touch position using CSS coordinates (not scaled by device pixel ratio)
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
-        // Move ball directly to pointer position with grid snapping
-        this.moveBallToPosition(x, y);
+        // Apply touch offset to maintain relative position
+        const targetX = x - this.touchOffset.x;
+        const targetY = y - this.touchOffset.y;
+        
+        // Move ball with offset applied
+        this.moveBallToPosition(targetX, targetY);
     }
 
     handleTouchEnd(e) {
+        if (this.isDragging) {
+            // Hide touch feedback with fade out
+            this.hideTouchFeedback();
+            
+            // Check win condition when drag is released
+            this.checkWinCondition();
+        }
+        
         this.touchStartPos = null;
+        this.touchOffset = null;
+        this.touchStartTime = null;
         this.isDragging = false;
         this.selectedBallIndex = -1; // Reset selected ball
+    }
+
+    // Clean up animations when needed
+    cleanupAnimations() {
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        this.touchAnimationState = {};
+    }
+
+    showTouchFeedback(ball) {
+        // Initialize animation state for this ball
+        const ballId = this.balls.indexOf(ball);
+                this.touchAnimationState[ballId] = {
+            isAnimating: true,
+            startTime: Date.now(),
+            duration: 300, // 300ms animation
+            opacity: 0.0,
+            scale: this.restScale
+        };
         
-        // Check win condition when drag is released
-        this.checkWinCondition();
+        // Start animation loop if not already running
+        if (!this.animationFrameId) {
+            this.animateTouchFeedback();
+        }
+    }
+
+
+
+    hideTouchFeedback() {
+        if (this.selectedBallIndex !== -1) {
+            const ballId = this.selectedBallIndex;
+            if (this.touchAnimationState[ballId]) {
+                // Start fade out animation
+                this.touchAnimationState[ballId].isAnimating = true;
+                this.touchAnimationState[ballId].startTime = Date.now();
+                this.touchAnimationState[ballId].duration = 200; // 200ms fade out
+                this.touchAnimationState[ballId].fadeOut = true;
+            }
+        }
+    }
+
+    animateTouchFeedback() {
+        const currentTime = Date.now();
+        let hasActiveAnimations = false;
+
+        // Update animation states
+        Object.keys(this.touchAnimationState).forEach(ballId => {
+            const state = this.touchAnimationState[ballId];
+            if (!state.isAnimating) return;
+
+            const elapsed = currentTime - state.startTime;
+            const progress = Math.min(elapsed / state.duration, 1.0);
+
+            if (state.fadeOut) {
+                // Fade out animation
+                state.opacity = 1.0 - progress;
+                // Shrink back towards restScale
+                state.scale = this.restScale + (0.45 * (1.0 - progress));
+                
+                if (progress >= 1.0) {
+                    state.isAnimating = false;
+                    this.balls[ballId].isTouched = false;
+                    this.balls[ballId].touchOpacity = 0.0;
+                                         this.balls[ballId].touchScale = this.restScale;
+                }
+            } else {
+                // Fade in animation
+                state.opacity = progress;
+                // Grow from restScale to restScale + 0.45 (equivalent to 1.2 when restScale=0.75)
+                state.scale = this.restScale + (0.45 * progress);
+                
+                if (progress >= 1.0) {
+                    state.opacity = 1.0;
+                    state.scale = this.restScale + 0.45;
+                }
+            }
+
+            this.balls[ballId].isTouched = true;
+            this.balls[ballId].touchOpacity = state.opacity;
+            this.balls[ballId].touchScale = state.scale;
+            hasActiveAnimations = true;
+        });
+
+        // Render the frame
+        this.render();
+
+        // Continue animation if there are active animations
+        if (hasActiveAnimations) {
+            this.animationFrameId = requestAnimationFrame(() => this.animateTouchFeedback());
+        } else {
+            this.animationFrameId = null;
+        }
     }
 
     moveBallToPosition(x, y) {
@@ -192,6 +367,9 @@ class GameManager {
         
         this.board = this.levelData.board;
         
+        // Calculate board positioning first
+        this.calculateBoardPosition();
+        
         // Initialize balls array from level data
         this.initializeBalls();
         
@@ -242,6 +420,9 @@ class GameManager {
                     y: this.boardStartY + (ballData.start[1] * this.gridSize),
                     radius: CONSTANTS.GAME_CONFIG.BALL_RADIUS,
                     color: ballData.color || 'white',
+                    isTouched: false, // Touch feedback state
+                    touchOpacity: 0.0, // Animation opacity
+                    touchScale: this.restScale, // Animation scale
                     endPosition: {
                         x: this.boardStartX + (ballData.end[0] * this.gridSize),
                         y: this.boardStartY + (ballData.end[1] * this.gridSize)
@@ -259,6 +440,9 @@ class GameManager {
                 y: this.boardStartY + (2 * this.gridSize),
                 radius: CONSTANTS.GAME_CONFIG.BALL_RADIUS,
                 color: 'white',
+                isTouched: false, // Touch feedback state
+                touchOpacity: 0.0, // Animation opacity
+                touchScale: this.restScale, // Animation scale
                 endPosition: {
                     x: this.boardStartX + (6 * this.gridSize),
                     y: this.boardStartY + (6 * this.gridSize)
@@ -328,12 +512,12 @@ class GameManager {
     render() {
         if (!this.ctx) return;
         
-        // Clear canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // Clear canvas using display dimensions (since context is scaled)
+        this.ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
         
         // Draw background
         this.ctx.fillStyle = '#000000';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
         
         // Draw grid
         this.renderGrid();
@@ -351,8 +535,8 @@ class GameManager {
         this.renderBalls();
     }
 
-    renderGrid() {
-        if (!this.board || !this.board.nodes) return;
+    calculateBoardPosition() {
+        if (!this.canvas || !this.board || !this.board.nodes) return;
         
         const nodes = this.board.nodes;
         const boardRows = nodes.length;
@@ -361,9 +545,10 @@ class GameManager {
         if (boardRows === 0 || boardCols === 0) return;
         
         // Calculate grid size based on available canvas space with margins
+        // Use display dimensions (CSS size) for calculations, not actual canvas size
         const margin = 80; // Space for level number and menus
-        const availableWidth = this.canvas.width - (margin * 2);
-        const availableHeight = this.canvas.height - (margin * 2);
+        const availableWidth = this.displayWidth - (margin * 2);
+        const availableHeight = this.displayHeight - (margin * 2);
         
         // Use the smaller dimension to ensure grid fits
         const gridSize = Math.min(availableWidth / boardCols, availableHeight / boardRows);
@@ -371,8 +556,8 @@ class GameManager {
         // Calculate board position to center it
         const boardWidth = boardCols * gridSize;
         const boardHeight = boardRows * gridSize;
-        const boardStartX = (this.canvas.width - boardWidth) / 2;
-        const boardStartY = (this.canvas.height - boardHeight) / 2;
+        const boardStartX = (this.displayWidth - boardWidth) / 2;
+        const boardStartY = (this.displayHeight - boardHeight) / 2;
         
         // Store grid info for other methods to use
         this.gridSize = gridSize;
@@ -381,24 +566,39 @@ class GameManager {
         this.boardWidth = boardWidth;
         this.boardHeight = boardHeight;
         
+        console.log(`Board positioned: startX=${boardStartX}, startY=${boardStartY}, width=${boardWidth}, height=${boardHeight}, gridSize=${gridSize}`);
+    }
+
+    renderGrid() {
+        if (!this.board || !this.board.nodes) return;
+        
+        // Ensure board position is calculated
+        this.calculateBoardPosition();
+        
+        const nodes = this.board.nodes;
+        const boardRows = nodes.length;
+        const boardCols = nodes[0] ? nodes[0].length : 0;
+        
+        if (boardRows === 0 || boardCols === 0) return;
+        
         this.ctx.strokeStyle = '#333333';
         this.ctx.lineWidth = 1;
         
         // Draw vertical lines for the board area only
         for (let col = 0; col <= boardCols; col++) {
-            const x = boardStartX + (col * gridSize);
+            const x = this.boardStartX + (col * this.gridSize);
             this.ctx.beginPath();
-            this.ctx.moveTo(x, boardStartY);
-            this.ctx.lineTo(x, boardStartY + boardHeight);
+            this.ctx.moveTo(x, this.boardStartY);
+            this.ctx.lineTo(x, this.boardStartY + this.boardHeight);
             this.ctx.stroke();
         }
         
         // Draw horizontal lines for the board area only
         for (let row = 0; row <= boardRows; row++) {
-            const y = boardStartY + (row * gridSize);
+            const y = this.boardStartY + (row * this.gridSize);
             this.ctx.beginPath();
-            this.ctx.moveTo(boardStartX, y);
-            this.ctx.lineTo(boardStartX + boardWidth, y);
+            this.ctx.moveTo(this.boardStartX, y);
+            this.ctx.lineTo(this.boardStartX + this.boardWidth, y);
             this.ctx.stroke();
         }
     }
@@ -407,7 +607,7 @@ class GameManager {
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.font = '24px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(`#${this.currentLevel}`, this.canvas.width / 2, 40);
+        this.ctx.fillText(`#${this.currentLevel}`, this.displayWidth / 2, 40);
     }
 
     renderBoard() {
@@ -440,10 +640,29 @@ class GameManager {
             // Use ball color from ball data, fallback to white
             const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
             
+            // Add touch feedback glow effect with animation
+            if (ball.isTouched && ball.touchOpacity > 0) {
+                // Draw single inner glow with animated opacity
+                const glowSize = (ball.radius * this.restScale) + 8;
+                const glowOpacity = Math.floor((ball.touchOpacity || 1.0) * 64).toString(16).padStart(2, '0');
+                this.ctx.fillStyle = colorHex + glowOpacity;
+                this.ctx.beginPath();
+                this.ctx.arc(ball.x, ball.y, glowSize, 0, 2 * Math.PI);
+                this.ctx.fill();
+            }
+            
+            // Draw the ball with subtle scale animation around restScale
+            const visualScale = (typeof ball.touchScale === 'number') ? ball.touchScale : this.restScale;
+            const ballRadius = ball.radius * visualScale;
             this.ctx.fillStyle = colorHex;
             this.ctx.beginPath();
-            this.ctx.arc(ball.x, ball.y, ball.radius, 0, 2 * Math.PI);
+            this.ctx.arc(ball.x, ball.y, ballRadius, 0, 2 * Math.PI);
             this.ctx.fill();
+            
+            // Add subtle border for better visibility
+            this.ctx.strokeStyle = '#333333';
+            this.ctx.lineWidth = 1;
+            this.ctx.stroke();
         });
     }
 
