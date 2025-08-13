@@ -112,7 +112,6 @@ window.FlipgameApp = {
         if (appInstance && appInstance.gameManager && appInstance.gameManager.levelData) {
             try {
                 Utils.validateLevelData(appInstance.gameManager.levelData);
-                console.log('✅ Current level validation passed');
                 return true;
             } catch (error) {
                 console.error('❌ Current level validation failed:', error.message);

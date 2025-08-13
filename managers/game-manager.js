@@ -83,8 +83,6 @@ class GameManager {
         this.devicePixelRatio = devicePixelRatio;
         this.displayWidth = displayWidth;
         this.displayHeight = displayHeight;
-        
-        console.log(`Canvas resized: display=${displayWidth}x${displayHeight}, actual=${this.canvas.width}x${this.canvas.height}, ratio=${devicePixelRatio}`);
     }
 
     setupTouchEvents() {
@@ -124,12 +122,6 @@ class GameManager {
         // Calculate touch position using CSS coordinates (not scaled by device pixel ratio)
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
-        
-        // Debug: log touch coordinates and canvas info
-        console.log(`Touch: clientX=${touch.clientX}, clientY=${touch.clientY}, rect.left=${rect.left}, rect.top=${rect.top}`);
-        console.log(`Calculated: x=${x}, y=${y}`);
-        console.log(`Canvas: width=${this.canvas.width}, height=${this.canvas.height}, style.width=${this.canvas.style.width}, style.height=${this.canvas.style.height}`);
-        console.log(`Display: width=${this.displayWidth}, height=${this.displayHeight}, devicePixelRatio=${this.devicePixelRatio}`);
         
         // Use larger touch target for mobile (minimum 44px as per accessibility guidelines)
         const touchTargetSize = Math.max(CONSTANTS.TOUCH_CONFIG.MIN_TOUCH_SIZE, CONSTANTS.GAME_CONFIG.BALL_RADIUS * 3);
@@ -566,23 +558,16 @@ class GameManager {
         this.currentLevel = levelNumber;
         this.gameState.isPlaying = true;
         
-        console.log('Loading level:', levelNumber);
-        console.log('Canvas available:', !!this.canvas);
-        
         try {
             // Load level data from JSON file
             const levelData = await this.storageManager.loadLevelData(levelNumber);
             
             if (levelData && levelData.board && levelData.board.nodes) {
                 this.levelData = levelData;
-                console.log('Level data loaded from file:', this.levelData);
             } else {
                 console.error(`Failed to load level ${levelNumber} from file`);
                 throw new Error(`Level ${levelNumber} not found or invalid`);
             }
-            
-            console.log('Board:', this.levelData.board);
-            console.log('Balls:', this.levelData.balls);
             
             this.board = this.levelData.board;
             
@@ -603,13 +588,10 @@ class GameManager {
 
 
     initializeBalls() {
-        console.log('Initializing balls from level data:', this.levelData);
-        
         this.balls = [];
         
         if (this.levelData.balls && this.levelData.balls.length > 0) {
             this.levelData.balls.forEach((ballData, index) => {
-                console.log(`Initializing ball ${index}:`, ballData);
                 
                 const ball = {
                     x: this.boardStartX + (ballData.start[0] * this.gridSize),
@@ -640,7 +622,6 @@ class GameManager {
                 this.balls.push(ball);
             });
         } else {
-            console.warn('No balls found in level data, creating default ball');
             // Create a default ball
             const defaultBall = {
                 x: this.boardStartX + (2 * this.gridSize),
@@ -657,8 +638,6 @@ class GameManager {
             };
             this.balls.push(defaultBall);
         }
-        
-        console.log('Balls array initialized:', this.balls);
     }
 
     checkWinCondition() {
@@ -785,9 +764,6 @@ class GameManager {
         this.boardStartY = boardStartY;
         this.boardWidth = boardWidth;
         this.boardHeight = boardHeight;
-        
-        console.log(`Board positioned: startX=${boardStartX}, startY=${boardStartY}, width=${boardWidth}, height=${boardHeight}, gridSize=${gridSize}`);
-        console.log(`Node grid: ${boardCols}x${boardRows} nodes with ${gridSize}px spacing`);
     }
 
     renderGrid() {
@@ -1022,8 +998,6 @@ class GameManager {
             const endX = ball.endPosition.x;
             const endY = ball.endPosition.y;
             
-            console.log(`Rendering goal ${index} at:`, endX, endY, 'Canvas size:', this.canvas.width, this.canvas.height);
-            
             // Use the same color as the ball for the ring
             const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
             
@@ -1055,13 +1029,6 @@ class GameManager {
             // Test the current level data
             if (this.levelData) {
                 Utils.validateLevelData(this.levelData);
-                console.log('✅ Level format validation passed');
-                
-                // Test ball initialization
-                console.log('✅ Balls initialized:', this.balls.length);
-                this.balls.forEach((ball, index) => {
-                    console.log(`✅ Ball ${index}:`, ball);
-                });
                 
                 return true;
             } else {
