@@ -14,6 +14,7 @@ class GameManager {
         this.ctx = null;
         this.board = null;
         this.levelData = null; // Store current level data
+        this.currentFace = 'front'; // Track which face is currently being shown ('front' or 'rear')
         this.balls = []; // Array of ball objects
         this.selectedBallIndex = -1; // Index of currently selected ball
         this.touchStartPos = null;
@@ -31,6 +32,16 @@ class GameManager {
         this.boardHeight = 0;
         
         this.init();
+    }
+
+    // Get the current nodes array based on which face is being shown
+    getCurrentNodes() {
+        if (!this.board || !this.board.front) return null;
+        
+        if (this.currentFace === 'rear' && this.board.rear) {
+            return this.board.rear;
+        }
+        return this.board.front;
     }
 
     init() {
@@ -340,9 +351,9 @@ class GameManager {
 
     // Get the node type at a specific grid position
     getNodeType(gridX, gridY) {
-        if (!this.board || !this.board.nodes) return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+        if (!this.board || !this.board.front) return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
         
-        const nodes = this.board.nodes;
+        const nodes = this.getCurrentNodes();
         if (gridY < 0 || gridY >= nodes.length) return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
         
         const row = nodes[gridY];
@@ -562,7 +573,7 @@ class GameManager {
             // Load level data from JSON file
             const levelData = await this.storageManager.loadLevelData(levelNumber);
             
-            if (levelData && levelData.board && levelData.board.nodes) {
+            if (levelData && levelData.board && levelData.board.front) {
                 this.levelData = levelData;
             } else {
                 console.error(`Failed to load level ${levelNumber} from file`);
@@ -685,7 +696,7 @@ class GameManager {
 
     rotateBoard(degrees) {
         // Rotate the game board
-        if (this.board && this.board.nodes) {
+        if (this.board && this.board.front) {
             // Implementation for board rotation
             this.render();
         }
@@ -693,7 +704,7 @@ class GameManager {
 
     flipBoard() {
         // Flip the game board
-        if (this.board && this.board.nodes) {
+        if (this.board && this.board.front) {
             // Implementation for board flip
             this.render();
         }
@@ -729,9 +740,10 @@ class GameManager {
     }
 
     calculateBoardPosition() {
-        if (!this.canvas || !this.board || !this.board.nodes) return;
+        if (!this.canvas || !this.board || !this.board.front) return;
         
-        const nodes = this.board.nodes;
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return;
         const boardRows = nodes.length;
         const boardCols = nodes[0] ? nodes[0].length : 0;
         
@@ -767,12 +779,13 @@ class GameManager {
     }
 
     renderGrid() {
-        if (!this.board || !this.board.nodes) return;
+        if (!this.board || !this.board.front) return;
         
         // Ensure board position is calculated
         this.calculateBoardPosition();
         
-        const nodes = this.board.nodes;
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return;
         const boardRows = nodes.length;
         const boardCols = nodes[0] ? nodes[0].length : 0;
         
@@ -807,8 +820,9 @@ class GameManager {
 
     renderBoard() {
         // Draw board nodes if they exist
-        if (this.board && this.board.nodes) {
-            const nodes = this.board.nodes;
+        if (this.board && this.board.front) {
+            const nodes = this.getCurrentNodes();
+            if (!nodes) return;
             
             for (let row = 0; row < nodes.length; row++) {
                 const rowString = nodes[row];
@@ -849,9 +863,10 @@ class GameManager {
 
     renderPathLines() {
         // Draw lines between connected path nodes
-        if (!this.board || !this.board.nodes) return;
+        if (!this.board || !this.board.front) return;
         
-        const nodes = this.board.nodes;
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return;
         
         for (let row = 0; row < nodes.length; row++) {
             const rowString = nodes[row];

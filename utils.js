@@ -15,20 +15,39 @@ class Utils {
 			throw new Error(CONSTANTS.MESSAGES.LEVEL_DATA_REQUIRED);
 		}
 		
-		if (!levelData.board || !levelData.board.nodes || !Array.isArray(levelData.board.nodes)) {
+		if (!levelData.board || !levelData.board.front || !Array.isArray(levelData.board.front)) {
 			throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 		}
 		
-		// Check if nodes array is not empty
-		if (levelData.board.nodes.length === 0) {
+		// Check if front array is not empty
+		if (levelData.board.front.length === 0) {
 			throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 		}
 		
-		// Check if all rows have the same length
-		const firstRowLength = levelData.board.nodes[0].length;
-		for (let i = 1; i < levelData.board.nodes.length; i++) {
-			if (levelData.board.nodes[i].length !== firstRowLength) {
+		// Check if all rows in front have the same length
+		const firstRowLength = levelData.board.front[0].length;
+		for (let i = 1; i < levelData.board.front.length; i++) {
+			if (levelData.board.front[i].length !== firstRowLength) {
 				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+			}
+		}
+		
+		// If rear is present, validate it has the same dimensions as front
+		if (levelData.board.rear) {
+			if (!Array.isArray(levelData.board.rear)) {
+				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+			}
+			
+			// Check if rear has same number of rows as front
+			if (levelData.board.rear.length !== levelData.board.front.length) {
+				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+			}
+			
+			// Check if all rows in rear have the same length as front rows
+			for (let i = 0; i < levelData.board.rear.length; i++) {
+				if (levelData.board.rear[i].length !== firstRowLength) {
+					throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+				}
 			}
 		}
 		
