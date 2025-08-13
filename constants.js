@@ -22,7 +22,7 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 2, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 4, // Set to level number (e.g., 4) to force start at that level
 		
 			// Ball configurations
 	BALL_RADIUS: 15,
@@ -81,9 +81,9 @@ const CONSTANTS = {
 		
 		// Goal ring sizing
 		GOAL_INNER_MIN_OFFSET: 1, // Minimum inner goal ring offset from ball radius
-		GOAL_INNER_RATIO: 0.03, // Goal inner ring offset as ratio of gridSize
-		GOAL_OUTER_MIN_OFFSET: 2, // Minimum outer goal ring offset from ball radius
-		GOAL_OUTER_RATIO: 0.05 // Goal outer ring offset as ratio of gridSize
+		GOAL_INNER_RATIO: 0.01, // Goal inner ring offset as ratio of gridSize
+		GOAL_OUTER_MIN_OFFSET: 4, // Minimum outer goal ring offset from ball radius
+		GOAL_OUTER_RATIO: 0.07 // Goal outer ring offset as ratio of gridSize
 	},
 
 	// Touch configurations

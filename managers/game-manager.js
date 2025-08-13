@@ -914,14 +914,21 @@ class GameManager {
         
         const config = CONSTANTS.ANIMATION_CONFIG;
         
-        this.balls.forEach((ball, index) => {
+        // Only create explosions for balls that have goals on the current face
+        const visibleBalls = this.balls.filter((ball, index) => {
+            // Check if this ball's goal is on the current face
+            return this.getGoalCurrentFace(ball) === this.currentFace;
+        });
+        
+        visibleBalls.forEach((ball, index) => {
             // Create explosion with delay based on ball index
             setTimeout(() => {
-                console.log(`Creating explosion ${index + 1} at (${ball.endPosition.x}, ${ball.endPosition.y})`);
                 this.createExplosionDisc(ball.endPosition.x, ball.endPosition.y, config, index);
             }, index * config.EXPLOSION_DELAY);
         });
     }
+
+
 
     createExplosionDisc(x, y, config, index) {
         if (!this.canvas) return;
@@ -962,7 +969,6 @@ class GameManager {
         const canvasContainer = this.canvas.parentElement;
         if (canvasContainer) {
             canvasContainer.appendChild(disc);
-            console.log(`Explosion ${index + 1} added to DOM at screen (${screenX}, ${screenY})`);
             
             // Animate the expansion with JavaScript
             this.animateExplosion(disc, startRadius, maxRadius, config.EXPLOSION_DURATION, index);
@@ -994,7 +1000,6 @@ class GameManager {
                 // Animation complete, remove the disc
                 if (disc.parentElement) {
                     disc.parentElement.removeChild(disc);
-                    console.log(`Explosion ${index + 1} removed from DOM`);
                 }
             }
         };
@@ -1420,17 +1425,26 @@ class GameManager {
             const endX = ball.endPosition.x;
             const endY = ball.endPosition.y;
             
-            // Use the same color as the ball for the ring
+            // Use the same color as the ball for the square frame
             const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
             
-            // Draw ring: inner radius = ball radius + 1, outer radius = ball radius + 5
+            // Get the radii for the square frame and circular hole
             const innerRadius = this.getGoalInnerRadius();
             const outerRadius = this.getGoalOuterRadius();
+            console.log("goal radii", innerRadius, outerRadius);
+            
+            // Calculate square dimensions (side length = outer radius * 2)
+            const squareHalfSize = outerRadius;
             
             this.ctx.fillStyle = colorHex;
             this.ctx.beginPath();
-            this.ctx.arc(endX, endY, outerRadius, 0, 2 * Math.PI);
+            
+            // Draw the outer square
+            this.ctx.rect(endX - squareHalfSize, endY - squareHalfSize, squareHalfSize * 2, squareHalfSize * 2);
+            
+            // Cut out the circular hole in the middle
             this.ctx.arc(endX, endY, innerRadius, 0, 2 * Math.PI, true); // true = counterclockwise for hole
+            
             this.ctx.fill();
         });
     }
