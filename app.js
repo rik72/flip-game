@@ -17,10 +17,16 @@ class App {
     }
 
     init() {
-        // Load saved progress
-        const progress = this.storageManager.loadGameProgress();
-        if (progress) {
-            this.currentLevel = progress.level;
+        // Check if we should force a specific level for development
+        if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
+            this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
+            console.log(`🔧 Development mode: Forcing start at level ${this.currentLevel}`);
+        } else {
+            // Load saved progress
+            const progress = this.storageManager.loadGameProgress();
+            if (progress) {
+                this.currentLevel = progress.level;
+            }
         }
         
         // Initialize game UI first

@@ -18,8 +18,9 @@ const CONSTANTS = {
 	// Game configurations
 	GAME_CONFIG: {
 		// General configurations
-		DEFAULT_LEVEL: 1,
 		MAX_LEVEL: 50,
+		// Development: Force loading specific level as first (set to null to disable)
+		FORCE_START_LEVEL: 4, // Set to level number (e.g., 4) to force start at that level
 		
 			// Ball configurations
 	BALL_RADIUS: 15,

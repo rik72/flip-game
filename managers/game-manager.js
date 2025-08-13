@@ -44,6 +44,123 @@ class GameManager {
         return this.board.front;
     }
 
+    // Determine which face a ball is currently on based on its position
+    getBallCurrentFace(ball) {
+        if (!this.board || !this.board.front) return 'front';
+        
+        // Convert ball position back to grid coordinates (for future use)
+        const gridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const gridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // Currently determine face based on original coordinates
+        // TODO: In the future, enhance this to detect actual current position
+        // and allow balls to dynamically switch between faces during gameplay
+        const isRearBall = ball.originalStart[0] < 0 || ball.originalStart[1] < 0;
+        return isRearBall ? 'rear' : 'front';
+    }
+
+    // Determine which face a goal is on based on the ball's end coordinates
+    getGoalCurrentFace(ball) {
+        if (!this.board || !this.board.front) return 'front';
+        
+        const isRearGoal = ball.originalEnd[0] < 0 || ball.originalEnd[1] < 0;
+        return isRearGoal ? 'rear' : 'front';
+    }
+
+    // Update the toggle button visibility based on whether the board has a rear face
+    updateToggleButton() {
+        const gameFooter = document.querySelector('.game-footer');
+        if (!gameFooter) return;
+
+        // Remove existing toggle button if present
+        const existingButton = document.getElementById('faceToggleButton');
+        if (existingButton) {
+            existingButton.remove();
+        }
+
+        // Add toggle button if board has rear face
+        if (this.board && this.board.rear) {
+            const toggleButton = document.createElement('button');
+            toggleButton.id = 'faceToggleButton';
+            toggleButton.className = 'btn btn-outline-light face-toggle-btn';
+            toggleButton.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+            toggleButton.title = 'Toggle board face';
+            // Ensure visibility on mobile with clean styling
+            toggleButton.style.border = 'none';
+            toggleButton.style.zIndex = '9999';
+            toggleButton.style.backgroundColor = 'transparent';
+            toggleButton.style.color = 'white';
+            toggleButton.style.display = 'flex !important';
+            toggleButton.style.alignItems = 'center';
+            toggleButton.style.justifyContent = 'center';
+            toggleButton.style.position = 'relative';
+            // Responsive sizing and positioning for mobile
+            const isMobile = window.innerWidth <= 768;
+            const buttonSize = isMobile ? '56px' : '44px';
+            const fontSize = isMobile ? '32px' : '24px';
+            
+            // Position button one grid cell away from board
+            let bottomOffset = '0';
+            if (isMobile && this.gridSize) {
+                // Distance = one grid cell + button size + some padding
+                const gridGap = this.gridSize;
+                const buttonRadius = parseInt(buttonSize) / 2;
+                const padding = 10;
+                bottomOffset = `${gridGap + buttonRadius + padding}px`;
+            } else if (isMobile) {
+                // Fallback if gridSize not available
+                bottomOffset = '80px';
+            }
+            
+            toggleButton.style.width = buttonSize;
+            toggleButton.style.height = buttonSize;
+            toggleButton.style.minWidth = buttonSize;
+            toggleButton.style.minHeight = buttonSize;
+            toggleButton.style.maxWidth = buttonSize;
+            toggleButton.style.maxHeight = buttonSize;
+            toggleButton.style.flexShrink = '0';
+            toggleButton.style.borderRadius = '50%';
+            toggleButton.style.fontSize = fontSize;
+            toggleButton.style.lineHeight = '1';
+            toggleButton.style.padding = '0';
+            toggleButton.style.margin = '0';
+            toggleButton.style.boxSizing = 'border-box';
+            toggleButton.style.touchAction = 'manipulation'; // Better mobile touch
+            toggleButton.style.webkitTapHighlightColor = 'transparent';
+            // Fallback text if icon doesn't load
+            toggleButton.setAttribute('aria-label', 'Toggle board face');
+            toggleButton.onclick = () => this.toggleBoardFace();
+            
+            // Insert button and position closer to board on mobile
+            
+            gameFooter.style.justifyContent = 'center';
+            gameFooter.style.display = 'flex !important';
+            gameFooter.style.alignItems = 'center';
+            gameFooter.style.position = 'fixed';
+            gameFooter.style.bottom = bottomOffset;
+            gameFooter.style.left = '0';
+            gameFooter.style.right = '0';
+            gameFooter.style.zIndex = '9998';
+            gameFooter.style.minHeight = isMobile ? '80px' : '60px';
+            gameFooter.style.height = 'auto';
+            gameFooter.style.padding = '5px';
+            gameFooter.style.background = 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)';
+            gameFooter.style.border = 'none';
+            gameFooter.appendChild(toggleButton);
+        } else {
+            // Reset footer alignment when no toggle button
+            gameFooter.style.justifyContent = 'flex-end';
+        }
+    }
+
+    // Toggle between front and rear board faces
+    toggleBoardFace() {
+        if (!this.board || !this.board.rear) return;
+        
+        this.currentFace = this.currentFace === 'front' ? 'rear' : 'front';
+        this.render();
+    }
+
     init() {
         this.setupCanvas();
         this.setupTouchEvents();
@@ -143,6 +260,10 @@ class GameManager {
         
         for (let i = 0; i < this.balls.length; i++) {
             const ball = this.balls[i];
+            
+            // Only consider balls on the current face
+            if (this.getBallCurrentFace(ball) !== this.currentFace) continue;
+            
             const distanceToBall = Math.sqrt(
                 Math.pow(x - ball.x, 2) + Math.pow(y - ball.y, 2)
             );
@@ -582,6 +703,9 @@ class GameManager {
             
             this.board = this.levelData.board;
             
+            // Add toggle button if board has rear face
+            this.updateToggleButton();
+            
             // Calculate board positioning first
             this.calculateBoardPosition();
             
@@ -604,18 +728,27 @@ class GameManager {
         if (this.levelData.balls && this.levelData.balls.length > 0) {
             this.levelData.balls.forEach((ballData, index) => {
                 
+                // Handle coordinate system: positive = front, negative = rear
+                const startX = Math.abs(ballData.start[0]);
+                const startY = Math.abs(ballData.start[1]);
+                const endX = Math.abs(ballData.end[0]);
+                const endY = Math.abs(ballData.end[1]);
+                
                 const ball = {
-                    x: this.boardStartX + (ballData.start[0] * this.gridSize),
-                    y: this.boardStartY + (ballData.start[1] * this.gridSize),
+                    x: this.boardStartX + (startX * this.gridSize),
+                    y: this.boardStartY + (startY * this.gridSize),
                     // radius kept for legacy but not used in rendering; dynamic radius derives from gridSize
                     radius: CONSTANTS.GAME_CONFIG.BALL_RADIUS,
                     color: ballData.color || 'white',
                     isTouched: false, // Touch feedback state
                     touchOpacity: 0.0, // Animation opacity
                     touchScale: this.restScale, // Animation scale
+                    // Store original coordinates for reference
+                    originalStart: ballData.start,
+                    originalEnd: ballData.end,
                     endPosition: {
-                        x: this.boardStartX + (ballData.end[0] * this.gridSize),
-                        y: this.boardStartY + (ballData.end[1] * this.gridSize)
+                        x: this.boardStartX + (endX * this.gridSize),
+                        y: this.boardStartY + (endY * this.gridSize)
                     },
                     // Animation properties for smooth movement
                     animation: {
@@ -979,6 +1112,8 @@ class GameManager {
 
     renderBalls() {
         this.balls.forEach((ball, index) => {
+            // Only render balls that belong to the current face
+            if (this.getBallCurrentFace(ball) !== this.currentFace) return;
             // Use ball color from ball data, fallback to white
             const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
             
@@ -1010,6 +1145,8 @@ class GameManager {
 
     renderEndGoals() {
         this.balls.forEach((ball, index) => {
+            // Only render goals for balls that belong to the current face
+            if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
             const endX = ball.endPosition.x;
             const endY = ball.endPosition.y;
             
