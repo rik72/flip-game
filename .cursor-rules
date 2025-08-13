@@ -58,6 +58,14 @@ HtmlBuilder.createActionButtons(id, 'EntityType');
 DisplayManager.renderEmptyState(container, 'Message');
 ```
 
+## TESTING PROTOCOL - ALWAYS FIRST ACTION
+
+🚨 **BEFORE ANY CODE CHANGES:**
+1. ✓ FIRST: Test localhost:8099 with curl
+2. ✓ If not available: Request user to run `npm run start`
+3. ✓ NEVER use alternative testing methods
+4. ✓ NEVER skip testing protocol
+
 ## MANDATORY CHECKS
 
 Before suggesting any code:
@@ -66,6 +74,7 @@ Before suggesting any code:
 3. ✓ Is this following established patterns?
 4. ✓ Will this maintain zero duplications?
 5. ✓ Is text properly centralized in constants.js?
+6. ✓ Have I tested on localhost:8099?
 
 ## ENFORCEMENT
 
