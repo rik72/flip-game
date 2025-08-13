@@ -30,7 +30,9 @@ class App {
         this.gameManager = new GameManager(this.storageManager);
         
         // Load first level
-        this.loadLevel(this.currentLevel);
+        this.loadLevel(this.currentLevel).catch(error => {
+            console.error('Failed to load initial level in App:', error);
+        });
         
         // Setup event listeners
         this.setupEventListeners();
@@ -59,12 +61,12 @@ class App {
         });
     }
 
-    loadLevel(levelNumber) {
+    async loadLevel(levelNumber) {
         this.currentLevel = levelNumber;
         this.gameState.isPlaying = true;
         
         if (this.gameManager) {
-            this.gameManager.loadLevel(levelNumber);
+            await this.gameManager.loadLevel(levelNumber);
         }
         
         // Update UI
@@ -86,7 +88,9 @@ class App {
         if (this.currentLevel > CONSTANTS.GAME_CONFIG.MAX_LEVEL) {
             this.gameCompleted();
         } else {
-            this.loadLevel(this.currentLevel);
+            this.loadLevel(this.currentLevel).catch(error => {
+                console.error('Failed to load next level in App:', error);
+            });
         }
     }
 
@@ -130,7 +134,9 @@ class App {
         if (confirm(CONSTANTS.MESSAGES.RESET_CONFIRM)) {
             this.storageManager.clearAll();
             this.currentLevel = 1;
-            this.loadLevel(this.currentLevel);
+            this.loadLevel(this.currentLevel).catch(error => {
+                console.error('Failed to load level after reset:', error);
+            });
             this.hideMenu();
         }
     }
@@ -145,7 +151,9 @@ class App {
 
     restartGame() {
         this.currentLevel = 1;
-        this.loadLevel(this.currentLevel);
+        this.loadLevel(this.currentLevel).catch(error => {
+            console.error('Failed to restart game:', error);
+        });
         Utils.hideModal('gameOverModal');
     }
 

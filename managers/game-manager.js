@@ -48,7 +48,9 @@ class GameManager {
         this.resizeCanvas();
         
         // Load level after canvas is set up
-        this.loadLevel(this.currentLevel);
+        this.loadLevel(this.currentLevel).catch(error => {
+            console.error('Failed to load initial level:', error);
+        });
         
         // Handle window resize
         window.addEventListener('resize', () => {
@@ -387,75 +389,45 @@ class GameManager {
                y <= this.boardStartY + this.boardHeight - ballRadius;
     }
 
-    loadLevel(levelNumber) {
+    async loadLevel(levelNumber) {
         this.currentLevel = levelNumber;
         this.gameState.isPlaying = true;
         
         console.log('Loading level:', levelNumber);
         console.log('Canvas available:', !!this.canvas);
         
-        // Load level data from storage or default
-        const storedLevel = this.storageManager.load(`level_${levelNumber}`);
-        console.log('Stored level data:', storedLevel);
-        
-        this.levelData = storedLevel || this.getDefaultLevel(levelNumber);
-        
-        // Ensure we have valid level data
-        if (!this.levelData || !this.levelData.board || !this.levelData.board.nodes) {
-            console.warn('Invalid level data, creating default');
-            this.levelData = this.getDefaultLevel(levelNumber);
+        try {
+            // Load level data from JSON file
+            const levelData = await this.storageManager.loadLevelData(levelNumber);
+            
+            if (levelData && levelData.board && levelData.board.nodes) {
+                this.levelData = levelData;
+                console.log('Level data loaded from file:', this.levelData);
+            } else {
+                console.error(`Failed to load level ${levelNumber} from file`);
+                throw new Error(`Level ${levelNumber} not found or invalid`);
+            }
+            
+            console.log('Board:', this.levelData.board);
+            console.log('Balls:', this.levelData.balls);
+            
+            this.board = this.levelData.board;
+            
+            // Calculate board positioning first
+            this.calculateBoardPosition();
+            
+            // Initialize balls array from level data
+            this.initializeBalls();
+            
+            this.render();
+        } catch (error) {
+            console.error('Error loading level:', error);
+            // Show error message to user
+            alert(`Failed to load level ${levelNumber}. Please check that the level file exists.`);
         }
-        
-        // Final safety check - create a minimal level if everything else fails
-        if (!this.levelData || !this.levelData.board || !this.levelData.board.nodes) {
-            console.error('Failed to create level data, using emergency fallback');
-            this.levelData = this.getDefaultLevel(1);
-        }
-        
-        console.log('Level data created:', this.levelData);
-        console.log('Board:', this.levelData.board);
-        console.log('Balls:', this.levelData.balls);
-        
-        this.board = this.levelData.board;
-        
-        // Calculate board positioning first
-        this.calculateBoardPosition();
-        
-        // Initialize balls array from level data
-        this.initializeBalls();
-        
-        this.render();
     }
 
-    getDefaultLevel(levelNumber) {
-        // Default level structure with string-based nodes
-        return {
-            board: {
-                nodes: [
-                    "........",
-                    "........",
-                    "........",
-                    "........",
-                    "........",
-                    "........",
-                    "........",
-                    "........"
-                ]
-            },
-            balls: [
-                {
-                    start: [2, 2],
-                    end: [6, 6],
-                    color: 'red'
-                },
-                {
-                    start: [2, 6],
-                    end: [6, 2],
-                    color: 'blue'
-                }
-            ]
-        };
-    }
+
 
     initializeBalls() {
         console.log('Initializing balls from level data:', this.levelData);
@@ -538,11 +510,15 @@ class GameManager {
 
     nextLevel() {
         this.currentLevel++;
-        this.loadLevel(this.currentLevel);
+        this.loadLevel(this.currentLevel).catch(error => {
+            console.error('Failed to load next level:', error);
+        });
     }
 
     resetLevel() {
-        this.loadLevel(this.currentLevel);
+        this.loadLevel(this.currentLevel).catch(error => {
+            console.error('Failed to reset level:', error);
+        });
     }
 
     rotateBoard(degrees) {

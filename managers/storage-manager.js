@@ -174,11 +174,23 @@ class StorageManager {
     }
 
     /**
-     * Carica i dati di un livello specifico
+     * Carica i dati di un livello specifico da file JSON
      * @param {number} levelNumber - Numero del livello
-     * @returns {object|null} - Dati del livello o null
+     * @returns {Promise<object|null>} - Dati del livello o null
      */
-    loadLevelData(levelNumber) {
-        return this.load(`level_${levelNumber}`);
+    async loadLevelData(levelNumber) {
+        try {
+            const response = await fetch(`levels/level_${levelNumber}.json`);
+            if (!response.ok) {
+                console.warn(`Level ${levelNumber} file not found`);
+                return null;
+            }
+            const levelData = await response.json();
+            console.log(`Loaded level ${levelNumber} from file:`, levelData);
+            return levelData;
+        } catch (error) {
+            console.error(`Error loading level ${levelNumber}:`, error);
+            return null;
+        }
     }
 } 
