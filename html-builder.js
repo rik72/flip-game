@@ -59,6 +59,7 @@ class HtmlBuilder {
         return `
             <div class="game-container">
                 <div class="game-header">
+                    <div id="levelNumberDisplay" class="level-number">#1</div>
                 </div>
                 <div class="game-canvas-container">
                     <div id="gameFlipWrapper" class="game-flip-wrapper">

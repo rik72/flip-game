@@ -103,7 +103,7 @@ body {
     right: 0;
     height: 60px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     padding: 0 20px;
     z-index: 100;
@@ -311,6 +311,11 @@ body {
     font-weight: bold;
     color: #ffffff;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    height: 100%;
 }
 
 /* Modal Styles */
@@ -486,5 +491,45 @@ body {
     body {
         background-color: #000000;
         color: #ffffff;
+    }
+}
+
+/* Level Completion Overlay */
+.level-completion-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 200;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.level-completion-overlay.active {
+    opacity: 1;
+}
+
+
+
+/* Explosion Animation */
+.explosion-disc {
+    position: absolute;
+    border-radius: 50%;
+    background-color: #FFFFFF;
+    pointer-events: none;
+    z-index: 150;
+    transform: translate(-50%, -50%);
+}
+
+/* Accessibility for explosion animations */
+@media (prefers-reduced-motion: reduce) {
+    .explosion-disc {
+        animation: none;
     }
 } 

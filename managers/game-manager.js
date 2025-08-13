@@ -252,6 +252,9 @@ class GameManager {
             console.error('Failed to load initial level:', error);
         });
         
+        // Update level number display in DOM
+        this.updateLevelNumberDisplay();
+        
         // Handle window resize
         window.addEventListener('resize', () => {
             this.resizeCanvas();
@@ -800,6 +803,9 @@ class GameManager {
             // Initialize balls array from level data
             this.initializeBalls();
             
+            // Update level number display in DOM
+            this.updateLevelNumberDisplay();
+            
             this.render();
         } catch (error) {
             console.error('Error loading level:', error);
@@ -896,10 +902,146 @@ class GameManager {
         // Save progress
         this.storageManager.saveGameProgress(this.currentLevel);
         
-        // Show completion message (can be enhanced with animations)
+        // Create explosion animations for each goal node
+        this.createExplosionAnimations();
+        
+        // Show completion overlay with touch event
+        this.showLevelCompletionOverlay();
+    }
+
+    createExplosionAnimations() {
+        if (!this.balls || !this.canvas) return;
+        
+        const config = CONSTANTS.ANIMATION_CONFIG;
+        
+        this.balls.forEach((ball, index) => {
+            // Create explosion with delay based on ball index
+            setTimeout(() => {
+                console.log(`Creating explosion ${index + 1} at (${ball.endPosition.x}, ${ball.endPosition.y})`);
+                this.createExplosionDisc(ball.endPosition.x, ball.endPosition.y, config, index);
+            }, index * config.EXPLOSION_DELAY);
+        });
+    }
+
+    createExplosionDisc(x, y, config, index) {
+        if (!this.canvas) return;
+        
+        const canvasRect = this.canvas.getBoundingClientRect();
+        
+        // Convert canvas coordinates to screen coordinates
+        let screenX = (x / this.displayWidth) * canvasRect.width;
+        let screenY = (y / this.displayHeight) * canvasRect.height;
+        
+        // Apply horizontal reflection for rear face (same as in render method)
+        if (this.currentFace === 'rear') {
+            screenX = canvasRect.width - screenX;
+        }
+        
+        // Calculate explosion radii based on ball radius
+        const ballRadius = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.BALL_RADIUS_RATIO;
+        const startRadius = ballRadius * 0.25; // 1/4 of ball radius
+        const maxRadius = ballRadius * 3; // 3 times ball radius
+        
+        const disc = document.createElement('div');
+        disc.className = 'explosion-disc';
+        disc.id = `explosion-${index}`;
+        
+        // Position the disc at the goal center
+        disc.style.left = `${screenX}px`;
+        disc.style.top = `${screenY}px`;
+        
+        // Set initial size and ensure it's visible
+        disc.style.width = `${startRadius * 2}px`;
+        disc.style.height = `${startRadius * 2}px`;
+        disc.style.opacity = '0.5';
+        
+        // Set higher z-index for later explosions to ensure they're visible
+        disc.style.zIndex = 150 + index;
+        
+        // Add to container
+        const canvasContainer = this.canvas.parentElement;
+        if (canvasContainer) {
+            canvasContainer.appendChild(disc);
+            console.log(`Explosion ${index + 1} added to DOM at screen (${screenX}, ${screenY})`);
+            
+            // Animate the expansion with JavaScript
+            this.animateExplosion(disc, startRadius, maxRadius, config.EXPLOSION_DURATION, index);
+        }
+    }
+
+    animateExplosion(disc, startRadius, maxRadius, duration, index) {
+        const startTime = performance.now();
+        const startSize = startRadius * 2;
+        const endSize = maxRadius * 2;
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Ease-out function
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            
+            const currentSize = startSize + (endSize - startSize) * easeOut;
+            const currentOpacity = 1 - progress;
+            
+            disc.style.width = `${currentSize}px`;
+            disc.style.height = `${currentSize}px`;
+            disc.style.opacity = currentOpacity;
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                // Animation complete, remove the disc
+                if (disc.parentElement) {
+                    disc.parentElement.removeChild(disc);
+                    console.log(`Explosion ${index + 1} removed from DOM`);
+                }
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+
+    showLevelCompletionOverlay() {
+        const canvasContainer = this.canvas?.parentElement;
+        if (!canvasContainer) return;
+        
+        // Create invisible overlay for touch events
+        const overlay = document.createElement('div');
+        overlay.className = 'level-completion-overlay';
+        overlay.style.background = 'transparent'; // Make it invisible
+        
+        // Add touch event to proceed to next level
+        overlay.addEventListener('click', () => {
+            this.proceedToNextLevel();
+        });
+        
+        // Add to container
+        canvasContainer.appendChild(overlay);
+        
+        // Activate overlay
         setTimeout(() => {
-            this.nextLevel();
-        }, 1000);
+            overlay.classList.add('active');
+        }, 100);
+    }
+
+    proceedToNextLevel() {
+        // Remove overlay
+        const overlay = document.querySelector('.level-completion-overlay');
+        if (overlay && overlay.parentElement) {
+            overlay.parentElement.removeChild(overlay);
+        }
+        
+        // Remove any remaining explosion discs
+        const discs = document.querySelectorAll('.explosion-disc');
+        discs.forEach(disc => {
+            if (disc.parentElement) {
+                disc.parentElement.removeChild(disc);
+            }
+        });
+        
+        // Proceed to next level
+        this.nextLevel();
     }
 
     nextLevel() {
@@ -973,9 +1115,6 @@ class GameManager {
         
         // Draw grid
         this.renderGrid();
-        
-        // Draw level number
-        this.renderLevelNumber();
         
         // Draw path lines first
         this.renderPathLines();
@@ -1067,11 +1206,19 @@ class GameManager {
         }
     }
 
-    renderLevelNumber() {
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.font = '24px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText(`#${this.currentLevel}`, this.displayWidth / 2, 40);
+    updateLevelNumberDisplay() {
+        const levelNumberElement = document.getElementById('levelNumberDisplay');
+        if (levelNumberElement) {
+            levelNumberElement.textContent = `#${this.currentLevel}`;
+        } else {
+            // Retry after a short delay if element is not found
+            setTimeout(() => {
+                const retryElement = document.getElementById('levelNumberDisplay');
+                if (retryElement) {
+                    retryElement.textContent = `#${this.currentLevel}`;
+                }
+            }, 100);
+        }
     }
 
     renderBoard() {

@@ -12,7 +12,9 @@ const CONSTANTS = {
 		EMPTY_NAME: 'The {type} name cannot be empty',
 		DUPLICATE_NAME: 'A {type} with this name already exists',
 		LEVEL_DATA_REQUIRED: 'Level data required',
-		INVALID_LEVEL: 'Invalid level'
+		INVALID_LEVEL: 'Invalid level',
+		
+
 	},
 
 	// Game configurations
@@ -20,7 +22,7 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 4, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 2, // Set to level number (e.g., 4) to force start at that level
 		
 			// Ball configurations
 	BALL_RADIUS: 15,
@@ -111,6 +113,14 @@ const CONSTANTS = {
 		BALL_EASE_DURATION: 300, // milliseconds for final snap
 		BALL_DRAG_DURATION: 50, // milliseconds for smooth dragging
 		BALL_EASE_TYPE: 'ease-out', // ease-in, ease-out, ease-in-out
+		
+		// Level completion explosion animation
+		EXPLOSION_DURATION: 1000, // milliseconds for explosion animation
+		EXPLOSION_DELAY: 100, // milliseconds between explosions
+		EXPLOSION_COLOR: '#FFFFFF', // white explosion color
+		
+		// Level completion delay
+		LEVEL_COMPLETION_DELAY: 2000, // milliseconds before allowing next level
 		
 		// Easing functions
 		EASING: {
