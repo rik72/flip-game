@@ -178,6 +178,21 @@ class GameManager {
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
+        // Check if touch is too far from the ball - if so, release the ball
+        const ball = this.balls[this.selectedBallIndex];
+        if (ball) {
+            const distanceFromBall = Math.sqrt(
+                Math.pow(x - ball.x, 2) + Math.pow(y - ball.y, 2)
+            );
+            
+            // Use MAX_TOUCH_DISTANCE from constants to determine when to release
+            if (distanceFromBall > CONSTANTS.TOUCH_CONFIG.MAX_TOUCH_DISTANCE) {
+                // Release the ball - simulate touch end
+                this.handleTouchEnd(e);
+                return;
+            }
+        }
+        
         // Apply touch offset to maintain relative position
         const targetX = x - this.touchOffset.x;
         const targetY = y - this.touchOffset.y;
@@ -244,6 +259,67 @@ class GameManager {
             const otherGridY = Math.round((otherBall.y - this.boardStartY) / this.gridSize);
             return otherGridX === gridX && otherGridY === gridY;
         });
+    }
+
+    // Get the node type at a specific grid position
+    getNodeType(gridX, gridY) {
+        if (!this.board || !this.board.nodes) return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+        
+        const nodes = this.board.nodes;
+        if (gridY < 0 || gridY >= nodes.length) return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+        
+        const row = nodes[gridY];
+        if (gridX < 0 || gridX >= row.length) return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+        
+        return row[gridX];
+    }
+
+    // Check if a ball can move to a specific node based on path types
+    canBallMoveToNode(ballIndex, gridX, gridY) {
+        const nodeType = this.getNodeType(gridX, gridY);
+        
+        // Empty nodes are not accessible
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) return false;
+        
+        // Path for all balls ('0') can be used by any ball
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) return true;
+        
+        // Ball-specific paths: ball 0 can use path '1', ball 1 can use path '2', etc.
+        const ballPathType = (ballIndex + 1).toString();
+        if (nodeType === ballPathType) return true;
+        
+        return false;
+    }
+
+    // Check if two adjacent nodes are connected via valid paths for a specific ball
+    areNodesConnected(fromGridX, fromGridY, toGridX, toGridY, ballIndex) {
+        // Only allow horizontal or vertical movement (no diagonal)
+        const deltaX = Math.abs(toGridX - fromGridX);
+        const deltaY = Math.abs(toGridY - fromGridY);
+        
+        if ((deltaX === 1 && deltaY === 0) || (deltaX === 0 && deltaY === 1)) {
+            // Check if both nodes allow this ball to move on them
+            return this.canBallMoveToNode(ballIndex, fromGridX, fromGridY) && 
+                   this.canBallMoveToNode(ballIndex, toGridX, toGridY);
+        }
+        
+        return false;
+    }
+
+    // Check if a ball can move from its current position to a target position
+    isValidPathMove(ballIndex, targetGridX, targetGridY) {
+        const ball = this.balls[ballIndex];
+        if (!ball) return false;
+        
+        // Get current grid position
+        const currentGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const currentGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // Check if target node allows this ball
+        if (!this.canBallMoveToNode(ballIndex, targetGridX, targetGridY)) return false;
+        
+        // Check if nodes are connected (adjacent and both allow this ball)
+        return this.areNodesConnected(currentGridX, currentGridY, targetGridX, targetGridY, ballIndex);
     }
 
     showTouchFeedback(ball) {
@@ -366,6 +442,11 @@ class GameManager {
         // Compute target grid cell
         const targetGridX = Math.round((clampedX - this.boardStartX) / this.gridSize);
         const targetGridY = Math.round((clampedY - this.boardStartY) / this.gridSize);
+        
+        // Check if this is a valid path-based move
+        if (!this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY)) {
+            return; // Skip movement if not allowed by path rules
+        }
         
         // Prevent two balls in the same node
         if (this.isNodeOccupied(targetGridX, targetGridY, this.selectedBallIndex)) {
@@ -552,7 +633,10 @@ class GameManager {
         // Draw level number
         this.renderLevelNumber();
         
-        // Draw board
+        // Draw path lines first
+        this.renderPathLines();
+        
+        // Draw board nodes on top of path lines
         this.renderBoard();
         
         // Draw end goals
@@ -615,15 +699,22 @@ class GameManager {
         
         if (boardRows === 0 || boardCols === 0) return;
         
-        // Draw dots at node intersections only (no connecting lines)
-        this.ctx.fillStyle = '#444444'; // Darker color for better visibility
+        // Draw dots only at empty intersections (not at path nodes)
+        this.ctx.fillStyle = '#222222'; // Even darker color for better visibility
         for (let row = 0; row < boardRows; row++) {
             for (let col = 0; col < boardCols; col++) {
-                const x = this.boardStartX + (col * this.gridSize);
-                const y = this.boardStartY + (row * this.gridSize);
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, 3, 0, 2 * Math.PI); // Slightly larger dots
-                this.ctx.fill();
+                const nodeType = nodes[row][col];
+                
+                // Only draw grid dots at empty nodes
+                if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) {
+                    const x = this.boardStartX + (col * this.gridSize);
+                    const y = this.boardStartY + (row * this.gridSize);
+                    // Make grid dots proportional to grid size, but smaller than path nodes
+                    const gridDotRadius = Math.max(2, this.gridSize * 0.06); // Smaller than path nodes (0.12)
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, gridDotRadius, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                }
             }
         }
     }
@@ -645,8 +736,25 @@ class GameManager {
                 for (let col = 0; col < rowString.length; col++) {
                     const nodeType = rowString[col];
                     
-                    // Only render path nodes as squares, skip start/end (they're rendered as circles)
-                    if (nodeType === '#') {
+                    // Render path nodes as circles
+                    if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1 ||
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2) {
+                        
+                        const centerX = this.boardStartX + (col * this.gridSize);
+                        const centerY = this.boardStartY + (row * this.gridSize);
+                        // Make path nodes slightly larger than grid dots for better visibility
+                        const nodeRadius = Math.max(5, this.gridSize * 0.08); // Larger than grid dots (4px)
+                        
+                        // Use same color as path lines
+                        this.ctx.fillStyle = this.getPathColor(nodeType);
+                        this.ctx.beginPath();
+                        this.ctx.arc(centerX, centerY, nodeRadius, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                    }
+                    
+                    // Legacy support: render '#' nodes as squares (if still used)
+                    else if (nodeType === '#') {
                         this.ctx.fillStyle = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType] || '#666666';
                         this.ctx.fillRect(
                             this.boardStartX + (col * this.gridSize),
@@ -658,6 +766,122 @@ class GameManager {
                 }
             }
         }
+    }
+
+    renderPathLines() {
+        // Draw lines between connected path nodes
+        if (!this.board || !this.board.nodes) return;
+        
+        const nodes = this.board.nodes;
+        
+        for (let row = 0; row < nodes.length; row++) {
+            const rowString = nodes[row];
+            for (let col = 0; col < rowString.length; col++) {
+                const nodeType = rowString[col];
+                
+                // Only process path nodes
+                if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1 ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2) {
+                    
+                    const centerX = this.boardStartX + (col * this.gridSize);
+                    const centerY = this.boardStartY + (row * this.gridSize);
+                    
+                    // Check right neighbor (horizontal connection)
+                    if (col + 1 < rowString.length) {
+                        const rightNodeType = rowString[col + 1];
+                        if (this.shouldDrawConnection(nodeType, rightNodeType)) {
+                            const rightX = this.boardStartX + ((col + 1) * this.gridSize);
+                            const rightY = centerY;
+                            
+                            const lineColor = this.getConnectionColor(nodeType, rightNodeType);
+                            this.drawPathLine(centerX, centerY, rightX, rightY, lineColor);
+                        }
+                    }
+                    
+                    // Check bottom neighbor (vertical connection)
+                    if (row + 1 < nodes.length) {
+                        const bottomRowString = nodes[row + 1];
+                        if (col < bottomRowString.length) {
+                            const bottomNodeType = bottomRowString[col];
+                            if (this.shouldDrawConnection(nodeType, bottomNodeType)) {
+                                const bottomX = centerX;
+                                const bottomY = this.boardStartY + ((row + 1) * this.gridSize);
+                                
+                                const lineColor = this.getConnectionColor(nodeType, bottomNodeType);
+                                this.drawPathLine(centerX, centerY, bottomX, bottomY, lineColor);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Check if two node types should be connected with a line
+    shouldDrawConnection(nodeType1, nodeType2) {
+        // Both nodes must be path nodes (not empty)
+        const pathTypes = [
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2
+        ];
+        
+        if (!pathTypes.includes(nodeType1) || !pathTypes.includes(nodeType2)) {
+            return false;
+        }
+        
+        // Same path types are always connected
+        if (nodeType1 === nodeType2) return true;
+        
+        // PATH_ALL_BALLS ('0') connects to any specific ball path
+        if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
+            return true;
+        }
+        
+        // Different specific ball paths don't connect
+        return false;
+    }
+
+    // Get the color for a connection between two node types
+    getConnectionColor(nodeType1, nodeType2) {
+        // If one is PATH_ALL_BALLS, use the color of the specific ball path
+        if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
+            return this.getPathColor(nodeType2);
+        }
+        if (nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
+            return this.getPathColor(nodeType1);
+        }
+        
+        // Both are same specific type
+        return this.getPathColor(nodeType1);
+    }
+
+    // Get the color for a specific path type
+    getPathColor(nodeType) {
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
+            return '#BBBBBB'; // light gray for all-ball paths
+        }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1) {
+            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Red for ball 1
+        }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2) {
+            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Blue for ball 2
+        }
+        return '#666666'; // Default gray
+    }
+
+    // Draw a line between two points with specified color
+    drawPathLine(x1, y1, x2, y2, color) {
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = Math.max(3, this.gridSize * 0.08);
+         // Proportional line width
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(x1, y1);
+        this.ctx.lineTo(x2, y2);
+        this.ctx.stroke();
     }
 
     renderBalls() {

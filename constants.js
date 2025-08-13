@@ -97,7 +97,9 @@ const CONSTANTS = {
 		// Node types (string-based)
 		NODE_TYPES: {
 			EMPTY: '.',
-			PATH: '#',
+			PATH_ALL_BALLS: '0',
+			PATH_BALL_1: '1',
+			PATH_BALL_2: '2',
 			WALL: 'X',
 			TELEPORT: 'T',
 			SWITCH: 'S',
@@ -107,7 +109,10 @@ const CONSTANTS = {
 		// Node colors (only for square nodes, circles use their own colors)
 		NODE_COLORS: {
 			'.': '#000000',  // Empty
-			'#': '#666666',  // Path
+			'0': '#444444',  // Path for all balls (darker gray to show it's a path)
+			'1': '#331111',  // Path for ball 1 (dark red tint)
+			'2': '#111133',  // Path for ball 2 (dark blue tint)
+			// TO DO
 			'X': '#FF0000',  // Wall
 			'T': '#0000FF',  // Teleport
 			'S': '#FFFF00',  // Switch
