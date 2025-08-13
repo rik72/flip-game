@@ -22,7 +22,7 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 4, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 5, // Set to level number (e.g., 4) to force start at that level
 		
 			// Ball configurations
 	BALL_RADIUS: 15,
@@ -141,6 +141,7 @@ const CONSTANTS = {
 			PATH_ALL_BALLS: '0',
 			PATH_BALL_1: '1',
 			PATH_BALL_2: '2',
+            WELL: 'W',
 			WALL: 'X',
 			TELEPORT: 'T',
 			SWITCH: 'S',
@@ -154,6 +155,7 @@ const CONSTANTS = {
 			'1': '#331111',  // Path for ball 1 (dark red tint)
 			'2': '#111133',  // Path for ball 2 (dark blue tint)
 			// TO DO
+			'W': '#FFFFFF',  // Well
 			'X': '#FF0000',  // Wall
 			'T': '#0000FF',  // Teleport
 			'S': '#FFFF00',  // Switch

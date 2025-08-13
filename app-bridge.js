@@ -168,4 +168,5 @@ window.FlipgameApp = {
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     appInstance = FlipgameApp.init();
+    window.app = appInstance; // Also expose as window.app for compatibility
 }); 

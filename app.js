@@ -33,12 +33,7 @@ class App {
         this.initializeGameUI();
         
         // Initialize game manager after UI is created
-        this.gameManager = new GameManager(this.storageManager);
-        
-        // Load first level
-        this.loadLevel(this.currentLevel).catch(error => {
-            console.error('Failed to load initial level in App:', error);
-        });
+        this.gameManager = new GameManager(this.storageManager, this.currentLevel, this);
         
         // Setup event listeners
         this.setupEventListeners();
@@ -136,6 +131,9 @@ class App {
         if (confirm(CONSTANTS.MESSAGES.RESET_CONFIRM)) {
             this.storageManager.clearAll();
             this.currentLevel = 1;
+            if (this.gameManager) {
+                this.gameManager.currentLevel = 1;
+            }
             this.loadLevel(this.currentLevel).catch(error => {
                 console.error('Failed to load level after reset:', error);
             });
@@ -153,6 +151,9 @@ class App {
 
     restartGame() {
         this.currentLevel = 1;
+        if (this.gameManager) {
+            this.gameManager.currentLevel = 1;
+        }
         this.loadLevel(this.currentLevel).catch(error => {
             console.error('Failed to restart game:', error);
         });
@@ -177,9 +178,4 @@ class App {
             currentLevel: this.currentLevel
         };
     }
-}
-
-// Initialize app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new App();
-}); 
+} 

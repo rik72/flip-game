@@ -4,9 +4,10 @@
  */
 
 class GameManager {
-    constructor(storageManager) {
+    constructor(storageManager, currentLevel = 1, appReference = null) {
         this.storageManager = storageManager;
-        this.currentLevel = 1;
+        this.currentLevel = currentLevel;
+        this.appReference = appReference; // Reference to App instance for synchronization
         this.gameState = {
             isPlaying: false
         };
@@ -411,14 +412,25 @@ class GameManager {
             // Hide touch feedback with fade out
             this.hideTouchFeedback();
             
-            // Perform final animated snap to ensure ball is properly positioned
+            // Get the final position where the ball was dropped
             const ball = this.balls[this.selectedBallIndex];
-            this.moveBallToPosition(ball.x, ball.y, true);
+            const finalGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+            const finalGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
             
-            // Check win condition when drag is released (after a small delay for animation)
-            setTimeout(() => {
-                this.checkWinCondition();
-            }, 50); // Small delay to let animation start
+            // Check if ball was dropped on a WELL node
+            const nodeType = this.getNodeType(finalGridX, finalGridY);
+            if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+                // Start well animation, then handle transfer after animation completes
+                this.startWellAnimation(ball, finalGridX, finalGridY);
+            } else {
+                // Perform final animated snap to ensure ball is properly positioned
+                this.moveBallToPosition(ball.x, ball.y, true);
+                
+                // Check win condition when drag is released (after a small delay for animation)
+                setTimeout(() => {
+                    this.checkWinCondition();
+                }, 50); // Small delay to let animation start
+            }
         }
         
         this.touchStartPos = null;
@@ -580,6 +592,9 @@ class GameManager {
         
         // Empty nodes are not accessible
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) return false;
+        
+        // WELL nodes can be used by any ball (like PATH_ALL_BALLS)
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) return true;
         
         // Path for all balls ('0') can be used by any ball
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) return true;
@@ -777,8 +792,111 @@ class GameManager {
                y <= this.boardStartY + this.boardHeight;
     }
 
+    // Start well animation when ball is dropped on a well
+    startWellAnimation(ball, wellGridX, wellGridY) {
+        // Create a pulsing/glowing effect on the well
+        this.wellAnimationState = {
+            isAnimating: true,
+            startTime: performance.now(),
+            duration: 800, // 800ms animation
+            ball: ball,
+            wellGridX: wellGridX,
+            wellGridY: wellGridY,
+            pulseCount: 0,
+            maxPulses: 3
+        };
+        
+        // Start the well animation loop
+        this.wellAnimationLoop();
+    }
+    
+    // Well animation loop
+    wellAnimationLoop() {
+        if (!this.wellAnimationState || !this.wellAnimationState.isAnimating) {
+            return;
+        }
+        
+        const currentTime = performance.now();
+        const elapsed = currentTime - this.wellAnimationState.startTime;
+        const progress = elapsed / this.wellAnimationState.duration;
+        
+        // Ball shrinking and fading out effect
+        const ball = this.wellAnimationState.ball;
+        
+        // Scale: start at 1.0, end at 0.0 (shrink to nothing)
+        ball.wellAnimationScale = 1.0 - progress;
+        
+        // Opacity: start at 1.0, end at 0.0 (fade out)
+        ball.wellAnimationOpacity = 1.0 - progress;
+        
+        // Re-render to show the animation
+        this.render();
+        
+        if (progress >= 1) {
+            // Animation complete, handle the transfer
+            this.wellAnimationState.isAnimating = false;
+            
+            // Reset animation properties
+            ball.wellAnimationScale = undefined;
+            ball.wellAnimationOpacity = undefined;
+            
+            this.handleWellTransfer(this.wellAnimationState.ball, this.wellAnimationState.wellGridX, this.wellAnimationState.wellGridY);
+        } else {
+            // Continue animation
+            requestAnimationFrame(() => this.wellAnimationLoop());
+        }
+    }
+
+    // Handle ball transfer through a well
+    handleWellTransfer(ball, wellGridX, wellGridY) {
+        // Get the board dimensions in grid cells
+        const nodes = this.getCurrentNodes();
+        const boardGridWidth = nodes[0] ? nodes[0].length : 0;
+        const boardGridHeight = nodes.length;
+        
+        // Calculate the transfer coordinates on the other side
+        // For a 6x3 board, well at (4,1) should transfer to (1,1) on rear face
+        // This suggests mirroring the coordinates
+        let transferX = boardGridWidth - 1 - wellGridX;
+        let transferY = boardGridHeight - 1 - wellGridY;
+        
+        // Convert grid coordinates back to absolute coordinates
+        // The transfer coordinates are now positive, so we can use them directly
+        let mappedX = transferX;
+        let mappedY = transferY;
+        
+        const transferAbsX = this.boardStartX + (mappedX * this.gridSize);
+        const transferAbsY = this.boardStartY + (mappedY * this.gridSize);
+        
+        // Update ball position to the transfer location
+        ball.x = transferAbsX;
+        ball.y = transferAbsY;
+        
+        // Update the ball's original start coordinates based on current face
+        // If currently on front face, transfer to rear (negative coordinates)
+        // If currently on rear face, transfer to front (positive coordinates)
+        const currentBallFace = this.getBallCurrentFace(ball);
+        if (currentBallFace === 'front') {
+            // Transfer from front to rear - use negative coordinates
+            ball.originalStart = [-transferX, -transferY];
+        } else {
+            // Transfer from rear to front - use positive coordinates
+            ball.originalStart = [transferX, transferY];
+        }
+        
+        // Flip the board as if user clicked the flip button
+        this.toggleBoardFace();
+        
+        // Re-render to show the changes
+        this.render();
+    }
+
     async loadLevel(levelNumber) {
         this.currentLevel = levelNumber;
+        // Synchronize with App instance if available
+        if (this.appReference) {
+            this.appReference.currentLevel = levelNumber;
+        }
         this.gameState.isPlaying = true;
         
         try {
@@ -1051,6 +1169,10 @@ class GameManager {
 
     nextLevel() {
         this.currentLevel++;
+        // Synchronize with App instance if available
+        if (this.appReference) {
+            this.appReference.currentLevel = this.currentLevel;
+        }
         this.loadLevel(this.currentLevel).catch(error => {
             console.error('Failed to load next level:', error);
         });
@@ -1264,6 +1386,30 @@ class GameManager {
                             this.gridSize
                         );
                     }
+                    
+                    // Render WELL nodes as white circle rings with gradient
+                    else if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+                        const centerX = this.boardStartX + (col * this.gridSize);
+                        const centerY = this.boardStartY + (row * this.gridSize);
+                        
+                        // Use same radii as goal nodes
+                        const innerRadius = this.getGoalInnerRadius();
+                        const outerRadius = this.getGoalOuterRadius();
+                        
+                        // Create radial gradient from opaque white at outer radius to transparent at inner radius
+                        const gradient = this.ctx.createRadialGradient(
+                            centerX, centerY, 0,             // Start at center (0)
+                            centerX, centerY, outerRadius    // End at outer radius
+                        );
+                        gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');                           // Transparent at center
+                        gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');                         // Still transparent at 50%
+                        gradient.addColorStop(1, 'rgba(255, 255, 255, 1)');                           // Opaque white at edge
+                        
+                        this.ctx.fillStyle = gradient;
+                        this.ctx.beginPath();
+                        this.ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
+                        this.ctx.fill();
+                    }
                 }
             }
         }
@@ -1281,10 +1427,11 @@ class GameManager {
             for (let col = 0; col < rowString.length; col++) {
                 const nodeType = rowString[col];
                 
-                // Only process path nodes
+                // Process path nodes and WELL nodes
                 if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1 ||
-                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2) {
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2 ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
                     
                     const centerX = this.boardStartX + (col * this.gridSize);
                     const centerY = this.boardStartY + (row * this.gridSize);
@@ -1297,7 +1444,7 @@ class GameManager {
                             const rightY = centerY;
                             
                             const lineColor = this.getConnectionColor(nodeType, rightNodeType);
-                            this.drawPathLine(centerX, centerY, rightX, rightY, lineColor);
+                            this.drawPathLineWithWellClipping(centerX, centerY, rightX, rightY, lineColor, nodeType, rightNodeType);
                         }
                     }
                     
@@ -1311,7 +1458,7 @@ class GameManager {
                                 const bottomY = this.boardStartY + ((row + 1) * this.gridSize);
                                 
                                 const lineColor = this.getConnectionColor(nodeType, bottomNodeType);
-                                this.drawPathLine(centerX, centerY, bottomX, bottomY, lineColor);
+                                this.drawPathLineWithWellClipping(centerX, centerY, bottomX, bottomY, lineColor, nodeType, bottomNodeType);
                             }
                         }
                     }
@@ -1322,11 +1469,12 @@ class GameManager {
 
     // Check if two node types should be connected with a line
     shouldDrawConnection(nodeType1, nodeType2) {
-        // Both nodes must be path nodes (not empty)
+        // Both nodes must be path nodes (not empty) or WELL nodes
         const pathTypes = [
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1,
-            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL
         ];
         
         if (!pathTypes.includes(nodeType1) || !pathTypes.includes(nodeType2)) {
@@ -1348,11 +1496,13 @@ class GameManager {
 
     // Get the color for a connection between two node types
     getConnectionColor(nodeType1, nodeType2) {
-        // If one is PATH_ALL_BALLS, use the color of the specific ball path
-        if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
+        // If one is PATH_ALL_BALLS or WELL, use the color of the specific ball path
+        if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
+            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
             return this.getPathColor(nodeType2);
         }
-        if (nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
+        if (nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
             return this.getPathColor(nodeType1);
         }
         
@@ -1364,6 +1514,9 @@ class GameManager {
     getPathColor(nodeType) {
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
             return '#BBBBBB'; // light gray for all-ball paths
+        }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            return '#BBBBBB'; // light gray for well nodes (same as PATH_ALL_BALLS)
         }
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1) {
             return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Red for ball 1
@@ -1383,6 +1536,49 @@ class GameManager {
         this.ctx.moveTo(x1, y1);
         this.ctx.lineTo(x2, y2);
         this.ctx.stroke();
+    }
+
+    // Draw a line between two points with well clipping
+    drawPathLineWithWellClipping(x1, y1, x2, y2, color, nodeType1, nodeType2) {
+        // If neither node is a WELL, draw normal line
+        if (nodeType1 !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL && 
+            nodeType2 !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            this.drawPathLine(x1, y1, x2, y2, color);
+            return;
+        }
+        
+        // Determine which endpoint is the WELL
+        let wellX, wellY, otherX, otherY;
+        if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            wellX = x1;
+            wellY = y1;
+            otherX = x2;
+            otherY = y2;
+        } else {
+            wellX = x2;
+            wellY = y2;
+            otherX = x1;
+            otherY = y1;
+        }
+        
+        // Calculate the clipped endpoint at the well's outer radius
+        const wellOuterRadius = this.getGoalOuterRadius();
+        const dx = otherX - wellX;
+        const dy = otherY - wellY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance <= wellOuterRadius) {
+            // Line is completely inside the well, don't draw it
+            return;
+        }
+        
+        // Calculate the intersection point at the well's outer radius
+        const ratio = wellOuterRadius / distance;
+        const clippedX = wellX + dx * ratio;
+        const clippedY = wellY + dy * ratio;
+        
+        // Draw the line from the other endpoint to the clipped point
+        this.drawPathLine(otherX, otherY, clippedX, clippedY, color);
     }
 
     renderBalls() {
@@ -1407,12 +1603,29 @@ class GameManager {
                 this.ctx.restore();
             }
             
-            // Draw the ball with subtle scale animation around restScale
-            const ballRadius = this.getVisualBallRadius(ball);
+            // Apply well animation effects if active
+            let finalBallRadius = this.getVisualBallRadius(ball);
+            let finalAlpha = 1.0;
+            
+            if (ball.wellAnimationScale !== undefined) {
+                finalBallRadius *= Math.max(0, ball.wellAnimationScale); // Clamp to prevent negative radius
+            }
+            if (ball.wellAnimationOpacity !== undefined) {
+                finalAlpha = Math.max(0, Math.min(1, ball.wellAnimationOpacity)); // Clamp opacity between 0 and 1
+            }
+            
+            // Draw the ball with well animation effects
+            this.ctx.save();
+            if (finalAlpha < 1.0) {
+                this.ctx.globalAlpha = finalAlpha;
+            }
+            
             this.ctx.fillStyle = colorHex;
             this.ctx.beginPath();
-            this.ctx.arc(ball.x, ball.y, ballRadius, 0, 2 * Math.PI);
+            this.ctx.arc(ball.x, ball.y, finalBallRadius, 0, 2 * Math.PI);
             this.ctx.fill();
+            
+            this.ctx.restore();
             
 
         });
@@ -1431,7 +1644,6 @@ class GameManager {
             // Get the radii for the square frame and circular hole
             const innerRadius = this.getGoalInnerRadius();
             const outerRadius = this.getGoalOuterRadius();
-            console.log("goal radii", innerRadius, outerRadius);
             
             // Calculate square dimensions (side length = outer radius * 2)
             const squareHalfSize = outerRadius;
