@@ -20,9 +20,8 @@ class ComplianceValidator {
         this.violations = [];
         this.warnings = [];
         this.moduleFiles = {
-            constantsEn: 'constants.js',
+            constants: 'constants.js',
             utils: 'utils.js',
-        
             htmlBuilder: 'html-builder.js',
             displayManager: 'display-manager.js',
             storageManager: 'managers/storage-manager.js',
@@ -65,8 +64,9 @@ class ComplianceValidator {
         console.log('🏗️  Checking architecture compliance...');
         
         // Check if constants structure exists in constants file
-        if (!moduleContents.constantsEn.includes('window.CONSTANTS_IT_OBJ')) {
-            this.addViolation('CRITICAL', 'Constants structure not found in constants.js');
+        // Legacy check removed: we only require a top-level CONSTANTS object
+        if (!moduleContents.constants.includes('const CONSTANTS =')) {
+            this.addViolation('CRITICAL', 'Constants object not found in constants.js');
         }
 
         // Check required classes exist in their respective files
@@ -153,11 +153,12 @@ class ComplianceValidator {
         console.log('📋 Checking CONSTANTS usage...');
         
         // Check if multi-language constants structure is proper in both constants files
-        const requiredSections = ['MESSAGES', 'POSITION_POINTS', 'GAME_TYPE_LABELS'];
+        // Only require sections used by the current app
+        const requiredSections = ['MESSAGES','GAME_CONFIG','CANVAS_CONFIG','TOUCH_CONFIG','LEVEL_CONFIG'];
         
         // Validate constants.js
         requiredSections.forEach(section => {
-            if (!moduleContents.constantsEn.includes(`${section}:`)) {
+            if (!moduleContents.constants.includes(`${section}:`)) {
                 this.addViolation('MEDIUM', `Missing required CONSTANTS section: ${section} in constants.js`);
             }
         });
@@ -192,15 +193,14 @@ class ComplianceValidator {
 
         // Check that each module contains only its expected content
         const moduleExpectations = {
-            constantsEn: ['window.CONSTANTS_IT_OBJ'],
+            constants: ['const CONSTANTS ='],
             utils: ['class Utils'],
-    
             htmlBuilder: ['class HtmlBuilder'],
             displayManager: ['class DisplayManager'],
             storageManager: ['class StorageManager'],
-                        gameManager: ['class GameManager'],
+            gameManager: ['class GameManager'],
             app: ['class App'],
-            appBridge: ['let app', 'document.addEventListener', 'function showSection']
+            appBridge: ['let appInstance', 'document.addEventListener']
         };
 
         for (const [module, expectations] of Object.entries(moduleExpectations)) {
