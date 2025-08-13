@@ -852,13 +852,12 @@ class GameManager {
         // Get the board dimensions in grid cells
         const nodes = this.getCurrentNodes();
         const boardGridWidth = nodes[0] ? nodes[0].length : 0;
-        const boardGridHeight = nodes.length;
         
         // Calculate the transfer coordinates on the other side
         // For a 6x3 board, well at (4,1) should transfer to (1,1) on rear face
         // This suggests mirroring the coordinates
         let transferX = boardGridWidth - 1 - wellGridX;
-        let transferY = boardGridHeight - 1 - wellGridY;
+        let transferY = wellGridY;
         
         // Convert grid coordinates back to absolute coordinates
         // The transfer coordinates are now positive, so we can use them directly
@@ -1490,6 +1489,12 @@ class GameManager {
             return true;
         }
         
+        // WELL nodes connect to any path type (allowing balls to enter wells)
+        if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL || 
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            return true;
+        }
+        
         // Different specific ball paths don't connect
         return false;
     }
@@ -1519,10 +1524,20 @@ class GameManager {
             return '#BBBBBB'; // light gray for well nodes (same as PATH_ALL_BALLS)
         }
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1) {
-            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Red for ball 1
+            // Use the color of the first ball (ball 0) from the level data
+            if (this.balls && this.balls.length > 0) {
+                const ballColor = this.balls[0].color;
+                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#FF0000';
+            }
+            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Fallback to red
         }
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2) {
-            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Blue for ball 2
+            // Use the color of the second ball (ball 1) from the level data
+            if (this.balls && this.balls.length > 1) {
+                const ballColor = this.balls[1].color;
+                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#0000FF';
+            }
+            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Fallback to blue
         }
         return '#666666'; // Default gray
     }
