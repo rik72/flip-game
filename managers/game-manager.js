@@ -353,14 +353,14 @@ class GameManager {
         const snappedX = this.boardStartX + snappedRelativeX;
         const snappedY = this.boardStartY + snappedRelativeY;
         
-        // Ensure the ball stays within board bounds
+        // Ensure the ball stays within board bounds (node-based, not radius-based)
         const clampedX = Math.max(
-            this.boardStartX + logicalRadius, 
-            Math.min(snappedX, this.boardStartX + this.boardWidth - logicalRadius)
+            this.boardStartX, 
+            Math.min(snappedX, this.boardStartX + this.boardWidth)
         );
         const clampedY = Math.max(
-            this.boardStartY + logicalRadius, 
-            Math.min(snappedY, this.boardStartY + this.boardHeight - logicalRadius)
+            this.boardStartY, 
+            Math.min(snappedY, this.boardStartY + this.boardHeight)
         );
         
         // Compute target grid cell
@@ -382,11 +382,11 @@ class GameManager {
     }
 
     isValidMove(x, y, ballRadius = CONSTANTS.GAME_CONFIG.BALL_RADIUS) {
-        // Check if position is within board bounds
-        return x >= this.boardStartX + ballRadius && 
-               x <= this.boardStartX + this.boardWidth - ballRadius &&
-               y >= this.boardStartY + ballRadius && 
-               y <= this.boardStartY + this.boardHeight - ballRadius;
+        // Check if position is within board bounds (node-based boundaries)
+        return x >= this.boardStartX && 
+               x <= this.boardStartX + this.boardWidth &&
+               y >= this.boardStartY && 
+               y <= this.boardStartY + this.boardHeight;
     }
 
     async loadLevel(levelNumber) {
@@ -454,7 +454,6 @@ class GameManager {
                 };
                 
                 this.balls.push(ball);
-                console.log(`Ball ${index} initialized:`, ball);
             });
         } else {
             console.warn('No balls found in level data, creating default ball');
@@ -468,8 +467,8 @@ class GameManager {
                 touchOpacity: 0.0, // Animation opacity
                 touchScale: this.restScale, // Animation scale
                 endPosition: {
-                    x: this.boardStartX + (6 * this.gridSize),
-                    y: this.boardStartY + (6 * this.gridSize)
+                    x: this.boardStartX + (4 * this.gridSize),
+                    y: this.boardStartY + (4 * this.gridSize)
                 }
             };
             this.balls.push(defaultBall);
@@ -578,12 +577,18 @@ class GameManager {
         const availableWidth = this.displayWidth - (margin * 2);
         const availableHeight = this.displayHeight - (margin * 2);
         
-        // Use the smaller dimension to ensure grid fits
-        const gridSize = Math.min(availableWidth / boardCols, availableHeight / boardRows);
+        // For node-oriented grid: we need spacing between nodes, not cell sizes
+        // For N nodes, we need (N-1) spaces between them
+        const gridSpacingX = boardCols > 1 ? availableWidth / (boardCols - 1) : availableWidth;
+        const gridSpacingY = boardRows > 1 ? availableHeight / (boardRows - 1) : availableHeight;
+        
+        // Use the smaller spacing to ensure grid fits
+        const gridSize = Math.min(gridSpacingX, gridSpacingY);
         
         // Calculate board position to center it
-        const boardWidth = boardCols * gridSize;
-        const boardHeight = boardRows * gridSize;
+        // Board area spans from first node to last node
+        const boardWidth = (boardCols - 1) * gridSize;
+        const boardHeight = (boardRows - 1) * gridSize;
         const boardStartX = (this.displayWidth - boardWidth) / 2;
         const boardStartY = (this.displayHeight - boardHeight) / 2;
         
@@ -595,6 +600,7 @@ class GameManager {
         this.boardHeight = boardHeight;
         
         console.log(`Board positioned: startX=${boardStartX}, startY=${boardStartY}, width=${boardWidth}, height=${boardHeight}, gridSize=${gridSize}`);
+        console.log(`Node grid: ${boardCols}x${boardRows} nodes with ${gridSize}px spacing`);
     }
 
     renderGrid() {
@@ -609,25 +615,16 @@ class GameManager {
         
         if (boardRows === 0 || boardCols === 0) return;
         
-        this.ctx.strokeStyle = '#333333';
-        this.ctx.lineWidth = 1;
-        
-        // Draw vertical lines for the board area only
-        for (let col = 0; col <= boardCols; col++) {
-            const x = this.boardStartX + (col * this.gridSize);
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, this.boardStartY);
-            this.ctx.lineTo(x, this.boardStartY + this.boardHeight);
-            this.ctx.stroke();
-        }
-        
-        // Draw horizontal lines for the board area only
-        for (let row = 0; row <= boardRows; row++) {
-            const y = this.boardStartY + (row * this.gridSize);
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.boardStartX, y);
-            this.ctx.lineTo(this.boardStartX + this.boardWidth, y);
-            this.ctx.stroke();
+        // Draw dots at node intersections only (no connecting lines)
+        this.ctx.fillStyle = '#444444'; // Darker color for better visibility
+        for (let row = 0; row < boardRows; row++) {
+            for (let col = 0; col < boardCols; col++) {
+                const x = this.boardStartX + (col * this.gridSize);
+                const y = this.boardStartY + (row * this.gridSize);
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 3, 0, 2 * Math.PI); // Slightly larger dots
+                this.ctx.fill();
+            }
         }
     }
 
