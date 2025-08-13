@@ -675,11 +675,10 @@ class GameManager {
             
             // Add touch feedback glow effect with animation
             if (ball.isTouched && ball.touchOpacity > 0) {
-                // Ensure halo is always larger than the current visual ball radius
-                        const visualBallRadius = this.getVisualBallRadius(ball);
-        const haloRadius = visualBallRadius + Math.max(6, this.getLogicalBallRadius() * 0.4);
-                
-                // Use globalAlpha for reliable alpha on all browsers
+                				// Ensure halo matches the goal ring outer radius for consistency
+				const haloRadius = this.getGoalOuterRadius();
+				
+				// Use globalAlpha for reliable alpha on all browsers
                 this.ctx.save();
                 this.ctx.globalAlpha = Math.min(1, Math.max(0, (ball.touchOpacity || 1.0) * 0.35));
                 this.ctx.fillStyle = colorHex;
