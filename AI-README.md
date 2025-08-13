@@ -102,7 +102,7 @@ Utilizzare `.ai-assistant-config.json` per:
 - [ ] ✅ Confermato zero duplicazioni
 
 ### **Durante Modifica (Enforcement):**
-- [ ] ✅ Uso `Utils.validateName()` per validazioni
+- [ ] ✅ Uso `Utils.validateLevelData()` per validazioni
 
 - [ ] ✅ Uso `HtmlBuilder.*` per HTML
 - [ ] ✅ Uso `DisplayManager.*` per stati vuoti

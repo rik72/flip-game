@@ -25,7 +25,7 @@
       ]
     },
     "mandatory_patterns": {
-      "validation": "Utils.validateName()",
+      "validation": "Utils.validateLevelData()",
       
       "html_generation": "HtmlBuilder.*",
       "empty_states": "DisplayManager.renderEmptyState()",
@@ -59,7 +59,7 @@
     "require_confirmation": "for any architecture changes"
   },
   "quick_reference": {
-    "validate_name": "Utils.validateName(name, items, id, 'type')",
+    "validate_name": "Utils.validateLevelData(levelData)",
     
     "create_button": "HtmlBuilder.createButton(text, class, callback, icon)",
     "empty_state": "DisplayManager.renderEmptyState(container, message)",

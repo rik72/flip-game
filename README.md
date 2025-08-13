@@ -10,7 +10,7 @@ Flipgame is a level-based puzzle game designed exclusively for mobile devices. T
 
 - **Mobile-First Design**: Optimized for touch interactions and mobile screens
 - **Level-Based Progression**: Solve puzzles to unlock new levels
-- **Board Manipulation**: Flip and rotate game boards for new perspectives
+- **Proportional Rendering**: Balls, halos, and goal rings scale with board size for consistent visuals
 - **Touch Gestures**: Intuitive drag and tap controls
 - **No Text UI**: Clean, visual-only interface with level numbers displayed graphically
 - **Progress Saving**: Automatic save/load of game progress
@@ -69,7 +69,7 @@ The project uses vanilla JavaScript with no build process required. Key files:
 - `app.js` - Main application controller
 - `managers/game-manager.js` - Game logic and mechanics
 - `styles.css` - Game styling and mobile optimizations
-- `constants-*.js` - Game configuration and messages
+- `constants.js` - Game configuration and messages
 
 ## 🎯 Game Mechanics
 
@@ -99,8 +99,8 @@ The project uses vanilla JavaScript with no build process required. Key files:
 
 ### Touch Handling
 
-- **Touch Events**: Optimized for mobile touch interactions
-- **Gesture Recognition**: Support for drag, tap, and multi-touch
+- **Touch Events**: Optimized for mobile touch interactions with preventDefault + stopPropagation
+- **Device Pixel Ratio**: Canvas scaled for high-DPI displays without touch offset
 - **Responsive Design**: Adapts to different screen sizes and orientations
 - **Performance**: 60fps target for smooth gameplay
 
@@ -114,7 +114,7 @@ The project uses vanilla JavaScript with no build process required. Key files:
 
 ### Adding New Levels
 
-Levels are defined in the `GameManager` with the following structure:
+Levels are defined in the `GameManager` (grid-based). Balls and goal rings scale with `gridSize`. Use the following structure:
 
 ```javascript
 {
@@ -152,6 +152,8 @@ Levels are defined in the `GameManager` with the following structure:
 - `start: [x, y]` - Starting grid position
 - `end: [x, y]` - Goal grid position
 - `color` - Ball color (optional)
+
+Note: Visual ball size scales with the board (`gridSize * 0.375` base), touch feedback scales up to match the goal inner radius, and halo matches the goal outer radius.
 
 ### Styling
 
@@ -200,8 +202,8 @@ flipgame/
 
 ### Common Issues
 
-1. **Canvas not rendering**: Check browser compatibility and JavaScript console
-2. **Touch not working**: Ensure device supports touch events
+1. **Canvas not rendering**: Check browser console and verify devicePixelRatio scaling is applied
+2. **Touch offset**: Ensure touch coordinates use CSS pixels (not DPR-scaled)
 3. **Performance issues**: Check for background processes affecting frame rate
 4. **Progress not saving**: Verify localStorage is enabled in browser
 

@@ -12,22 +12,20 @@ Tutte le modifiche importanti a questo progetto saranno documentate in questo fi
 - **`CONSTANTS`**: Oggetto centralizzato per tutte le configurazioni
   - `MESSAGES`: Messaggi di errore e notifiche unificati
   - `MODAL_TYPES`: Configurazioni modali (titoli, bottoni)
-  - `POSITION_POINTS`: Punteggi posizioni (winner: 2, participant: 1, last: 0)
-  - `GAME_TYPE_LABELS`: Etichette tipi di gioco
-  - `POSITION_LABELS`: Etichette posizioni con emoji
-  - `POSITION_BADGE_CLASSES`: Classi CSS per badge
+  - `LEVEL_CONFIG`: Configurazioni livelli e mapping colori
+- `CANVAS_CONFIG`/`TOUCH_CONFIG`/`GAME_CONFIG`: Configurazioni core
 
 ##### **Classe Utils**
 - `formatMessage(template, type)`: Formattazione messaggi con placeholder
-- `validateName(name, existingItems, currentId, itemType)`: Validazione nomi univoci
-- `confirmDelete(message)`: Conferma eliminazione standardizzata
+- `validateLevelData(levelData)`: Validazione struttura livelli
+
 - `showModal(modalId)` / `hideModal(modalId)`: Gestione modali Bootstrap
 
 
 
 ##### **Classe HtmlBuilder**
 - `createButton(text, className, onClick, icon)`: Bottoni standardizzati
-- `createActionButtons(itemId, itemType)`: Bottoni Modifica/Elimina
+
 
 - `createEmptyStateMessage(message)`: Messaggi stato vuoto
 

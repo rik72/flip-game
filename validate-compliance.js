@@ -132,13 +132,6 @@ class ComplianceValidator {
     validateUtilityUsage(moduleContents) {
         console.log('🔧 Checking utility class usage...');
         
-        // Check if Utils.validateName is used for validations across files
-        for (const [module, content] of Object.entries(moduleContents)) {
-            if (content.includes('if (!name)') && !content.includes('Utils.validateName')) {
-                this.addWarning(`Should use Utils.validateName() instead of manual validation in ${this.moduleFiles[module]}`);
-            }
-        }
-        
         // Check if HtmlBuilder is used for common elements
         for (const [module, content] of Object.entries(moduleContents)) {
             if (content.includes('<button class="btn') && !content.includes('HtmlBuilder.createButton')) {
@@ -179,7 +172,7 @@ class ComplianceValidator {
         // Check for proper error handling in relevant files
         for (const [module, content] of Object.entries(moduleContents)) {
             if (module === 'app' || module === 'utils') {
-                if (!content.includes('try {') || !content.includes('Utils.validateName')) {
+                if (!content.includes('try {')) {
                     this.addWarning(`Ensure proper error handling with try-catch for validations in ${this.moduleFiles[module]}`);
                 }
             }

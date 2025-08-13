@@ -12,8 +12,7 @@ const CONSTANTS = {
 		EMPTY_NAME: 'The {type} name cannot be empty',
 		DUPLICATE_NAME: 'A {type} with this name already exists',
 		LEVEL_DATA_REQUIRED: 'Level data required',
-		INVALID_LEVEL: 'Invalid level',
-		INVALID_MOVE: 'Invalid move'
+		INVALID_LEVEL: 'Invalid level'
 	},
 
 	// Game configurations

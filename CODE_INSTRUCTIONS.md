@@ -272,7 +272,7 @@ canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 - **Touch Events API**: Per gesture handling
 - **CSS Grid/Flexbox**: Per layout responsive
 - **Vanilla JavaScript**: Nessuna dipendenza aggiuntiva
-- **Canvas Library**: Per grafica avanzata
+- Device pixel ratio aware canvas scaling; no external canvas library needed
 
 ## 🎯 Roadmap Tecnica
 

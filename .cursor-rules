@@ -22,7 +22,7 @@ constants.js → utils.js → html-builder.js → display-manager.js → app.js 
 
 - Write inline HTML templates - use HtmlBuilder methods
 - Handle empty states manually - use DisplayManager.renderEmptyState()
-- Create validation logic - use Utils.validateName()
+- Create validation logic - use Utils.validateLevelData()
 - Use Bootstrap utility classes as CSS selectors (.mt-3, .d-flex, etc.)
 
 ### ✅ ALWAYS DO:
@@ -38,7 +38,7 @@ constants.js → utils.js → html-builder.js → display-manager.js → app.js 
 ### Validation:
 ```javascript
 try {
-    Utils.validateName(name, existingItems, currentId, 'entityType');
+    try { Utils.validateLevelData(levelData); } catch (e) { console.error(e.message); return; }
 } catch (error) {
     alert(error.message);
     return;
