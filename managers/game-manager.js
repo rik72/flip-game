@@ -22,7 +22,7 @@ class GameManager {
         this.isDragging = false;
         this.animationFrameId = null; // For smooth animations
         this.touchAnimationState = {}; // Track animation state for each ball
-        this.restScale = 0.75; // Resting visual scale for balls
+        this.restScale = CONSTANTS.RENDER_SIZE_CONFIG.BALL_REST_SCALE; // Resting visual scale for balls
         this.gridSize = 40; // Grid cell size for snapping
         this.boardStartX = 0;
         this.boardStartY = 0;
@@ -229,7 +229,7 @@ class GameManager {
     // Radius helpers to keep balls and graphics proportional to the board
     getLogicalBallRadius() {
         // Base logical radius used for bounds and goals (independent of touch animation)
-        return this.gridSize * 0.375; // 37.5% of a cell; tweak as desired
+        return this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.BALL_RADIUS_RATIO;
     }
 
     getVisualScale(ball) {
@@ -243,12 +243,12 @@ class GameManager {
     // Goal ring radii helpers (keep visuals proportional and reusable)
     getGoalInnerRadius() {
         const base = this.getLogicalBallRadius();
-        return base + Math.max(1, this.gridSize * 0.02);
+        return base + Math.max(CONSTANTS.RENDER_SIZE_CONFIG.GOAL_INNER_MIN_OFFSET, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GOAL_INNER_RATIO);
     }
 
     getGoalOuterRadius() {
         const base = this.getLogicalBallRadius();
-        return base + Math.max(5, this.gridSize * 0.125);
+        return base + Math.max(CONSTANTS.RENDER_SIZE_CONFIG.GOAL_OUTER_MIN_OFFSET, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GOAL_OUTER_RATIO);
     }
 
     // Check if a grid node is already occupied by another ball
@@ -710,7 +710,7 @@ class GameManager {
                     const x = this.boardStartX + (col * this.gridSize);
                     const y = this.boardStartY + (row * this.gridSize);
                     // Make grid dots proportional to grid size, but smaller than path nodes
-                    const gridDotRadius = Math.max(2, this.gridSize * 0.06); // Smaller than path nodes (0.12)
+                    const gridDotRadius = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.GRID_DOT_MIN_SIZE, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GRID_DOT_RATIO);
                     this.ctx.beginPath();
                     this.ctx.arc(x, y, gridDotRadius, 0, 2 * Math.PI);
                     this.ctx.fill();
@@ -744,7 +744,7 @@ class GameManager {
                         const centerX = this.boardStartX + (col * this.gridSize);
                         const centerY = this.boardStartY + (row * this.gridSize);
                         // Make path nodes slightly larger than grid dots for better visibility
-                        const nodeRadius = Math.max(5, this.gridSize * 0.08); // Larger than grid dots (4px)
+                        const nodeRadius = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_NODE_MIN_SIZE, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_NODE_RATIO);
                         
                         // Use same color as path lines
                         this.ctx.fillStyle = this.getPathColor(nodeType);
@@ -875,8 +875,7 @@ class GameManager {
     // Draw a line between two points with specified color
     drawPathLine(x1, y1, x2, y2, color) {
         this.ctx.strokeStyle = color;
-        this.ctx.lineWidth = Math.max(3, this.gridSize * 0.08);
-         // Proportional line width
+        this.ctx.lineWidth = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_MIN_WIDTH, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_RATIO);
         
         this.ctx.beginPath();
         this.ctx.moveTo(x1, y1);

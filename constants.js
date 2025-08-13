@@ -58,6 +58,31 @@ const CONSTANTS = {
 		PATH_COLOR: '#666666'
 	},
 
+	// Rendering size configurations
+	RENDER_SIZE_CONFIG: {
+		// Ball sizing
+		BALL_RADIUS_RATIO: 0.375, // Ball radius as ratio of gridSize (37.5% of grid cell)
+		BALL_REST_SCALE: 0.75, // Resting visual scale for balls during animations
+		
+		// Grid dot sizing (for empty intersections)
+		GRID_DOT_MIN_SIZE: 2, // Minimum grid dot radius in pixels
+		GRID_DOT_RATIO: 0.06, // Grid dot radius as ratio of gridSize
+		
+		// Path node sizing (for path intersections)
+		PATH_NODE_MIN_SIZE: 5, // Minimum path node radius in pixels
+		PATH_NODE_RATIO: 0.08, // Path node radius as ratio of gridSize
+		
+		// Path line sizing
+		PATH_LINE_MIN_WIDTH: 3, // Minimum path line width in pixels
+		PATH_LINE_RATIO: 0.08, // Path line width as ratio of gridSize
+		
+		// Goal ring sizing
+		GOAL_INNER_MIN_OFFSET: 1, // Minimum inner goal ring offset from ball radius
+		GOAL_INNER_RATIO: 0.03, // Goal inner ring offset as ratio of gridSize
+		GOAL_OUTER_MIN_OFFSET: 2, // Minimum outer goal ring offset from ball radius
+		GOAL_OUTER_RATIO: 0.05 // Goal outer ring offset as ratio of gridSize
+	},
+
 	// Touch configurations
 	TOUCH_CONFIG: {
 		MIN_TOUCH_SIZE: 44,
@@ -71,28 +96,6 @@ const CONSTANTS = {
 
 	// Level configurations
 	LEVEL_CONFIG: {
-		// Default level structure
-		DEFAULT_STRUCTURE: {
-			board: {
-				nodes: [
-					"........",
-					"........",
-					"........",
-					"........",
-					"........",
-					"........",
-					"........",
-					"........"
-				]
-			},
-			balls: [
-				{
-					start: [2, 2],
-					end: [6, 6],
-					color: 'white'
-				}
-			]
-		},
 		
 		// Node types (string-based)
 		NODE_TYPES: {
