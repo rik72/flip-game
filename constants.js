@@ -164,5 +164,22 @@ const CONSTANTS = {
 		RENDER_QUALITY: 'high',
 		ENABLE_PARTICLES: true,
 		ENABLE_ANIMATIONS: true
+	},
+
+	// Animation configurations
+	ANIMATION_CONFIG: {
+		// Ball movement animation
+		BALL_EASE_DURATION: 300, // milliseconds for final snap
+		BALL_DRAG_DURATION: 50, // milliseconds for smooth dragging
+		BALL_EASE_TYPE: 'ease-out', // ease-in, ease-out, ease-in-out
+		
+		// Easing functions
+		EASING: {
+			LINEAR: (t) => t,
+			EASE_OUT: (t) => 1 - Math.pow(1 - t, 3), // cubic ease-out
+			EASE_IN: (t) => t * t * t, // cubic ease-in
+			EASE_IN_OUT: (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // cubic ease-in-out
+			EASE_OUT_QUICK: (t) => 1 - Math.pow(1 - t, 2) // quadratic ease-out for dragging
+		}
 	}
 }; 

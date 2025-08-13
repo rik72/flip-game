@@ -68,9 +68,6 @@ class App {
         if (this.gameManager) {
             await this.gameManager.loadLevel(levelNumber);
         }
-        
-        // Update UI
-        DisplayManager.updateGameProgress(this.currentLevel);
     }
 
 
@@ -79,7 +76,6 @@ class App {
         if (this.gameManager) {
             this.gameManager.resetLevel();
         }
-        DisplayManager.updateGameProgress(this.currentLevel);
     }
 
     nextLevel() {
@@ -102,11 +98,11 @@ class App {
     }
 
     showMenu() {
-        DisplayManager.showGameMenu();
+        // Menu functionality removed - no UI button to access menu
     }
 
     hideMenu() {
-        DisplayManager.hideGameMenu();
+        // Menu functionality removed - no UI button to access menu
     }
 
     showSettings() {

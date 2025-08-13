@@ -41,7 +41,6 @@ Questo documento contiene una roadmap strutturata per miglioramenti al progetto 
 
 **Azioni**:
 1. Audit completo di tutti i pattern `translateY(-5px)` per hover effects
-2. Standardizzazione di border-radius (15px vs 20px)
 3. Consolidamento di gradient patterns in utility classes
 4. Rimozione di stili CSS non utilizzati
 

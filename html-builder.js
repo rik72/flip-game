@@ -7,67 +7,63 @@ class HtmlBuilder {
 
     static createActionButtons(itemId, itemType, additionalButtons = []) {
         const deleteButton = this.createButton(
-            'Delete', 
-            'btn-danger', 
-            `app.delete${itemType}(${itemId})`,
+            '', 'btn-outline-danger', 
+            `app.confirmDelete('${itemType}', '${itemId}')`, 
             'bi-trash'
         );
-        const editButton = this.createButton(
-            'Edit', 
-            'btn-primary', 
-            `app.showEdit${itemType}Modal(${itemId})`,
-            'bi-pencil'
-        );
         
-        let buttons = deleteButton + editButton;
-        
-        // Add additional buttons if provided
-        additionalButtons.forEach(button => {
-            buttons += this.createButton(
-                button.text,
-                button.className,
-                button.onClick,
-                button.icon
-            );
-        });
-        
-        return buttons;
+        return [deleteButton, ...additionalButtons].join(' ');
     }
-
-
 
     static createEmptyStateMessage(message) {
-        return `<div class="col-12 text-center"><p class="text-muted">${message}</p></div>`;
+        return `
+            <div class="empty-state">
+                <div class="empty-state-content">
+                    <i class="bi bi-inbox empty-state-icon"></i>
+                    <p class="empty-state-message">${message}</p>
+                </div>
+            </div>
+        `;
     }
 
-    // Game-specific methods
     static createCanvas(id, className = 'game-canvas') {
-        return `<canvas id="${id}" class="${className}" width="800" height="600"></canvas>`;
+        return `<canvas id="${id}" class="${className}"></canvas>`;
+    }
+
+    static createModal(id, title, content, footerButtons = []) {
+        const footer = footerButtons.length > 0 
+            ? `<div class="modal-footer">${footerButtons.join(' ')}</div>`
+            : '';
+        
+        return `
+            <div class="modal fade" id="${id}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${title}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">${content}</div>
+                        ${footer}
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     static createTouchArea(id, className = 'touch-area') {
-        return `<div id="${id}" class="${className}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;"></div>`;
+        return `<div id="${id}" class="${className}"></div>`;
     }
 
     static createGameUI() {
         return `
             <div class="game-container">
                 <div class="game-header">
-                    <div class="game-controls">
-                        <button class="btn btn-sm btn-outline-light" onclick="app.resetLevel()">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </div>
                 </div>
                 <div class="game-canvas-container">
                     <canvas id="gameCanvas" class="game-canvas"></canvas>
                 </div>
                 <div class="game-footer">
-                    <div class="game-menu-button">
-                        <button class="btn btn-sm btn-outline-light" onclick="app.showMenu()">
-                            <i class="bi bi-three-dots"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
         `;
@@ -75,24 +71,6 @@ class HtmlBuilder {
 
     static createLevelNumber(level) {
         return `<div class="level-number">#${level}</div>`;
-    }
-
-    static createGameMenu() {
-        return `
-            <div class="game-menu" id="gameMenu">
-                <div class="menu-content">
-                    <button class="menu-item" onclick="app.showSettings()">
-                        <i class="bi bi-gear"></i> Settings
-                    </button>
-                    <button class="menu-item" onclick="app.resetProgress()">
-                        <i class="bi bi-arrow-clockwise"></i> Reset Progress
-                    </button>
-                    <button class="menu-item" onclick="app.exitGame()">
-                        <i class="bi bi-box-arrow-right"></i> Exit
-                    </button>
-                </div>
-            </div>
-        `;
     }
 
     static createSettingsModal() {
@@ -125,28 +103,6 @@ class HtmlBuilder {
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-primary" onclick="app.saveSettings()">Save</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    static createLevelCompleteModal(level) {
-        return `
-            <div class="modal fade" id="levelCompleteModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Level ${level} Completed!</h5>
-                        </div>
-                        <div class="modal-body">
-                            <div class="completion-stats">
-                                <p>Great job! Level ${level} completed!</p>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" onclick="app.nextLevel()">Next Level</button>
                         </div>
                     </div>
                 </div>

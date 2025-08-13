@@ -22,6 +22,7 @@ class GameManager {
         this.isDragging = false;
         this.animationFrameId = null; // For smooth animations
         this.touchAnimationState = {}; // Track animation state for each ball
+        this.ballAnimationId = null; // For ball movement animations
         this.restScale = CONSTANTS.RENDER_SIZE_CONFIG.BALL_REST_SCALE; // Resting visual scale for balls
         this.gridSize = 40; // Grid cell size for snapping
         this.boardStartX = 0;
@@ -197,17 +198,23 @@ class GameManager {
         const targetX = x - this.touchOffset.x;
         const targetY = y - this.touchOffset.y;
         
-        // Move ball with offset applied
-        this.moveBallToPosition(targetX, targetY);
+        // Move ball with animated snapping during dragging
+        this.moveBallToPosition(targetX, targetY, true);
     }
 
     handleTouchEnd(e) {
-        if (this.isDragging) {
+        if (this.isDragging && this.selectedBallIndex !== -1) {
             // Hide touch feedback with fade out
             this.hideTouchFeedback();
             
-            // Check win condition when drag is released
-            this.checkWinCondition();
+            // Perform final animated snap to ensure ball is properly positioned
+            const ball = this.balls[this.selectedBallIndex];
+            this.moveBallToPosition(ball.x, ball.y, true);
+            
+            // Check win condition when drag is released (after a small delay for animation)
+            setTimeout(() => {
+                this.checkWinCondition();
+            }, 50); // Small delay to let animation start
         }
         
         this.touchStartPos = null;
@@ -223,7 +230,85 @@ class GameManager {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
+        if (this.ballAnimationId) {
+            cancelAnimationFrame(this.ballAnimationId);
+            this.ballAnimationId = null;
+        }
         this.touchAnimationState = {};
+    }
+
+    // Start ball animation to target position
+    animateBallToPosition(ballIndex, targetX, targetY, isDragging = false) {
+        if (ballIndex < 0 || ballIndex >= this.balls.length) return;
+        
+        const ball = this.balls[ballIndex];
+        const animation = ball.animation;
+        
+        // If already animating to the same target, don't restart
+        if (animation.isAnimating && 
+            Math.abs(animation.targetX - targetX) < 1 && 
+            Math.abs(animation.targetY - targetY) < 1) {
+            return;
+        }
+        
+        // Set up animation properties
+        animation.isAnimating = true;
+        animation.startX = ball.x;
+        animation.startY = ball.y;
+        animation.targetX = targetX;
+        animation.targetY = targetY;
+        animation.startTime = performance.now();
+        animation.duration = isDragging ? 
+            CONSTANTS.ANIMATION_CONFIG.BALL_DRAG_DURATION : 
+            CONSTANTS.ANIMATION_CONFIG.BALL_EASE_DURATION;
+        animation.easing = isDragging ? 'EASE_OUT_QUICK' : 'EASE_OUT';
+        
+        // Start the animation loop if not already running
+        if (!this.ballAnimationId) {
+            this.ballAnimationLoop();
+        }
+    }
+
+    // Animation loop for ball movements
+    ballAnimationLoop() {
+        const currentTime = performance.now();
+        let anyAnimating = false;
+
+        // Update all animating balls
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            const animation = ball.animation;
+            
+            if (animation.isAnimating) {
+                const elapsed = currentTime - animation.startTime;
+                const progress = Math.min(elapsed / animation.duration, 1);
+                
+                // Apply easing function
+                const easingFunc = CONSTANTS.ANIMATION_CONFIG.EASING[animation.easing] || CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT;
+                const easedProgress = easingFunc(progress);
+                
+                // Interpolate position
+                ball.x = animation.startX + (animation.targetX - animation.startX) * easedProgress;
+                ball.y = animation.startY + (animation.targetY - animation.startY) * easedProgress;
+                
+                // Check if animation is complete
+                if (progress >= 1) {
+                    ball.x = animation.targetX;
+                    ball.y = animation.targetY;
+                    animation.isAnimating = false;
+                } else {
+                    anyAnimating = true;
+                }
+            }
+        }
+
+        // Continue animation loop if any balls are still animating
+        if (anyAnimating) {
+            this.render(); // Re-render with updated positions
+            this.ballAnimationId = requestAnimationFrame(() => this.ballAnimationLoop());
+        } else {
+            this.ballAnimationId = null;
+        }
     }
 
     // Radius helpers to keep balls and graphics proportional to the board
@@ -411,7 +496,7 @@ class GameManager {
         }
     }
 
-    moveBallToPosition(x, y) {
+    moveBallToPosition(x, y, animate = false) {
         if (this.selectedBallIndex === -1) return;
         
         const ball = this.balls[this.selectedBallIndex];
@@ -455,9 +540,16 @@ class GameManager {
         
         // Only update if position actually changed
         if (ball.x !== clampedX || ball.y !== clampedY) {
-            ball.x = clampedX;
-            ball.y = clampedY;
-            this.render();
+            if (animate) {
+                // Use smooth animation for snapping
+                const isDragging = this.isDragging;
+                this.animateBallToPosition(this.selectedBallIndex, clampedX, clampedY, isDragging);
+            } else {
+                // Immediate update during dragging
+                ball.x = clampedX;
+                ball.y = clampedY;
+                this.render();
+            }
             // Don't check win condition during drag - only when released
         }
     }
@@ -531,6 +623,17 @@ class GameManager {
                     endPosition: {
                         x: this.boardStartX + (ballData.end[0] * this.gridSize),
                         y: this.boardStartY + (ballData.end[1] * this.gridSize)
+                    },
+                    // Animation properties for smooth movement
+                    animation: {
+                        isAnimating: false,
+                        startX: 0,
+                        startY: 0,
+                        targetX: 0,
+                        targetY: 0,
+                        startTime: 0,
+                        duration: CONSTANTS.ANIMATION_CONFIG.BALL_EASE_DURATION,
+                        easing: 'EASE_OUT'
                     }
                 };
                 
