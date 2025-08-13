@@ -234,6 +234,16 @@ class GameManager {
         return base + Math.max(5, this.gridSize * 0.125);
     }
 
+    // Check if a grid node is already occupied by another ball
+    isNodeOccupied(gridX, gridY, ignoreBallIndex = -1) {
+        return this.balls.some((otherBall, idx) => {
+            if (idx === ignoreBallIndex) return false;
+            const otherGridX = Math.round((otherBall.x - this.boardStartX) / this.gridSize);
+            const otherGridY = Math.round((otherBall.y - this.boardStartY) / this.gridSize);
+            return otherGridX === gridX && otherGridY === gridY;
+        });
+    }
+
     showTouchFeedback(ball) {
         // Initialize animation state for this ball
         const ballId = this.balls.indexOf(ball);
@@ -350,6 +360,15 @@ class GameManager {
             this.boardStartY + logicalRadius, 
             Math.min(snappedY, this.boardStartY + this.boardHeight - logicalRadius)
         );
+        
+        // Compute target grid cell
+        const targetGridX = Math.round((clampedX - this.boardStartX) / this.gridSize);
+        const targetGridY = Math.round((clampedY - this.boardStartY) / this.gridSize);
+        
+        // Prevent two balls in the same node
+        if (this.isNodeOccupied(targetGridX, targetGridY, this.selectedBallIndex)) {
+            return; // Skip movement if target node is occupied
+        }
         
         // Only update if position actually changed
         if (ball.x !== clampedX || ball.y !== clampedY) {
