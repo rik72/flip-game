@@ -96,12 +96,53 @@ window.FlipgameApp = {
     },
 
     // Testing functions
-    testLevelFormat: function() {
+    testLevelFormat: function(levelData) {
+        return Utils.validateLevelData(levelData);
+    },
+
+    // Debug flip animation
+    testFlipAnimation: function() {
         if (appInstance && appInstance.gameManager) {
-            return appInstance.gameManager.testLevelFormat();
+            appInstance.gameManager.testFlipAnimation();
+        } else {
+            console.error('Game manager not available');
         }
-        console.error('❌ Game manager not available for testing');
-        return false;
+    },
+
+    // Debug pure rotation
+    testPureRotation: function() {
+        if (appInstance && appInstance.gameManager) {
+            appInstance.gameManager.testPureRotation();
+        } else {
+            console.error('Game manager not available');
+        }
+    },
+
+    // Debug flip without content switch
+    testFlipWithoutContentSwitch: function() {
+        if (appInstance && appInstance.gameManager) {
+            appInstance.gameManager.testFlipWithoutContentSwitch();
+        } else {
+            console.error('Game manager not available');
+        }
+    },
+
+    // Debug real flip animation
+    testRealFlip: function() {
+        if (appInstance && appInstance.gameManager) {
+            appInstance.gameManager.toggleBoardFace();
+        } else {
+            console.error('Game manager not available');
+        }
+    },
+
+    // Debug CSS changes
+    testCSSChanges: function() {
+        if (appInstance && appInstance.gameManager) {
+            appInstance.gameManager.testCSSChanges();
+        } else {
+            console.error('Game manager not available');
+        }
     },
 
     testGameReachability: function() {

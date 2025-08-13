@@ -25,6 +25,12 @@ class GameManager {
         this.touchAnimationState = {}; // Track animation state for each ball
         this.ballAnimationId = null; // For ball movement animations
         this.restScale = CONSTANTS.RENDER_SIZE_CONFIG.BALL_REST_SCALE; // Resting visual scale for balls
+        
+        // Flip animation state
+        this.isFlipping = false; // Track if flip animation is currently running
+        this.flipWrapper = null; // Reference to the flip wrapper element
+        this.flipAnimationTimeout = null; // Track animation timing
+        
         this.gridSize = 40; // Grid cell size for snapping
         this.boardStartX = 0;
         this.boardStartY = 0;
@@ -69,8 +75,17 @@ class GameManager {
 
     // Update the toggle button visibility based on whether the board has a rear face
     updateToggleButton() {
+        console.log('updateToggleButton called', {
+            hasBoard: !!this.board,
+            hasRear: !!(this.board && this.board.rear),
+            boardKeys: this.board ? Object.keys(this.board) : null
+        });
+        
         const gameFooter = document.querySelector('.game-footer');
-        if (!gameFooter) return;
+        if (!gameFooter) {
+            console.error('Game footer not found');
+            return;
+        }
 
         // Remove existing toggle button if present
         const existingButton = document.getElementById('faceToggleButton');
@@ -80,6 +95,7 @@ class GameManager {
 
         // Add toggle button if board has rear face
         if (this.board && this.board.rear) {
+            console.log('Creating toggle button - board has rear face');
             const toggleButton = document.createElement('button');
             toggleButton.id = 'faceToggleButton';
             toggleButton.className = 'btn btn-outline-light face-toggle-btn';
@@ -153,12 +169,76 @@ class GameManager {
         }
     }
 
-    // Toggle between front and rear board faces
+    // Toggle between front and rear board faces with animation
     toggleBoardFace() {
-        if (!this.board || !this.board.rear) return;
+        console.log('toggleBoardFace called', {
+            hasBoard: !!this.board,
+            hasRear: !!(this.board && this.board.rear),
+            isFlipping: this.isFlipping,
+            hasFlipWrapper: !!this.flipWrapper,
+            currentFace: this.currentFace
+        });
         
-        this.currentFace = this.currentFace === 'front' ? 'rear' : 'front';
-        this.render();
+        if (!this.board || !this.board.rear || this.isFlipping) {
+            console.log('toggleBoardFace early return - board/rear/flipping check failed');
+            return;
+        }
+        
+        // Ensure flip wrapper is initialized
+        if (!this.ensureFlipWrapper()) {
+            console.log('toggleBoardFace early return - flip wrapper not available');
+            return;
+        }
+        
+        // Start flip animation
+        this.isFlipping = true;
+        const targetFace = this.currentFace === 'front' ? 'rear' : 'front';
+        
+        console.log('Starting flip animation to:', targetFace);
+        
+        // Add flipping class to disable interactions and show overlay
+        this.flipWrapper.classList.add('flipping');
+        
+        // Apply CSS animation class based on target face
+        if (targetFace === 'rear') {
+            this.flipWrapper.classList.remove('flip-to-front');
+            this.flipWrapper.classList.add('flip-to-rear');
+        } else {
+            this.flipWrapper.classList.remove('flip-to-rear');
+            this.flipWrapper.classList.add('flip-to-front');
+        }
+        
+        console.log('Applied CSS classes:', this.flipWrapper.className);
+        
+        // Schedule face content switch at the very end (99% of animation)
+        const contentSwitchDelay = CONSTANTS.ANIMATION_CONFIG.FLIP_DURATION * CONSTANTS.ANIMATION_CONFIG.FLIP_HALFWAY_THRESHOLD;
+        console.log('Content switch timing:', {
+            duration: CONSTANTS.ANIMATION_CONFIG.FLIP_DURATION,
+            threshold: CONSTANTS.ANIMATION_CONFIG.FLIP_HALFWAY_THRESHOLD,
+            delay: contentSwitchDelay
+        });
+        
+        setTimeout(() => {
+            this.currentFace = targetFace;
+            this.render(); // Re-render with new face content
+            console.log('Switched face content to:', targetFace);
+            
+            // Keep the rotation going to 180 degrees for smooth easing
+            console.log('Content switched, continuing rotation to 180° for smooth easing');
+        }, contentSwitchDelay);
+        
+        // Clear any existing animation timeout
+        if (this.flipAnimationTimeout) {
+            clearTimeout(this.flipAnimationTimeout);
+        }
+        
+        // Schedule animation completion
+        this.flipAnimationTimeout = setTimeout(() => {
+            this.isFlipping = false;
+            this.flipWrapper.classList.remove('flipping');
+            this.flipAnimationTimeout = null;
+            console.log('Flip animation completed');
+        }, CONSTANTS.ANIMATION_CONFIG.FLIP_DURATION);
     }
 
     init() {
@@ -171,6 +251,26 @@ class GameManager {
         if (!this.canvas) {
             console.error('Canvas not found');
             return;
+        }
+        
+        // Initialize flip wrapper reference - retry if not available
+        this.flipWrapper = document.getElementById('gameFlipWrapper');
+        console.log('Flip wrapper found:', !!this.flipWrapper);
+        if (!this.flipWrapper) {
+            console.error('Flip wrapper not found - will retry later');
+            // Retry after a short delay
+            setTimeout(() => {
+                this.flipWrapper = document.getElementById('gameFlipWrapper');
+                if (this.flipWrapper) {
+                    console.log('Flip wrapper found on retry');
+                    this.initializeFlipAnimation();
+                } else {
+                    console.error('Flip wrapper still not found after retry');
+                }
+            }, 100);
+        } else {
+            // Initialize flip animation CSS properties
+            this.initializeFlipAnimation();
         }
         
         this.ctx = this.canvas.getContext('2d');
@@ -358,6 +458,17 @@ class GameManager {
             cancelAnimationFrame(this.ballAnimationId);
             this.ballAnimationId = null;
         }
+        
+        // Clean up flip animation
+        if (this.flipAnimationTimeout) {
+            clearTimeout(this.flipAnimationTimeout);
+            this.flipAnimationTimeout = null;
+        }
+        if (this.flipWrapper) {
+            this.flipWrapper.classList.remove('flipping', 'flip-to-rear', 'flip-to-front');
+        }
+        this.isFlipping = false;
+        
         this.touchAnimationState = {};
     }
 
@@ -843,6 +954,146 @@ class GameManager {
         }
     }
 
+    // Initialize CSS custom properties for flip animation
+    initializeFlipAnimation() {
+        if (!this.flipWrapper) return;
+        
+        console.log('Flip wrapper initialized for animation');
+        
+        // The CSS animation is now handled directly in the stylesheet
+        // No need to set custom properties
+    }
+
+    // Ensure flip wrapper is initialized
+    ensureFlipWrapper() {
+        if (!this.flipWrapper) {
+            this.flipWrapper = document.getElementById('gameFlipWrapper');
+            if (this.flipWrapper) {
+                this.initializeFlipAnimation();
+            }
+        }
+        return !!this.flipWrapper;
+    }
+
+    // Test method for debugging flip animation
+    testFlipAnimation() {
+        console.log('Testing flip animation...');
+        if (!this.ensureFlipWrapper()) {
+            console.error('Flip wrapper not available for test');
+            return;
+        }
+        
+        console.log('Flip wrapper found, testing animation...');
+        this.flipWrapper.classList.add('flipping');
+        this.flipWrapper.classList.add('flip-to-rear');
+        
+        // Test animation without switching content
+        setTimeout(() => {
+            this.flipWrapper.classList.remove('flip-to-rear');
+            this.flipWrapper.classList.add('flip-to-front');
+            console.log('Animation halfway - switched to front rotation');
+        }, 400);
+        
+        setTimeout(() => {
+            this.flipWrapper.classList.remove('flip-to-front');
+            this.flipWrapper.classList.remove('flipping');
+            console.log('Test animation completed');
+        }, 800);
+    }
+
+    // Test pure rotation without content switching
+    testPureRotation() {
+        console.log('Testing pure rotation without content switching...');
+        if (!this.ensureFlipWrapper()) {
+            console.error('Flip wrapper not available for rotation test');
+            return;
+        }
+        
+        console.log('Starting pure rotation test...');
+        // Use a single continuous rotation to 180 degrees
+        this.flipWrapper.classList.add('flip-to-rear');
+        
+        // Let it complete the full rotation to 180 degrees
+        setTimeout(() => {
+            console.log('Rotation should be complete at 180 degrees');
+            console.log('Current transform:', this.flipWrapper.style.transform);
+            console.log('Current classes:', this.flipWrapper.className);
+            // Don't remove the class - keep it at 180 degrees
+            // this.flipWrapper.classList.remove('flip-to-rear');
+            console.log('Keeping rotation at 180 degrees');
+        }, 6000);
+    }
+
+    // Test flip animation without content switching
+    testFlipWithoutContentSwitch() {
+        console.log('Testing flip animation without content switching...');
+        if (!this.ensureFlipWrapper()) {
+            console.error('Flip wrapper not available for flip test');
+            return;
+        }
+        
+        console.log('Starting flip animation test...');
+        this.isFlipping = true;
+        
+        // Add flipping class to show overlay
+        this.flipWrapper.classList.add('flipping');
+        this.flipWrapper.classList.add('flip-to-rear');
+        
+        // Don't switch content - just let it rotate
+        setTimeout(() => {
+            this.isFlipping = false;
+            this.flipWrapper.classList.remove('flipping');
+            console.log('Flip animation completed without content switch');
+        }, 6000);
+    }
+
+    // Simple CSS test to verify CSS is working
+    testCSSChanges() {
+        console.log('Testing CSS changes...');
+        if (!this.ensureFlipWrapper()) {
+            console.error('Flip wrapper not available for CSS test');
+            return;
+        }
+        
+        // Test by changing canvas opacity to make wrapper visible
+        if (this.canvas) {
+            this.canvas.style.opacity = '0.3';
+            console.log('Set canvas opacity to 0.3');
+        }
+        
+        // Test with a very visible border and background
+        this.flipWrapper.style.backgroundColor = 'red';
+        this.flipWrapper.style.border = '10px solid yellow';
+        this.flipWrapper.style.zIndex = '10000';
+        this.flipWrapper.style.position = 'absolute';
+        this.flipWrapper.style.top = '0';
+        this.flipWrapper.style.left = '0';
+        this.flipWrapper.style.width = '100%';
+        this.flipWrapper.style.height = '100%';
+        console.log('Set wrapper with red background, yellow border, and high z-index');
+        
+        setTimeout(() => {
+            this.flipWrapper.style.backgroundColor = 'blue';
+            this.flipWrapper.style.border = '10px solid green';
+            console.log('Set wrapper with blue background and green border');
+        }, 1000);
+        
+        setTimeout(() => {
+            this.flipWrapper.style.backgroundColor = '';
+            this.flipWrapper.style.border = '';
+            this.flipWrapper.style.zIndex = '';
+            this.flipWrapper.style.position = '';
+            this.flipWrapper.style.top = '';
+            this.flipWrapper.style.left = '';
+            this.flipWrapper.style.width = '';
+            this.flipWrapper.style.height = '';
+            if (this.canvas) {
+                this.canvas.style.opacity = '';
+            }
+            console.log('Reset all styles');
+        }, 2000);
+    }
+
     render() {
         if (!this.ctx) return;
         
@@ -852,6 +1103,15 @@ class GameManager {
         // Draw background
         this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
+        
+        // Apply horizontal reflection for rear face
+        if (this.currentFace === 'rear') {
+            this.ctx.save();
+            // Scale horizontally by -1 to flip the image
+            this.ctx.scale(-1, 1);
+            // Translate to compensate for the flip
+            this.ctx.translate(-this.displayWidth, 0);
+        }
         
         // Draw grid
         this.renderGrid();
@@ -870,6 +1130,11 @@ class GameManager {
         
         // Draw balls LAST (on top of everything)
         this.renderBalls();
+        
+        // Restore context if we applied reflection
+        if (this.currentFace === 'rear') {
+            this.ctx.restore();
+        }
     }
 
     calculateBoardPosition() {

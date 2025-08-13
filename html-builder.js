@@ -61,7 +61,9 @@ class HtmlBuilder {
                 <div class="game-header">
                 </div>
                 <div class="game-canvas-container">
-                    <canvas id="gameCanvas" class="game-canvas"></canvas>
+                    <div id="gameFlipWrapper" class="game-flip-wrapper">
+                        <canvas id="gameCanvas" class="game-canvas"></canvas>
+                    </div>
                 </div>
                 <div class="game-footer">
                 </div>

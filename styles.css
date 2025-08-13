@@ -142,6 +142,41 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* 3D perspective for flip animation */
+    perspective: 1000px;
+    perspective-origin: center center;
+}
+
+/* Game Flip Wrapper for 3D animations */
+.game-flip-wrapper {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-style: preserve-3d;
+    /* Direct animation properties - no custom properties */
+    transition: transform 0.6s ease-in-out;
+    /* Remove backface-visibility to see if it's causing the black screen */
+    /* backface-visibility: hidden; */
+    /* Ensure the wrapper is visible during animation */
+    background-color: rgba(0, 0, 0, 0.95);
+    /* Ensure wrapper is above canvas and all other elements */
+    z-index: 10000;
+}
+
+/* Flip animation states */
+.game-flip-wrapper.flipping {
+    pointer-events: none; /* Disable interactions during animation */
+    /* Clean animation without overlay or glow */
+}
+
+.game-flip-wrapper.flip-to-rear {
+    transform: rotateY(180deg) !important;
+}
+
+.game-flip-wrapper.flip-to-front {
+    transform: rotateY(0deg) !important;
 }
 
 .game-canvas {

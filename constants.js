@@ -95,6 +95,33 @@ const CONSTANTS = {
 		}
 	},
 
+	// Animation configurations
+	ANIMATION_CONFIG: {
+		// Board flip animation
+		FLIP_DURATION: 600, // Animation duration in milliseconds
+		FLIP_EASING: 'ease-in-out', // CSS easing function
+		FLIP_PERSPECTIVE: 1000, // 3D perspective distance in pixels
+		FLIP_AXIS: 'Y', // Rotation axis (X, Y, or Z)
+		
+		// Animation states
+		FLIP_ANGLE: 180, // Rotation angle in degrees
+		FLIP_HALFWAY_THRESHOLD: 0.5, // When to switch face content (0.0-1.0) - at halfway point
+		
+		// Ball movement animation
+		BALL_EASE_DURATION: 300, // milliseconds for final snap
+		BALL_DRAG_DURATION: 50, // milliseconds for smooth dragging
+		BALL_EASE_TYPE: 'ease-out', // ease-in, ease-out, ease-in-out
+		
+		// Easing functions
+		EASING: {
+			LINEAR: (t) => t,
+			EASE_OUT: (t) => 1 - Math.pow(1 - t, 3), // cubic ease-out
+			EASE_IN: (t) => t * t * t, // cubic ease-in
+			EASE_IN_OUT: (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // cubic ease-in-out
+			EASE_OUT_QUICK: (t) => 1 - Math.pow(1 - t, 2) // quadratic ease-out for dragging
+		}
+	},
+
 	// Level configurations
 	LEVEL_CONFIG: {
 		
@@ -165,22 +192,5 @@ const CONSTANTS = {
 		RENDER_QUALITY: 'high',
 		ENABLE_PARTICLES: true,
 		ENABLE_ANIMATIONS: true
-	},
-
-	// Animation configurations
-	ANIMATION_CONFIG: {
-		// Ball movement animation
-		BALL_EASE_DURATION: 300, // milliseconds for final snap
-		BALL_DRAG_DURATION: 50, // milliseconds for smooth dragging
-		BALL_EASE_TYPE: 'ease-out', // ease-in, ease-out, ease-in-out
-		
-		// Easing functions
-		EASING: {
-			LINEAR: (t) => t,
-			EASE_OUT: (t) => 1 - Math.pow(1 - t, 3), // cubic ease-out
-			EASE_IN: (t) => t * t * t, // cubic ease-in
-			EASE_IN_OUT: (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // cubic ease-in-out
-			EASE_OUT_QUICK: (t) => 1 - Math.pow(1 - t, 2) // quadratic ease-out for dragging
-		}
 	}
 }; 
