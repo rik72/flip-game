@@ -613,12 +613,23 @@ class GameManager {
             const nodeType = this.getNodeType(snappedGridX, snappedGridY);
             
             if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
-                // Snap to the well position first, then start well animation
-                this.moveBallToPosition(finalSnapX, finalSnapY, true);
-                // Start well animation after a small delay to let the snap complete
-                setTimeout(() => {
-                    this.startWellAnimation(ball, snappedGridX, snappedGridY);
-                }, 100); // Small delay to let snap animation complete
+                // Check if the well destination is occupied on the other face
+                if (this.isWellDestinationOccupied(snappedGridX, snappedGridY, this.selectedBallIndex)) {
+                    // Destination is occupied, show blocked transfer animation
+                    console.log('Well transfer blocked: destination is occupied on the other face');
+                    this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                    // Start blocked well animation after a small delay
+                    setTimeout(() => {
+                        this.startBlockedWellAnimation(ball, snappedGridX, snappedGridY);
+                    }, 100);
+                } else {
+                    // Destination is free, proceed with well transfer
+                    this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                    // Start well animation after a small delay to let the snap complete
+                    setTimeout(() => {
+                        this.startWellAnimation(ball, snappedGridX, snappedGridY);
+                    }, 100); // Small delay to let snap animation complete
+                }
             } else {
                 // Snap to final position (not a well)
                 this.moveBallToPosition(finalSnapX, finalSnapY, true);
@@ -766,13 +777,58 @@ class GameManager {
         return base + Math.max(CONSTANTS.RENDER_SIZE_CONFIG.GOAL_OUTER_MIN_OFFSET, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GOAL_OUTER_RATIO);
     }
 
-    // Check if a grid node is already occupied by another ball
+    // Check if a grid node is already occupied by another ball on the same face
     isNodeOccupied(gridX, gridY, ignoreBallIndex = -1) {
+        // Get the face of the ball being moved (if ignoreBallIndex is valid)
+        let movingBallFace = 'front'; // Default to front
+        if (ignoreBallIndex >= 0 && ignoreBallIndex < this.balls.length) {
+            movingBallFace = this.getBallCurrentFace(this.balls[ignoreBallIndex]);
+        }
+        
         return this.balls.some((otherBall, idx) => {
             if (idx === ignoreBallIndex) return false;
+            
+            // Only check balls on the same face
+            const otherBallFace = this.getBallCurrentFace(otherBall);
+            if (otherBallFace !== movingBallFace) return false;
+            
             const otherGridX = Math.round((otherBall.x - this.boardStartX) / this.gridSize);
             const otherGridY = Math.round((otherBall.y - this.boardStartY) / this.gridSize);
             return otherGridX === gridX && otherGridY === gridY;
+        });
+    }
+
+    // Check if a well destination is occupied on the other face
+    isWellDestinationOccupied(wellGridX, wellGridY, ballIndex) {
+        if (!this.board || !this.board.rear) return false; // No rear face, no transfer possible
+        
+        // Get the board dimensions in grid cells
+        const nodes = this.getCurrentNodes();
+        const boardGridWidth = nodes[0] ? nodes[0].length : 0;
+        
+        // Calculate the transfer coordinates on the other side (same logic as handleWellTransfer)
+        let transferX = boardGridWidth - 1 - wellGridX;
+        let transferY = wellGridY;
+        
+        // Get the face of the ball being transferred
+        const ball = this.balls[ballIndex];
+        const currentBallFace = this.getBallCurrentFace(ball);
+        const destinationFace = currentBallFace === 'front' ? 'rear' : 'front';
+        
+        // Check if the destination coordinates are occupied by a ball on the destination face
+        return this.balls.some((otherBall, idx) => {
+            if (idx === ballIndex) return false; // Don't check the ball being transferred
+            
+            // Only check balls on the destination face
+            const otherBallFace = this.getBallCurrentFace(otherBall);
+            if (otherBallFace !== destinationFace) return false;
+            
+            // Convert the other ball's position to grid coordinates
+            const otherGridX = Math.round((otherBall.x - this.boardStartX) / this.gridSize);
+            const otherGridY = Math.round((otherBall.y - this.boardStartY) / this.gridSize);
+            
+            // Check if the other ball is at the destination coordinates
+            return otherGridX === transferX && otherGridY === transferY;
         });
     }
 
@@ -1124,11 +1180,34 @@ class GameManager {
             wellGridX: wellGridX,
             wellGridY: wellGridY,
             pulseCount: 0,
-            maxPulses: 3
+            maxPulses: 3,
+            isBlocked: false // Track if this is a blocked transfer
         };
         
         // Start the well animation loop
         this.wellAnimationLoop();
+    }
+
+    // Start blocked well animation when transfer is blocked
+    startBlockedWellAnimation(ball, wellGridX, wellGridY) {
+        // Create a blocked transfer animation
+        this.wellAnimationState = {
+            isAnimating: true,
+            startTime: performance.now(),
+            duration: 400, // Shorter animation for blocked transfer
+            ball: ball,
+            wellGridX: wellGridX,
+            wellGridY: wellGridY,
+            pulseCount: 0,
+            maxPulses: 3,
+            isBlocked: true // Mark as blocked transfer
+        };
+        
+        // Mark the ball as blocked for visual feedback
+        ball.isBlockedTransfer = true;
+        
+        // Start the blocked well animation loop
+        this.blockedWellAnimationLoop();
     }
     
     // Well animation loop
@@ -1165,6 +1244,57 @@ class GameManager {
         } else {
             // Continue animation
             requestAnimationFrame(() => this.wellAnimationLoop());
+        }
+    }
+
+    // Blocked well animation loop (reverses halfway through)
+    blockedWellAnimationLoop() {
+        if (!this.wellAnimationState || !this.wellAnimationState.isAnimating) {
+            return;
+        }
+        
+        const currentTime = performance.now();
+        const elapsed = currentTime - this.wellAnimationState.startTime;
+        const progress = elapsed / this.wellAnimationState.duration;
+        
+        // Ball shrinking and fading effect that reverses halfway through
+        const ball = this.wellAnimationState.ball;
+        
+        // Create a "bounce back" effect: shrink/fade to 0.7 at 50% progress, then return to 1.0
+        let scaleProgress, opacityProgress;
+        if (progress <= 0.5) {
+            // First half: shrink and fade to 0.7
+            scaleProgress = 1.0 - (progress * 2 * 0.3); // From 1.0 to 0.7
+            opacityProgress = 1.0 - (progress * 2 * 0.3); // From 1.0 to 0.7
+        } else {
+            // Second half: grow and fade back to 1.0
+            const secondHalfProgress = (progress - 0.5) * 2; // 0.0 to 1.0 in second half
+            scaleProgress = 0.7 + (secondHalfProgress * 0.3); // From 0.7 to 1.0
+            opacityProgress = 0.7 + (secondHalfProgress * 0.3); // From 0.7 to 1.0
+        }
+        
+        ball.wellAnimationScale = scaleProgress;
+        ball.wellAnimationOpacity = opacityProgress;
+        
+        // Re-render to show the animation
+        this.render();
+        
+        if (progress >= 1) {
+            // Animation complete, ball stays on current face
+            this.wellAnimationState.isAnimating = false;
+            
+            // Reset animation properties
+            ball.wellAnimationScale = undefined;
+            ball.wellAnimationOpacity = undefined;
+            ball.isBlockedTransfer = false; // Clear blocked flag
+            
+            // Check win condition since transfer was blocked
+            setTimeout(() => {
+                this.checkWinCondition();
+            }, 50);
+        } else {
+            // Continue animation
+            requestAnimationFrame(() => this.blockedWellAnimationLoop());
         }
     }
 
