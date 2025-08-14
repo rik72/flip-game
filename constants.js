@@ -24,12 +24,12 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 5, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 1, // Set to level number (e.g., 4) to force start at that level
 		
-			// Ball configurations
-	BALL_RADIUS: 15,
-	BALL_SPEED: 0.1,
-	BALL_COLOR: '#FFFFFF',
+        // Ball configurations
+        BALL_RADIUS: 15,
+        BALL_SPEED: 0.1,
+        BALL_COLOR: '#FFFFFF',
 		
 		// Board configurations
 		BOARD_TYPES: {
@@ -74,7 +74,7 @@ const CONSTANTS = {
 		GRID_DOT_RATIO: 0.06, // Grid dot radius as ratio of gridSize
 		
 		// Path node sizing (for path intersections)
-		PATH_NODE_MIN_SIZE: 5, // Minimum path node radius in pixels
+		PATH_NODE_MIN_SIZE: 3, // Minimum path node radius in pixels
 		PATH_NODE_RATIO: 0.08, // Path node radius as ratio of gridSize
 		
 		// Path line sizing
@@ -90,8 +90,10 @@ const CONSTANTS = {
 
 	// Touch configurations
 	TOUCH_CONFIG: {
-		MIN_TOUCH_SIZE: 44,
-		MAX_TOUCH_DISTANCE: 100,
+		// Touch size and distance are now scaled with grid size
+		// These will be calculated as: gridSize * ratio
+		MIN_TOUCH_SIZE_RATIO: 1.2, // Minimum touch size as ratio of gridSize (120% of grid cell)
+		MAX_TOUCH_DISTANCE_RATIO: 1.4, // Maximum touch distance as ratio of gridSize (140% of grid cell)
 		TOUCH_TIMEOUT: 300,
 		GESTURE_RECOGNITION: {
 			SWIPE_THRESHOLD: 50,

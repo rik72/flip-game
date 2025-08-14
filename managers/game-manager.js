@@ -220,6 +220,11 @@ class GameManager {
             this.isFlipping = false;
             this.flipWrapper.classList.remove('flipping');
             this.flipAnimationTimeout = null;
+
+            // Check win condition after transfer animation is complete, but only if level is not already completed
+            if (!this.storageManager.isLevelCompleted(this.currentLevel)) {
+                this.checkWinCondition();
+            }
         }, CONSTANTS.ANIMATION_CONFIG.FLIP_DURATION);
     }
 
@@ -340,8 +345,8 @@ class GameManager {
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
-        // Use larger touch target for mobile (minimum 44px as per accessibility guidelines)
-        const touchTargetSize = Math.max(CONSTANTS.TOUCH_CONFIG.MIN_TOUCH_SIZE, CONSTANTS.GAME_CONFIG.BALL_RADIUS * 3);
+        // Use grid-scaled touch target (minimum 100% of grid size for accessibility)
+        const touchTargetSize = Math.max(this.gridSize * CONSTANTS.TOUCH_CONFIG.MIN_TOUCH_SIZE_RATIO, CONSTANTS.GAME_CONFIG.BALL_RADIUS * 3);
         
         // Check if touch is near any ball - find the closest one within touch range
         let closestBallIndex = -1;
@@ -418,7 +423,7 @@ class GameManager {
             Math.pow(touchX - ball.x, 2) + Math.pow(touchY - ball.y, 2)
         );
         
-        if (distanceFromBall > CONSTANTS.TOUCH_CONFIG.MAX_TOUCH_DISTANCE) {
+        if (distanceFromBall > this.gridSize * CONSTANTS.TOUCH_CONFIG.MAX_TOUCH_DISTANCE_RATIO) {
             // Release the ball - simulate touch end
             this.handleTouchEnd(e);
             return;
@@ -636,9 +641,11 @@ class GameManager {
                 // Snap to final position (not a well)
                 this.moveBallToPosition(finalSnapX, finalSnapY, true);
                 
-                // Check win condition when drag is released (after a small delay for animation)
+                // Check win condition when drag is released (after a small delay for animation), but only if level is not already completed
                 setTimeout(() => {
-                    this.checkWinCondition();
+                    if (!this.storageManager.isLevelCompleted(this.currentLevel)) {
+                        this.checkWinCondition();
+                    }
                 }, 50); // Small delay to let animation start
             }
         }
@@ -1290,9 +1297,11 @@ class GameManager {
             ball.wellAnimationOpacity = undefined;
             ball.isBlockedTransfer = false; // Clear blocked flag
             
-            // Check win condition since transfer was blocked
+            // Check win condition since transfer was blocked, but only if level is not already completed
             setTimeout(() => {
-                this.checkWinCondition();
+                if (!this.storageManager.isLevelCompleted(this.currentLevel)) {
+                    this.checkWinCondition();
+                }
             }, 50);
         } else {
             // Continue animation
@@ -1358,6 +1367,9 @@ class GameManager {
             this.appReference.currentLevel = levelNumber;
         }
         this.gameState.isPlaying = true;
+        
+        // Reset completion status for this level when entering it
+        this.storageManager.resetLevelCompletion(levelNumber);
         
         try {
             // Load level data from JSON file
@@ -2160,8 +2172,6 @@ class GameManager {
             this.ctx.fill();
         });
     }
-
-
 
     getGameState() {
         return {

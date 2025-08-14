@@ -141,6 +141,24 @@ class StorageManager {
         return progress ? progress.level : 0;
     }
 
+    /**
+     * Controlla se un livello specifico è stato completato
+     * @param {number} level - Numero del livello da controllare
+     * @returns {boolean} - True se il livello è completato, false altrimenti
+     */
+    isLevelCompleted(level) {
+        const levelData = this.load(`level_${level}`);
+        return levelData && levelData.completed === true;
+    }
+
+    /**
+     * Resetta lo stato di completamento di un livello specifico
+     * @param {number} level - Numero del livello da resettare
+     */
+    resetLevelCompletion(level) {
+        this.save(`level_${level}`, { completed: false });
+    }
+
 
 
     /**
