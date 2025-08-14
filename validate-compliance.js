@@ -114,15 +114,17 @@ class ComplianceValidator {
         // Check for duplicated class definitions
         const classDefinitions = {};
         for (const [module, content] of Object.entries(moduleContents)) {
-            const classPattern = /class\s+(\w+)/g;
-            let match;
-            while ((match = classPattern.exec(content)) !== null) {
-                const className = match[1];
-                if (classDefinitions[className]) {
-                    this.addViolation('CRITICAL', `Duplicate class definition: ${className} found in both ${classDefinitions[className]} and ${this.moduleFiles[module]}`);
-                } else {
-                    classDefinitions[className] = this.moduleFiles[module];
-                }
+            const classPattern = /^class\s+(\w+)/gm;
+            const matches = content.match(classPattern);
+            if (matches) {
+                matches.forEach(match => {
+                    const className = match.replace('class ', '').trim();
+                    if (classDefinitions[className]) {
+                        this.addViolation('CRITICAL', `Duplicate class definition: ${className} found in both ${classDefinitions[className]} and ${this.moduleFiles[module]}`);
+                    } else {
+                        classDefinitions[className] = this.moduleFiles[module];
+                    }
+                });
             }
         }
         
