@@ -70,15 +70,8 @@ class GameManager {
     getBallCurrentFace(ball) {
         if (!this.board || !this.board.front) return 'front';
         
-        // Convert ball position back to grid coordinates (for future use)
-        const gridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
-        const gridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
-        
-        // Currently determine face based on original coordinates
-        // TODO: In the future, enhance this to detect actual current position
-        // and allow balls to dynamically switch between faces during gameplay
-        const isRearBall = ball.originalStart[0] < 0 || ball.originalStart[1] < 0;
-        return isRearBall ? 'rear' : 'front';
+        // Return the ball's current face (tracked during gameplay)
+        return ball.currentFace || 'front';
     }
 
     // Determine which face a goal is on based on the ball's end coordinates
@@ -1331,16 +1324,18 @@ class GameManager {
         ball.x = transferAbsX;
         ball.y = transferAbsY;
         
-        // Update the ball's original start coordinates based on current face
+        // Update the ball's original start coordinates and current face based on transfer
         // If currently on front face, transfer to rear (negative coordinates)
         // If currently on rear face, transfer to front (positive coordinates)
         const currentBallFace = this.getBallCurrentFace(ball);
         if (currentBallFace === 'front') {
             // Transfer from front to rear - use negative coordinates
             ball.originalStart = [-transferX, -transferY];
+            ball.currentFace = 'rear';
         } else {
             // Transfer from rear to front - use positive coordinates
             ball.originalStart = [transferX, transferY];
+            ball.currentFace = 'front';
         }
         
         // Flip the board as if user clicked the flip button
@@ -1428,6 +1423,8 @@ class GameManager {
                     // Store original coordinates for reference
                     originalStart: ballData.start,
                     originalEnd: ballData.end,
+                    // Track which face the ball is currently on
+                    currentFace: ballData.start[0] < 0 || ballData.start[1] < 0 ? 'rear' : 'front',
                     endPosition: {
                         x: this.boardStartX + (endX * this.gridSize),
                         y: this.boardStartY + (endY * this.gridSize)
@@ -1457,6 +1454,7 @@ class GameManager {
                 isTouched: false, // Touch feedback state
                 touchOpacity: 0.0, // Animation opacity
                 touchScale: this.restScale, // Animation scale
+                currentFace: 'front', // Default ball starts on front face
                 endPosition: {
                     x: this.boardStartX + (4 * this.gridSize),
                     y: this.boardStartY + (4 * this.gridSize)
@@ -1474,14 +1472,25 @@ class GameManager {
     checkWinCondition() {
         if (!this.canvas || this.balls.length === 0) return;
         
-        // Check if all balls are at their respective end positions
+        // Check if all balls are at their respective end positions AND on the correct face
         const allBallsAtGoal = this.balls.every(ball => {
+            // Convert ball's current position back to grid coordinates
             const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
             const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
-            const goalGridX = Math.round((ball.endPosition.x - this.boardStartX) / this.gridSize);
-            const goalGridY = Math.round((ball.endPosition.y - this.boardStartY) / this.gridSize);
             
-            return ballGridX === goalGridX && ballGridY === goalGridY;
+            // Get the goal coordinates from the original coordinate system
+            const goalGridX = ball.originalEnd[0];
+            const goalGridY = ball.originalEnd[1];
+            
+            // Check if ball is at the correct grid position
+            const correctPosition = ballGridX === Math.abs(goalGridX) && ballGridY === Math.abs(goalGridY);
+            
+            // Check if ball is on the correct face
+            const goalFace = goalGridX < 0 || goalGridY < 0 ? 'rear' : 'front';
+            const ballFace = this.getBallCurrentFace(ball);
+            const correctFace = goalFace === ballFace;
+            
+            return correctPosition && correctFace;
         });
         
         if (allBallsAtGoal) {
