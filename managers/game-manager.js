@@ -872,11 +872,17 @@ class GameManager {
     }
 
     // Find the closest usable path within gridBoxSize distance from a touch position
+    // Only considers paths adjacent to the ball's current position
     findClosestUsablePath(touchX, touchY, ballIndex) {
         const nodes = this.getCurrentNodes();
         if (!nodes) return null;
         
-
+        // Get the ball's current grid position
+        const ball = this.balls[ballIndex];
+        if (!ball) return null;
+        
+        const currentBallGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const currentBallGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
         
         let closestPath = null;
         let closestDistance = Infinity;
@@ -885,51 +891,50 @@ class GameManager {
         const touchGridX = (touchX - this.boardStartX) / this.gridSize;
         const touchGridY = (touchY - this.boardStartY) / this.gridSize;
         
-        // Check all possible paths (horizontal and vertical connections)
-        for (let y = 0; y < nodes.length; y++) {
-            for (let x = 0; x < nodes[y].length; x++) {
-                // Check if this node allows the ball
-                if (!this.canBallMoveToNode(ballIndex, x, y)) continue;
-                
-                // Check horizontal connection to the right
-                if (x + 1 < nodes[y].length && this.canBallMoveToNode(ballIndex, x + 1, y) && !this.isNodeOccupied(x + 1, y, ballIndex)) {
-                    const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, x, y, x + 1, y);
-                    if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
-                        closestDistance = pathDistance;
-                        closestPath = { start: { x, y }, end: { x: x + 1, y }, isHorizontal: true };
-                    }
-                }
-                
-                // Check horizontal connection to the left (from the right node)
-                if (x > 0 && this.canBallMoveToNode(ballIndex, x - 1, y) && !this.isNodeOccupied(x - 1, y, ballIndex)) {
-                    const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, x - 1, y, x, y);
-                    if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
-                        closestDistance = pathDistance;
-                        closestPath = { start: { x: x - 1, y }, end: { x, y }, isHorizontal: true };
-                    }
-                }
-                
-                // Check vertical connection downward
-                if (y + 1 < nodes.length && this.canBallMoveToNode(ballIndex, x, y + 1) && !this.isNodeOccupied(x, y + 1, ballIndex)) {
-                    const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, x, y, x, y + 1);
-                    if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
-                        closestDistance = pathDistance;
-                        closestPath = { start: { x, y }, end: { x, y: y + 1 }, isHorizontal: false };
-                    }
-                }
-                
-                // Check vertical connection upward (from the bottom node)
-                if (y > 0 && this.canBallMoveToNode(ballIndex, x, y - 1) && !this.isNodeOccupied(x, y - 1, ballIndex)) {
-                    const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, x, y - 1, x, y);
-                    if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
-                        closestDistance = pathDistance;
-                        closestPath = { start: { x, y: y - 1 }, end: { x, y }, isHorizontal: false };
-                    }
-                }
+        // Only check paths that are adjacent to the ball's current position
+        // Check horizontal connection to the right
+        if (currentBallGridX + 1 < nodes[currentBallGridY].length && 
+            this.canBallMoveToNode(ballIndex, currentBallGridX + 1, currentBallGridY) && 
+            !this.isNodeOccupied(currentBallGridX + 1, currentBallGridY, ballIndex)) {
+            const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX, currentBallGridY, currentBallGridX + 1, currentBallGridY);
+            if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
+                closestDistance = pathDistance;
+                closestPath = { start: { x: currentBallGridX, y: currentBallGridY }, end: { x: currentBallGridX + 1, y: currentBallGridY }, isHorizontal: true };
             }
         }
         
-
+        // Check horizontal connection to the left
+        if (currentBallGridX > 0 && 
+            this.canBallMoveToNode(ballIndex, currentBallGridX - 1, currentBallGridY) && 
+            !this.isNodeOccupied(currentBallGridX - 1, currentBallGridY, ballIndex)) {
+            const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX - 1, currentBallGridY, currentBallGridX, currentBallGridY);
+            if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
+                closestDistance = pathDistance;
+                closestPath = { start: { x: currentBallGridX - 1, y: currentBallGridY }, end: { x: currentBallGridX, y: currentBallGridY }, isHorizontal: true };
+            }
+        }
+        
+        // Check vertical connection downward
+        if (currentBallGridY + 1 < nodes.length && 
+            this.canBallMoveToNode(ballIndex, currentBallGridX, currentBallGridY + 1) && 
+            !this.isNodeOccupied(currentBallGridX, currentBallGridY + 1, ballIndex)) {
+            const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX, currentBallGridY, currentBallGridX, currentBallGridY + 1);
+            if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
+                closestDistance = pathDistance;
+                closestPath = { start: { x: currentBallGridX, y: currentBallGridY }, end: { x: currentBallGridX, y: currentBallGridY + 1 }, isHorizontal: false };
+            }
+        }
+        
+        // Check vertical connection upward
+        if (currentBallGridY > 0 && 
+            this.canBallMoveToNode(ballIndex, currentBallGridX, currentBallGridY - 1) && 
+            !this.isNodeOccupied(currentBallGridX, currentBallGridY - 1, ballIndex)) {
+            const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX, currentBallGridY - 1, currentBallGridX, currentBallGridY);
+            if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
+                closestDistance = pathDistance;
+                closestPath = { start: { x: currentBallGridX, y: currentBallGridY - 1 }, end: { x: currentBallGridX, y: currentBallGridY }, isHorizontal: false };
+            }
+        }
         
         return closestPath;
     }
@@ -1368,6 +1373,12 @@ class GameManager {
         }
         this.gameState.isPlaying = true;
         
+        // Always start new level with front face
+        this.currentFace = 'front';
+        
+        // Reset flip wrapper CSS classes to match front face state
+        this.resetFlipWrapperState();
+        
         // Reset completion status for this level when entering it
         this.storageManager.resetLevelCompletion(levelNumber);
         
@@ -1713,6 +1724,33 @@ class GameManager {
             }
         }
         return !!this.flipWrapper;
+    }
+
+    // Reset flip wrapper CSS classes to match current face state
+    resetFlipWrapperState() {
+        if (!this.ensureFlipWrapper()) {
+            return;
+        }
+        
+        // Temporarily disable transitions and hide the flip wrapper
+        const originalTransition = this.flipWrapper.style.transition;
+        const originalVisibility = this.flipWrapper.style.visibility;
+        this.flipWrapper.style.transition = 'none';
+        this.flipWrapper.style.visibility = 'hidden';
+        
+        // Remove all flip-related classes
+        this.flipWrapper.classList.remove('flipping', 'flip-to-rear', 'flip-to-front');
+        
+        // Ensure the wrapper is in the correct state for front face
+        // The default state (no classes) shows the front face
+        this.flipWrapper.style.transform = 'rotateY(0deg)';
+        
+        // Force a reflow to ensure the changes are applied
+        this.flipWrapper.offsetHeight;
+        
+        // Restore transition and visibility
+        this.flipWrapper.style.transition = originalTransition || '';
+        this.flipWrapper.style.visibility = originalVisibility || 'visible';
     }
 
 

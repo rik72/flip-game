@@ -92,8 +92,8 @@ const CONSTANTS = {
 	TOUCH_CONFIG: {
 		// Touch size and distance are now scaled with grid size
 		// These will be calculated as: gridSize * ratio
-		MIN_TOUCH_SIZE_RATIO: 1.2, // Minimum touch size as ratio of gridSize (120% of grid cell)
-		MAX_TOUCH_DISTANCE_RATIO: 1.4, // Maximum touch distance as ratio of gridSize (140% of grid cell)
+		MIN_TOUCH_SIZE_RATIO: 1, // Minimum touch size as ratio of gridSize (120% of grid cell)
+		MAX_TOUCH_DISTANCE_RATIO: 1.1, // Maximum touch distance as ratio of gridSize (140% of grid cell)
 		TOUCH_TIMEOUT: 300,
 		GESTURE_RECOGNITION: {
 			SWIPE_THRESHOLD: 50,
