@@ -1,9 +1,18 @@
 /**
  * GameManager - Gestione logica di gioco per Flipgame
  * Responsabile per: livelli, touch interactions, meccaniche puzzle
+ * 
+ * @class GameManager
+ * @description Manages the core game logic including level loading, ball movement,
+ * touch interactions, and win condition checking for the Flipgame puzzle game.
  */
-
 class GameManager {
+    /**
+     * Creates a new GameManager instance
+     * @param {StorageManager} storageManager - The storage manager for saving/loading game state
+     * @param {number} currentLevel - The starting level number (default: 1)
+     * @param {App|null} appReference - Reference to the main App instance for synchronization
+     */
     constructor(storageManager, currentLevel = 1, appReference = null) {
         this.storageManager = storageManager;
         this.currentLevel = currentLevel;
@@ -1341,6 +1350,12 @@ class GameManager {
         this.render();
     }
 
+    /**
+     * Loads a specific level and initializes the game state
+     * @param {number} levelNumber - The level number to load
+     * @returns {Promise<void>}
+     * @throws {Error} When level data cannot be loaded or is invalid
+     */
     async loadLevel(levelNumber) {
         this.currentLevel = levelNumber;
         // Synchronize with App instance if available
@@ -1378,12 +1393,17 @@ class GameManager {
         } catch (error) {
             console.error('Error loading level:', error);
             // Show error message to user
-            alert(`Failed to load level ${levelNumber}. Please check that the level file exists.`);
+            alert(CONSTANTS.MESSAGES.LEVEL_LOAD_ERROR.replace('{levelNumber}', levelNumber));
         }
     }
 
 
 
+    /**
+     * Initializes the balls array from level data
+     * Creates ball objects with position, color, and animation properties
+     * @returns {void}
+     */
     initializeBalls() {
         this.balls = [];
         
@@ -1446,6 +1466,11 @@ class GameManager {
         }
     }
 
+    /**
+     * Checks if all balls have reached their goal positions
+     * Triggers level completion if win condition is met
+     * @returns {void}
+     */
     checkWinCondition() {
         if (!this.canvas || this.balls.length === 0) return;
         

@@ -63,11 +63,17 @@ class App {
     }
 
     async loadLevel(levelNumber) {
-        this.currentLevel = levelNumber;
-        this.gameState.isPlaying = true;
-        
-        if (this.gameManager) {
-            await this.gameManager.loadLevel(levelNumber);
+        try {
+            this.currentLevel = levelNumber;
+            this.gameState.isPlaying = true;
+            
+            if (this.gameManager) {
+                await this.gameManager.loadLevel(levelNumber);
+            }
+        } catch (error) {
+            console.error('Error loading level in App:', error);
+            this.gameState.isPlaying = false;
+            // Error handling is already done in GameManager
         }
     }
 

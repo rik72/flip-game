@@ -11,61 +11,66 @@ class Utils {
 
 	// Game-specific validation methods
 	static validateLevelData(levelData) {
-		if (!levelData) {
-			throw new Error(CONSTANTS.MESSAGES.LEVEL_DATA_REQUIRED);
-		}
-		
-		if (!levelData.board || !levelData.board.front || !Array.isArray(levelData.board.front)) {
-			throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
-		}
-		
-		// Check if front array is not empty
-		if (levelData.board.front.length === 0) {
-			throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
-		}
-		
-		// Check if all rows in front have the same length
-		const firstRowLength = levelData.board.front[0].length;
-		for (let i = 1; i < levelData.board.front.length; i++) {
-			if (levelData.board.front[i].length !== firstRowLength) {
-				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+		try {
+			if (!levelData) {
+				throw new Error(CONSTANTS.MESSAGES.LEVEL_DATA_REQUIRED);
 			}
-		}
-		
-		// If rear is present, validate it has the same dimensions as front
-		if (levelData.board.rear) {
-			if (!Array.isArray(levelData.board.rear)) {
+			
+			if (!levelData.board || !levelData.board.front || !Array.isArray(levelData.board.front)) {
 				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 			}
 			
-			// Check if rear has same number of rows as front
-			if (levelData.board.rear.length !== levelData.board.front.length) {
+			// Check if front array is not empty
+			if (levelData.board.front.length === 0) {
 				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 			}
 			
-			// Check if all rows in rear have the same length as front rows
-			for (let i = 0; i < levelData.board.rear.length; i++) {
-				if (levelData.board.rear[i].length !== firstRowLength) {
+			// Check if all rows in front have the same length
+			const firstRowLength = levelData.board.front[0].length;
+			for (let i = 1; i < levelData.board.front.length; i++) {
+				if (levelData.board.front[i].length !== firstRowLength) {
 					throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 				}
 			}
-		}
-		
-		// Check if level has balls with start and end positions
-		if (!levelData.balls || !Array.isArray(levelData.balls) || levelData.balls.length === 0) {
-			throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
-		}
-		
-		// Validate each ball has start and end positions
-		for (const ball of levelData.balls) {
-			if (!ball.start || !Array.isArray(ball.start) || ball.start.length !== 2) {
+			
+			// If rear is present, validate it has the same dimensions as front
+			if (levelData.board.rear) {
+				if (!Array.isArray(levelData.board.rear)) {
+					throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+				}
+				
+				// Check if rear has same number of rows as front
+				if (levelData.board.rear.length !== levelData.board.front.length) {
+					throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+				}
+				
+				// Check if all rows in rear have the same length as front rows
+				for (let i = 0; i < levelData.board.rear.length; i++) {
+					if (levelData.board.rear[i].length !== firstRowLength) {
+						throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+					}
+				}
+			}
+			
+			// Check if level has balls with start and end positions
+			if (!levelData.balls || !Array.isArray(levelData.balls) || levelData.balls.length === 0) {
 				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 			}
-			if (!ball.end || !Array.isArray(ball.end) || ball.end.length !== 2) {
-				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+			
+			// Validate each ball has start and end positions
+			for (const ball of levelData.balls) {
+				if (!ball.start || !Array.isArray(ball.start) || ball.start.length !== 2) {
+					throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+				}
+				if (!ball.end || !Array.isArray(ball.end) || ball.end.length !== 2) {
+					throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+				}
 			}
+			
+			return true;
+		} catch (error) {
+			console.error('Validation error:', error);
+			throw error; // Re-throw to allow calling code to handle
 		}
-		
-		return true;
 	}
 } 

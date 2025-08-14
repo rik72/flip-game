@@ -14,6 +14,8 @@ const CONSTANTS = {
 		LEVEL_DATA_REQUIRED: 'Level data required',
 		INVALID_LEVEL: 'Invalid level',
 		
+		// Error messages
+		LEVEL_LOAD_ERROR: 'Failed to load level {levelNumber}. Please check that the level file exists.',
 
 	},
 
