@@ -38,6 +38,11 @@ class GameManager {
         this.boardWidth = 0;
         this.boardHeight = 0;
         
+        // New properties for improved ball drag/snap behavior
+        this.ballOriginNode = null; // Store the origin node when ball is picked up
+        this.currentUsablePath = null; // Store the current usable path being followed
+        this.pathProjectionPoint = null; // Store the projected point on the current path
+        
         this.init();
     }
 
@@ -369,42 +374,177 @@ class GameManager {
             };
             this.isDragging = true;
             
+            // Store the origin node when ball is picked up
+            const originGridX = Math.round((selectedBall.x - this.boardStartX) / this.gridSize);
+            const originGridY = Math.round((selectedBall.y - this.boardStartY) / this.gridSize);
+            this.ballOriginNode = { x: originGridX, y: originGridY };
+            console.log(`Ball picked up at origin node: ${originGridX}, ${originGridY}`);
+            
+            // Reset path tracking
+            this.currentUsablePath = null;
+            this.pathProjectionPoint = null;
+            
             // Add visual feedback for touch
             this.showTouchFeedback(selectedBall);
         }
     }
 
     handleTouchMove(e) {
-        if (!this.isDragging || this.selectedBallIndex === -1) return;
+        if (!this.isDragging || this.selectedBallIndex === -1 || !this.ballOriginNode) return;
         
         const touch = e.touches[0];
         const rect = this.canvas.getBoundingClientRect();
         
         // Calculate touch position using CSS coordinates (not scaled by device pixel ratio)
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+        
+        const ball = this.balls[this.selectedBallIndex];
+        if (!ball) return;
+        
+        // Convert origin node to absolute coordinates
+        const originX = this.boardStartX + this.ballOriginNode.x * this.gridSize;
+        const originY = this.boardStartY + this.ballOriginNode.y * this.gridSize;
+        
+        // Calculate distance from touch to origin node
+        const distanceFromOrigin = Math.sqrt(
+            Math.pow(touchX - originX, 2) + Math.pow(touchY - originY, 2)
+        );
         
         // Check if touch is too far from the ball - if so, release the ball
-        const ball = this.balls[this.selectedBallIndex];
-        if (ball) {
-            const distanceFromBall = Math.sqrt(
-                Math.pow(x - ball.x, 2) + Math.pow(y - ball.y, 2)
-            );
-            
-            // Use MAX_TOUCH_DISTANCE from constants to determine when to release
-            if (distanceFromBall > CONSTANTS.TOUCH_CONFIG.MAX_TOUCH_DISTANCE) {
-                // Release the ball - simulate touch end
-                this.handleTouchEnd(e);
-                return;
-            }
+        const distanceFromBall = Math.sqrt(
+            Math.pow(touchX - ball.x, 2) + Math.pow(touchY - ball.y, 2)
+        );
+        
+        if (distanceFromBall > CONSTANTS.TOUCH_CONFIG.MAX_TOUCH_DISTANCE) {
+            // Release the ball - simulate touch end
+            this.handleTouchEnd(e);
+            return;
         }
         
-        // Apply touch offset to maintain relative position
-        const targetX = x - this.touchOffset.x;
-        const targetY = y - this.touchOffset.y;
+        const threshold = this.gridSize / 4; // gridBoxSize / 4
         
-        // Move ball with animated snapping during dragging
-        this.moveBallToPosition(targetX, targetY, true);
+        // Step 2: As long as touch distance from origin node is <= gridBoxSize / 4, stay there
+        if (distanceFromOrigin <= threshold) {
+            // Ball stays at origin node
+            this.moveBallToPosition(originX, originY, true);
+            this.currentUsablePath = null;
+            this.pathProjectionPoint = null;
+            console.log(`Ball staying at origin: distance ${distanceFromOrigin.toFixed(1)} <= threshold ${threshold}`);
+            return;
+        }
+        
+        // Step 3: As soon as touch distance from origin node is > gridBoxSize / 4, 
+        // find closest usable path and project touch position onto it
+        if (!this.currentUsablePath) {
+            // Find the closest usable path within gridBoxSize distance
+            this.currentUsablePath = this.findClosestUsablePath(touchX, touchY, this.selectedBallIndex);
+            console.log(`Looking for usable path at touch position: ${touchX.toFixed(1)}, ${touchY.toFixed(1)}`);
+        }
+        
+        if (this.currentUsablePath) {
+            console.log(`Using current path: ${this.currentUsablePath.start.x},${this.currentUsablePath.start.y} -> ${this.currentUsablePath.end.x},${this.currentUsablePath.end.y}`);
+            // Project touch position onto the current usable path
+            this.pathProjectionPoint = this.projectTouchOnPath(touchX, touchY, this.currentUsablePath);
+            
+            if (this.pathProjectionPoint) {
+                console.log(`Projected point: ${this.pathProjectionPoint.gridX.toFixed(1)}, ${this.pathProjectionPoint.gridY.toFixed(1)}`);
+                // Determine the correct destination node based on current ball position
+                const currentBallGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+                const currentBallGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+                console.log(`Current ball grid position: ${currentBallGridX}, ${currentBallGridY}`);
+                
+                let destNode;
+                if (currentBallGridX === this.currentUsablePath.start.x && currentBallGridY === this.currentUsablePath.start.y) {
+                    // Ball is at start node, destination is end node
+                    destNode = this.currentUsablePath.end;
+                    console.log(`Ball at start node, destination: ${destNode.x},${destNode.y}`);
+                } else if (currentBallGridX === this.currentUsablePath.end.x && currentBallGridY === this.currentUsablePath.end.y) {
+                    // Ball is at end node, determine which direction the touch is going
+                    const startDist = Math.sqrt(
+                        Math.pow(touchX - (this.boardStartX + this.currentUsablePath.start.x * this.gridSize), 2) +
+                        Math.pow(touchY - (this.boardStartY + this.currentUsablePath.start.y * this.gridSize), 2)
+                    );
+                    const endDist = Math.sqrt(
+                        Math.pow(touchX - (this.boardStartX + this.currentUsablePath.end.x * this.gridSize), 2) +
+                        Math.pow(touchY - (this.boardStartY + this.currentUsablePath.end.y * this.gridSize), 2)
+                    );
+                    destNode = startDist < endDist ? this.currentUsablePath.start : this.currentUsablePath.end;
+                    console.log(`Ball at end node, destination: ${destNode.x},${destNode.y} (start dist: ${startDist.toFixed(1)}, end dist: ${endDist.toFixed(1)})`);
+                } else {
+                    // Ball is somewhere in between, determine which end is closer to touch
+                    const startDist = Math.sqrt(
+                        Math.pow(touchX - (this.boardStartX + this.currentUsablePath.start.x * this.gridSize), 2) +
+                        Math.pow(touchY - (this.boardStartY + this.currentUsablePath.start.y * this.gridSize), 2)
+                    );
+                    const endDist = Math.sqrt(
+                        Math.pow(touchX - (this.boardStartX + this.currentUsablePath.end.x * this.gridSize), 2) +
+                        Math.pow(touchY - (this.boardStartY + this.currentUsablePath.end.y * this.gridSize), 2)
+                    );
+                    destNode = startDist < endDist ? this.currentUsablePath.start : this.currentUsablePath.end;
+                    console.log(`Ball in between, destination: ${destNode.x},${destNode.y} (start dist: ${startDist.toFixed(1)}, end dist: ${endDist.toFixed(1)})`);
+                }
+                
+                // Convert destination node to absolute coordinates
+                const destX = this.boardStartX + destNode.x * this.gridSize;
+                const destY = this.boardStartY + destNode.y * this.gridSize;
+                console.log(`Destination node absolute: ${destX.toFixed(1)}, ${destY.toFixed(1)}`);
+                
+                // Calculate distance from projected point to destination node
+                const distanceToDest = Math.sqrt(
+                    Math.pow(this.pathProjectionPoint.x - destX, 2) + 
+                    Math.pow(this.pathProjectionPoint.y - destY, 2)
+                );
+                console.log(`Distance to destination: ${distanceToDest.toFixed(1)} (threshold: ${threshold})`);
+                
+                // Step 4: As soon as touch distance from destination node is < gridBoxSize / 4, snap to new node
+                if (distanceToDest < threshold) {
+                    // Snap to destination node
+                    this.moveBallToPosition(destX, destY, true);
+                    
+                    // Update origin node to the new destination
+                    this.ballOriginNode = { 
+                        x: destNode.x, 
+                        y: destNode.y 
+                    };
+                    
+                    // Reset path tracking for next movement
+                    this.currentUsablePath = null;
+                    this.pathProjectionPoint = null;
+                    
+                    console.log(`Ball snapped to destination node: ${this.ballOriginNode.x},${this.ballOriginNode.y}`);
+                } else {
+                    // Move ball to projected position on path
+                    this.moveBallToPosition(this.pathProjectionPoint.x, this.pathProjectionPoint.y, true);
+                    console.log(`Ball moved to projected position: ${this.pathProjectionPoint.gridX.toFixed(1)},${this.pathProjectionPoint.gridY.toFixed(1)}`);
+                }
+                
+                // If ball is at a node and touch is moving away from the current path, reset path to find a new one
+                if (this.currentUsablePath && 
+                    ((currentBallGridX === this.currentUsablePath.start.x && currentBallGridY === this.currentUsablePath.start.y) ||
+                     (currentBallGridX === this.currentUsablePath.end.x && currentBallGridY === this.currentUsablePath.end.y))) {
+                    
+                    const pathStartX = this.boardStartX + this.currentUsablePath.start.x * this.gridSize;
+                    const pathStartY = this.boardStartY + this.currentUsablePath.start.y * this.gridSize;
+                    const pathEndX = this.boardStartX + this.currentUsablePath.end.x * this.gridSize;
+                    const pathEndY = this.boardStartY + this.currentUsablePath.end.y * this.gridSize;
+                    
+                    const distToPathStart = Math.sqrt(Math.pow(touchX - pathStartX, 2) + Math.pow(touchY - pathStartY, 2));
+                    const distToPathEnd = Math.sqrt(Math.pow(touchX - pathEndX, 2) + Math.pow(touchY - pathEndY, 2));
+                    
+                    // If touch is far from both ends of the current path, look for a new path
+                    if (distToPathStart > this.gridSize && distToPathEnd > this.gridSize) {
+                        console.log(`Touch far from current path, looking for new path`);
+                        this.currentUsablePath = null;
+                        this.pathProjectionPoint = null;
+                    }
+                }
+            }
+        } else {
+            // No usable path found, stay at origin
+            console.log(`No usable path found, staying at origin`);
+            this.moveBallToPosition(originX, originY, true);
+        }
     }
 
     handleTouchEnd(e) {
@@ -414,17 +554,39 @@ class GameManager {
             
             // Get the final position where the ball was dropped
             const ball = this.balls[this.selectedBallIndex];
-            const finalGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
-            const finalGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
             
-            // Check if ball was dropped on a WELL node
-            const nodeType = this.getNodeType(finalGridX, finalGridY);
+            // First, handle snapping to closest node if needed
+            let finalSnapX = ball.x;
+            let finalSnapY = ball.y;
+            
+            // Check if ball is at an exact grid position (on a node)
+            const isOnNode = (ball.x - this.boardStartX) % this.gridSize === 0 && 
+                            (ball.y - this.boardStartY) % this.gridSize === 0;
+            
+            if (!isOnNode) {
+                // Ball is mid-course, snap to closest accessible node
+                const closestNode = this.findClosestAccessibleNode(this.selectedBallIndex, ball.x, ball.y);
+                if (closestNode) {
+                    finalSnapX = this.boardStartX + closestNode.x * this.gridSize;
+                    finalSnapY = this.boardStartY + closestNode.y * this.gridSize;
+                }
+            }
+            
+            // Now check if the snapped position is on a WELL node
+            const snappedGridX = Math.round((finalSnapX - this.boardStartX) / this.gridSize);
+            const snappedGridY = Math.round((finalSnapY - this.boardStartY) / this.gridSize);
+            const nodeType = this.getNodeType(snappedGridX, snappedGridY);
+            
             if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
-                // Start well animation, then handle transfer after animation completes
-                this.startWellAnimation(ball, finalGridX, finalGridY);
+                // Snap to the well position first, then start well animation
+                this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                // Start well animation after a small delay to let the snap complete
+                setTimeout(() => {
+                    this.startWellAnimation(ball, snappedGridX, snappedGridY);
+                }, 100); // Small delay to let snap animation complete
             } else {
-                // Perform final animated snap to ensure ball is properly positioned
-                this.moveBallToPosition(ball.x, ball.y, true);
+                // Snap to final position (not a well)
+                this.moveBallToPosition(finalSnapX, finalSnapY, true);
                 
                 // Check win condition when drag is released (after a small delay for animation)
                 setTimeout(() => {
@@ -438,6 +600,11 @@ class GameManager {
         this.touchStartTime = null;
         this.isDragging = false;
         this.selectedBallIndex = -1; // Reset selected ball
+        
+        // Reset ball drag/snap tracking properties
+        this.ballOriginNode = null;
+        this.currentUsablePath = null;
+        this.pathProjectionPoint = null;
     }
 
     // Clean up animations when needed
@@ -586,25 +753,7 @@ class GameManager {
         return row[gridX];
     }
 
-    // Check if a ball can move to a specific node based on path types
-    canBallMoveToNode(ballIndex, gridX, gridY) {
-        const nodeType = this.getNodeType(gridX, gridY);
-        
-        // Empty nodes are not accessible
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) return false;
-        
-        // WELL nodes can be used by any ball (like PATH_ALL_BALLS)
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) return true;
-        
-        // Path for all balls ('0') can be used by any ball
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) return true;
-        
-        // Ball-specific paths: ball 0 can use path '1', ball 1 can use path '2', etc.
-        const ballPathType = (ballIndex + 1).toString();
-        if (nodeType === ballPathType) return true;
-        
-        return false;
-    }
+
 
     // Check if two adjacent nodes are connected via valid paths for a specific ball
     areNodesConnected(fromGridX, fromGridY, toGridX, toGridY, ballIndex) {
@@ -619,6 +768,160 @@ class GameManager {
         }
         
         return false;
+    }
+
+    // Find the closest usable path within gridBoxSize distance from a touch position
+    findClosestUsablePath(touchX, touchY, ballIndex) {
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return null;
+        
+        console.log('Current nodes layout:');
+        nodes.forEach((row, y) => {
+            console.log(`Row ${y}: ${row}`);
+        });
+        
+        let closestPath = null;
+        let closestDistance = Infinity;
+        
+        // Convert touch position to grid coordinates
+        const touchGridX = (touchX - this.boardStartX) / this.gridSize;
+        const touchGridY = (touchY - this.boardStartY) / this.gridSize;
+        
+        // Check all possible paths (horizontal and vertical connections)
+        console.log(`Searching for paths near touch position: ${touchGridX.toFixed(2)}, ${touchGridY.toFixed(2)}`);
+        for (let y = 0; y < nodes.length; y++) {
+            for (let x = 0; x < nodes[y].length; x++) {
+                // Check if this node allows the ball
+                if (!this.canBallMoveToNode(ballIndex, x, y)) continue;
+                
+                // Check horizontal connection to the right
+                if (x + 1 < nodes[y].length && this.canBallMoveToNode(ballIndex, x + 1, y)) {
+                    const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, x, y, x + 1, y);
+                    console.log(`Checking right path from ${x},${y} to ${x+1},${y}: distance ${pathDistance.toFixed(3)}`);
+                    if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
+                        closestDistance = pathDistance;
+                        closestPath = { start: { x, y }, end: { x: x + 1, y }, isHorizontal: true };
+                        console.log(`Found closer right path: ${x},${y} -> ${x+1},${y}`);
+                    }
+                }
+                
+                // Check horizontal connection to the left (from the right node)
+                if (x > 0 && this.canBallMoveToNode(ballIndex, x - 1, y)) {
+                    const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, x - 1, y, x, y);
+                    console.log(`Checking left path from ${x-1},${y} to ${x},${y}: distance ${pathDistance.toFixed(3)}`);
+                    if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
+                        closestDistance = pathDistance;
+                        closestPath = { start: { x: x - 1, y }, end: { x, y }, isHorizontal: true };
+                        console.log(`Found closer left path: ${x-1},${y} -> ${x},${y}`);
+                    }
+                }
+                
+                // Check vertical connection downward
+                if (y + 1 < nodes.length && this.canBallMoveToNode(ballIndex, x, y + 1)) {
+                    const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, x, y, x, y + 1);
+                    console.log(`Checking down path from ${x},${y} to ${x},${y+1}: distance ${pathDistance.toFixed(3)}`);
+                    if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
+                        closestDistance = pathDistance;
+                        closestPath = { start: { x, y }, end: { x, y: y + 1 }, isHorizontal: false };
+                        console.log(`Found closer down path: ${x},${y} -> ${x},${y+1}`);
+                    }
+                }
+                
+                // Check vertical connection upward (from the bottom node)
+                if (y > 0 && this.canBallMoveToNode(ballIndex, x, y - 1)) {
+                    const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, x, y - 1, x, y);
+                    console.log(`Checking up path from ${x},${y-1} to ${x},${y}: distance ${pathDistance.toFixed(3)}`);
+                    if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
+                        closestDistance = pathDistance;
+                        closestPath = { start: { x, y: y - 1 }, end: { x, y }, isHorizontal: false };
+                        console.log(`Found closer up path: ${x},${y-1} -> ${x},${y}`);
+                    }
+                }
+            }
+        }
+        
+        // Debug logging (can be removed in production)
+        // if (closestPath) {
+        //     console.log(`Found closest path: ${closestPath.start.x},${closestPath.start.y} -> ${closestPath.end.x},${closestPath.end.y} (distance: ${closestDistance.toFixed(3)})`);
+        // } else {
+        //     console.log(`No usable path found within range for touch at ${touchGridX.toFixed(2)}, ${touchGridY.toFixed(2)}`);
+        // }
+        
+        return closestPath;
+    }
+
+    // Calculate distance from a point to a path segment
+    getDistanceToPath(pointX, pointY, pathStartX, pathStartY, pathEndX, pathEndY) {
+        const A = pointX - pathStartX;
+        const B = pointY - pathStartY;
+        const C = pathEndX - pathStartX;
+        const D = pathEndY - pathStartY;
+        
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        
+        if (lenSq === 0) {
+            // Path is a point, return distance to that point
+            return Math.sqrt(A * A + B * B);
+        }
+        
+        let param = dot / lenSq;
+        
+        let xx, yy;
+        if (param < 0) {
+            xx = pathStartX;
+            yy = pathStartY;
+        } else if (param > 1) {
+            xx = pathEndX;
+            yy = pathEndY;
+        } else {
+            xx = pathStartX + param * C;
+            yy = pathStartY + param * D;
+        }
+        
+        const dx = pointX - xx;
+        const dy = pointY - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // Project a touch position onto a usable path
+    projectTouchOnPath(touchX, touchY, path) {
+        if (!path) return null;
+        
+        // Convert touch position to grid coordinates
+        const touchGridX = (touchX - this.boardStartX) / this.gridSize;
+        const touchGridY = (touchY - this.boardStartY) / this.gridSize;
+        
+        const startX = path.start.x;
+        const startY = path.start.y;
+        const endX = path.end.x;
+        const endY = path.end.y;
+        
+        if (path.isHorizontal) {
+            // Horizontal path: project X coordinate, clamp Y
+            const projectedX = Math.max(startX, Math.min(endX, touchGridX));
+            const projectedY = startY; // Y is fixed for horizontal path
+            
+            // Convert back to absolute coordinates
+            return {
+                x: this.boardStartX + projectedX * this.gridSize,
+                y: this.boardStartY + projectedY * this.gridSize,
+                gridX: projectedX,
+                gridY: projectedY
+            };
+        } else {
+            // Vertical path: project Y coordinate, clamp X
+            const projectedX = startX; // X is fixed for vertical path
+            const projectedY = Math.max(startY, Math.min(endY, touchGridY));
+            
+            // Convert back to absolute coordinates
+            return {
+                x: this.boardStartX + projectedX * this.gridSize,
+                y: this.boardStartY + projectedY * this.gridSize,
+                gridX: projectedX,
+                gridY: projectedY
+            };
+        }
     }
 
     // Check if a ball can move from its current position to a target position
@@ -734,33 +1037,32 @@ class GameManager {
         // Use logical radius for bounds checks
         const logicalRadius = this.getLogicalBallRadius();
         
-        // Snap to grid relative to board position
-        const relativeX = x - this.boardStartX;
-        const relativeY = y - this.boardStartY;
-        const snappedRelativeX = Math.round(relativeX / this.gridSize) * this.gridSize;
-        const snappedRelativeY = Math.round(relativeY / this.gridSize) * this.gridSize;
-        
-        // Convert back to absolute coordinates
-        const snappedX = this.boardStartX + snappedRelativeX;
-        const snappedY = this.boardStartY + snappedRelativeY;
+        // For the new drag/snap system, we don't snap to grid here
+        // The position is already calculated correctly by the projection system
+        let targetX = x;
+        let targetY = y;
         
         // Ensure the ball stays within board bounds (node-based, not radius-based)
         const clampedX = Math.max(
             this.boardStartX, 
-            Math.min(snappedX, this.boardStartX + this.boardWidth)
+            Math.min(targetX, this.boardStartX + this.boardWidth)
         );
         const clampedY = Math.max(
             this.boardStartY, 
-            Math.min(snappedY, this.boardStartY + this.boardHeight)
+            Math.min(targetY, this.boardStartY + this.boardHeight)
         );
         
-        // Compute target grid cell
+        // Compute target grid cell for validation
         const targetGridX = Math.round((clampedX - this.boardStartX) / this.gridSize);
         const targetGridY = Math.round((clampedY - this.boardStartY) / this.gridSize);
         
-        // Check if this is a valid path-based move
-        if (!this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY)) {
-            return; // Skip movement if not allowed by path rules
+        // During dragging, we skip path validation since the new system handles it
+        // Only validate when not dragging (final placement)
+        if (!this.isDragging) {
+            // Check if this is a valid path-based move
+            if (!this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY)) {
+                return; // Skip movement if not allowed by path rules
+            }
         }
         
         // Prevent two balls in the same node
@@ -1686,5 +1988,57 @@ class GameManager {
         };
     }
 
+    // Find the closest accessible node for a ball
+    findClosestAccessibleNode(ballIndex, currentX, currentY) {
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return null;
+        
+        let closestNode = null;
+        let closestDistance = Infinity;
+        
+        // Convert current position to grid coordinates
+        const currentGridX = (currentX - this.boardStartX) / this.gridSize;
+        const currentGridY = (currentY - this.boardStartY) / this.gridSize;
+        
+        // Check all nodes to find the closest accessible one
+        for (let y = 0; y < nodes.length; y++) {
+            for (let x = 0; x < nodes[y].length; x++) {
+                // Check if this node is accessible to the ball
+                if (this.canBallMoveToNode(ballIndex, x, y)) {
+                    const distance = Math.sqrt(
+                        Math.pow(currentGridX - x, 2) + Math.pow(currentGridY - y, 2)
+                    );
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestNode = { x, y };
+                    }
+                }
+            }
+        }
+        
+        return closestNode;
+    }
+
+    // Check if a ball can move to a specific node based on path types
+    canBallMoveToNode(ballIndex, gridX, gridY) {
+        const nodeType = this.getNodeType(gridX, gridY);
+        
+        // Empty nodes are not accessible
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) return false;
+        
+        // WELL nodes can be used by any ball (like PATH_ALL_BALLS)
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) return true;
+        
+        // Path for all balls ('0') can be used by any ball
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) return true;
+        
+        // Ball-specific paths: ball 0 can use path '1', ball 1 can use path '2', etc.
+        const ballPathType = (ballIndex + 1).toString();
+        if (nodeType === ballPathType) return true;
+        
+        console.log(`Node ${gridX},${gridY} (type: '${nodeType}') not accessible for ball ${ballIndex}`);
+        return false;
+    }
 
 } 

@@ -22,7 +22,7 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 5, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 1, // Set to level number (e.g., 4) to force start at that level
 		
 			// Ball configurations
 	BALL_RADIUS: 15,
