@@ -19,6 +19,12 @@ const CONSTANTS = {
 
 	},
 
+	// Application configurations
+	APP_CONFIG: {
+		// Development mode - e.g. enables "level" URL query parameter
+		DEVEL: true
+	},
+
 	// Game configurations
 	GAME_CONFIG: {
 		// General configurations

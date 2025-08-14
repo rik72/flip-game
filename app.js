@@ -17,15 +17,33 @@ class App {
     }
 
     init() {
-        // Check if we should force a specific level for development
-        if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
-            this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
-            console.log(`🔧 Development mode: Forcing start at level ${this.currentLevel}`);
+        // Check for level URL parameter in development mode
+        if (CONSTANTS.APP_CONFIG.DEVEL) {
+            const urlLevel = Utils.getUrlParameterAsNumber('level');
+            if (urlLevel !== null && urlLevel >= 1 && urlLevel <= CONSTANTS.GAME_CONFIG.MAX_LEVEL) {
+                this.currentLevel = urlLevel;
+                console.log(`🔧 Development mode: Loading level ${this.currentLevel} from URL parameter`);
+            } else if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
+                this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
+                console.log(`🔧 Development mode: Forcing start at level ${this.currentLevel}`);
+            } else {
+                // Load saved progress
+                const progress = this.storageManager.loadGameProgress();
+                if (progress) {
+                    this.currentLevel = progress.level;
+                }
+            }
         } else {
-            // Load saved progress
-            const progress = this.storageManager.loadGameProgress();
-            if (progress) {
-                this.currentLevel = progress.level;
+            // Production mode - check if we should force a specific level for development
+            if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
+                this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
+                console.log(`🔧 Development mode: Forcing start at level ${this.currentLevel}`);
+            } else {
+                // Load saved progress
+                const progress = this.storageManager.loadGameProgress();
+                if (progress) {
+                    this.currentLevel = progress.level;
+                }
             }
         }
         

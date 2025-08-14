@@ -73,4 +73,18 @@ class Utils {
 			throw error; // Re-throw to allow calling code to handle
 		}
 	}
+
+	// URL parameter utilities
+	static getUrlParameter(name) {
+		const urlParams = new URLSearchParams(window.location.search);
+		return urlParams.get(name);
+	}
+
+	static getUrlParameterAsNumber(name, defaultValue = null) {
+		const value = this.getUrlParameter(name);
+		if (value === null) return defaultValue;
+		
+		const numValue = parseInt(value, 10);
+		return isNaN(numValue) ? defaultValue : numValue;
+	}
 } 
