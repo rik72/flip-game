@@ -30,7 +30,7 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 1, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 4, // Set to level number (e.g., 4) to force start at that level
 		
         // Ball configurations
         BALL_RADIUS: 15,
@@ -161,13 +161,13 @@ const CONSTANTS = {
 		// Node colors (only for square nodes, circles use their own colors)
 		NODE_COLORS: {
 			'.': '#000000',  // Empty
-			'0': '#444444',  // Path for all balls (darker gray to show it's a path)
-			'1': '#331111',  // Path for ball 1 (dark red tint)
-			'2': '#111133',  // Path for ball 2 (dark blue tint)
+			'0': '#aaaaaa',  // Path for all balls
+			'1': '#801111',  // Path for ball 1
+			'2': '#111180',  // Path for ball 2
 			// TO DO
 			'W': '#FFFFFF',  // Well
 			'X': '#FF0000',  // Wall
-			'T': '#0000FF',  // Teleport
+			'T': '#8000FF',  // Teleport
 			'S': '#FFFF00',  // Switch
 			'C': '#FF00FF'   // Collectible
 		},

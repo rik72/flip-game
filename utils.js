@@ -87,4 +87,9 @@ class Utils {
 		const numValue = parseInt(value, 10);
 		return isNaN(numValue) ? defaultValue : numValue;
 	}
+
+	static getUrlParameterAsString(name, defaultValue = null) {
+		const value = this.getUrlParameter(name);
+		return value !== null ? value : defaultValue;
+	}
 } 

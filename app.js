@@ -19,19 +19,33 @@ class App {
     init() {
         // Check for level URL parameter in development mode
         if (CONSTANTS.APP_CONFIG.DEVEL) {
-            const urlLevel = Utils.getUrlParameterAsNumber('level');
-            if (urlLevel !== null && urlLevel >= 1 && urlLevel <= CONSTANTS.GAME_CONFIG.MAX_LEVEL) {
-                this.currentLevel = urlLevel;
+            const urlLevel = Utils.getUrlParameterAsString('level');
+            
+            if (urlLevel === 'test') {
+                // Test level mode - check localStorage for test data
+                try {
+                    const testData = localStorage.getItem('testLevel');
+                    if (testData) {
+                        const levelData = JSON.parse(testData);
+                        this.currentLevel = 'test';
+                        this.testLevelData = levelData;
+                        console.log(`🔧 Test mode: Loading test level from localStorage`);
+                    } else {
+                        console.error('No test level data found in localStorage');
+                        this.loadDefaultLevel();
+                    }
+                } catch (error) {
+                    console.error('Error parsing test level data:', error);
+                    this.loadDefaultLevel();
+                }
+            } else if (urlLevel !== null && !isNaN(urlLevel) && urlLevel >= 1 && urlLevel <= CONSTANTS.GAME_CONFIG.MAX_LEVEL) {
+                this.currentLevel = parseInt(urlLevel);
                 console.log(`🔧 Development mode: Loading level ${this.currentLevel} from URL parameter`);
             } else if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
                 this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
                 console.log(`🔧 Development mode: Forcing start at level ${this.currentLevel}`);
             } else {
-                // Load saved progress
-                const progress = this.storageManager.loadGameProgress();
-                if (progress) {
-                    this.currentLevel = progress.level;
-                }
+                this.loadDefaultLevel();
             }
         } else {
             // Production mode - check if we should force a specific level for development
@@ -39,11 +53,7 @@ class App {
                 this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
                 console.log(`🔧 Development mode: Forcing start at level ${this.currentLevel}`);
             } else {
-                // Load saved progress
-                const progress = this.storageManager.loadGameProgress();
-                if (progress) {
-                    this.currentLevel = progress.level;
-                }
+                this.loadDefaultLevel();
             }
         }
         
@@ -52,6 +62,16 @@ class App {
         
         // Initialize game manager after UI is created
         this.gameManager = new GameManager(this.storageManager, this.currentLevel, this);
+        
+        // Store test level data if available
+        if (this.testLevelData) {
+            this.gameManager.testLevelData = this.testLevelData;
+        }
+        
+        // Load the level after setting up test data
+        this.gameManager.loadLevel(this.currentLevel).catch(error => {
+            console.error('Failed to load initial level:', error);
+        });
         
         // Setup event listeners
         this.setupEventListeners();
@@ -78,6 +98,14 @@ class App {
         window.addEventListener('beforeunload', () => {
             this.saveProgress();
         });
+    }
+
+    loadDefaultLevel() {
+        // Load saved progress
+        const progress = this.storageManager.loadGameProgress();
+        if (progress) {
+            this.currentLevel = progress.level;
+        }
     }
 
     async loadLevel(levelNumber) {

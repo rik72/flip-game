@@ -122,7 +122,7 @@ class GameManager {
             if (this.gridSize && this.boardStartY !== undefined && this.boardHeight !== undefined) {
                 // Calculate position: board bottom + one grid cell + button radius
                 const boardBottom = this.boardStartY + this.boardHeight;
-                const gridCellBelow = boardBottom + this.gridSize;
+                const gridCellBelow = boardBottom + 3*this.gridSize;
                 const buttonRadius = parseInt(buttonSize) / 2;
                 const buttonCenterY = gridCellBelow + buttonRadius;
                 
@@ -222,7 +222,8 @@ class GameManager {
             this.flipAnimationTimeout = null;
 
             // Check win condition after transfer animation is complete, but only if level is not already completed
-            if (!this.storageManager.isLevelCompleted(this.currentLevel)) {
+            // For test levels, always check win condition
+            if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
                 this.checkWinCondition();
             }
         }, CONSTANTS.ANIMATION_CONFIG.FLIP_DURATION);
@@ -231,6 +232,11 @@ class GameManager {
     init() {
         this.setupCanvas();
         this.setupTouchEvents();
+        
+        // Don't load level here - let the app handle it after setting test data
+        // this.loadLevel(this.currentLevel).catch(error => {
+        //     console.error('Failed to load initial level:', error);
+        // });
     }
 
     setupCanvas() {
@@ -261,10 +267,10 @@ class GameManager {
         this.ctx = this.canvas.getContext('2d');
         this.resizeCanvas();
         
-        // Load level after canvas is set up
-        this.loadLevel(this.currentLevel).catch(error => {
-            console.error('Failed to load initial level:', error);
-        });
+        // Don't load level here - let the app handle it after setting test data
+        // this.loadLevel(this.currentLevel).catch(error => {
+        //     console.error('Failed to load initial level:', error);
+        // });
         
         // Update level number display in DOM
         this.updateLevelNumberDisplay();
@@ -643,7 +649,8 @@ class GameManager {
                 
                 // Check win condition when drag is released (after a small delay for animation), but only if level is not already completed
                 setTimeout(() => {
-                    if (!this.storageManager.isLevelCompleted(this.currentLevel)) {
+                    // For test levels, always check win condition
+                    if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
                         this.checkWinCondition();
                     }
                 }, 50); // Small delay to let animation start
@@ -1304,7 +1311,8 @@ class GameManager {
             
             // Check win condition since transfer was blocked, but only if level is not already completed
             setTimeout(() => {
-                if (!this.storageManager.isLevelCompleted(this.currentLevel)) {
+                // For test levels, always check win condition
+                if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
                     this.checkWinCondition();
                 }
             }, 50);
@@ -1361,7 +1369,7 @@ class GameManager {
 
     /**
      * Loads a specific level and initializes the game state
-     * @param {number} levelNumber - The level number to load
+     * @param {number|string} levelNumber - The level number to load, or 'test' for test levels
      * @returns {Promise<void>}
      * @throws {Error} When level data cannot be loaded or is invalid
      */
@@ -1379,18 +1387,33 @@ class GameManager {
         // Reset flip wrapper CSS classes to match front face state
         this.resetFlipWrapperState();
         
-        // Reset completion status for this level when entering it
-        this.storageManager.resetLevelCompletion(levelNumber);
+        // Reset completion status for this level when entering it (only for numbered levels)
+        if (typeof levelNumber === 'number') {
+            this.storageManager.resetLevelCompletion(levelNumber);
+        }
         
         try {
-            // Load level data from JSON file
-            const levelData = await this.storageManager.loadLevelData(levelNumber);
+            let levelData;
+            
+            // Handle test levels
+            if (levelNumber === 'test' && this.testLevelData) {
+                levelData = this.testLevelData;
+                console.log('Loading test level data:', levelData);
+            } else {
+                // Load level data from JSON file
+                levelData = await this.storageManager.loadLevelData(levelNumber);
+            }
             
             if (levelData && levelData.board && levelData.board.front) {
                 this.levelData = levelData;
             } else {
-                console.error(`Failed to load level ${levelNumber} from file`);
-                throw new Error(`Level ${levelNumber} not found or invalid`);
+                if (levelNumber === 'test') {
+                    console.error('Test level data is missing or invalid');
+                    throw new Error('Test level data is missing or invalid');
+                } else {
+                    console.error(`Failed to load level ${levelNumber} from file`);
+                    throw new Error(`Level ${levelNumber} not found or invalid`);
+                }
             }
             
             this.board = this.levelData.board;
@@ -1429,10 +1452,11 @@ class GameManager {
             this.levelData.balls.forEach((ballData, index) => {
                 
                 // Handle coordinate system: positive = front, negative = rear
-                const startX = Math.abs(ballData.start[0]);
-                const startY = Math.abs(ballData.start[1]);
-                const endX = Math.abs(ballData.end[0]);
-                const endY = Math.abs(ballData.end[1]);
+                // Editor uses: front = [col, row], rear = [-col, -row]
+                const startX = ballData.start[0] < 0 ? -ballData.start[0] : ballData.start[0];
+                const startY = ballData.start[1] < 0 ? -ballData.start[1] : ballData.start[1];
+                const endX = ballData.end[0] < 0 ? -ballData.end[0] : ballData.end[0];
+                const endY = ballData.end[1] < 0 ? -ballData.end[1] : ballData.end[1];
                 
                 const ball = {
                     x: this.boardStartX + (startX * this.gridSize),
@@ -1495,8 +1519,10 @@ class GameManager {
     checkWinCondition() {
         if (!this.canvas || this.balls.length === 0) return;
         
+        console.log('🔍 Checking win condition for level:', this.currentLevel);
+        
         // Check if all balls are at their respective end positions AND on the correct face
-        const allBallsAtGoal = this.balls.every(ball => {
+        const allBallsAtGoal = this.balls.every((ball, ballIndex) => {
             // Convert ball's current position back to grid coordinates
             const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
             const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
@@ -1506,17 +1532,25 @@ class GameManager {
             const goalGridY = ball.originalEnd[1];
             
             // Check if ball is at the correct grid position
-            const correctPosition = ballGridX === Math.abs(goalGridX) && ballGridY === Math.abs(goalGridY);
+            // Use same coordinate conversion as editor: front = [col, row], rear = [-col, -row]
+            const goalGridXConverted = goalGridX < 0 ? -goalGridX : goalGridX;
+            const goalGridYConverted = goalGridY < 0 ? -goalGridY : goalGridY;
+            const correctPosition = ballGridX === goalGridXConverted && ballGridY === goalGridYConverted;
             
             // Check if ball is on the correct face
             const goalFace = goalGridX < 0 || goalGridY < 0 ? 'rear' : 'front';
             const ballFace = this.getBallCurrentFace(ball);
             const correctFace = goalFace === ballFace;
             
+            console.log(`Ball ${ballIndex + 1}: position=(${ballGridX},${ballGridY}), goal=(${goalGridXConverted},${goalGridYConverted}), face=${ballFace}, goalFace=${goalFace}, correctPosition=${correctPosition}, correctFace=${correctFace}`);
+            
             return correctPosition && correctFace;
         });
         
+        console.log('🎯 All balls at goal:', allBallsAtGoal);
+        
         if (allBallsAtGoal) {
+            console.log('🏆 Level completed! Triggering completion animation...');
             this.levelCompleted();
         }
     }
