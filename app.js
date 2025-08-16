@@ -26,7 +26,26 @@ class App {
                 try {
                     const testData = localStorage.getItem('testLevel');
                     if (testData) {
+                        console.log('Raw test data from localStorage:', testData);
                         const levelData = JSON.parse(testData);
+                        console.log('Parsed test level data:', levelData);
+                        
+                        // Validate the test level data structure
+                        if (!levelData || !levelData.board || !levelData.board.front) {
+                            console.error('Invalid test level data structure:', levelData);
+                            throw new Error('Test level data is missing required board structure');
+                        }
+                        
+                        if (!Array.isArray(levelData.board.front)) {
+                            console.error('Test level front board is not an array:', levelData.board.front);
+                            throw new Error('Test level front board should be an array');
+                        }
+                        
+                        if (levelData.board.rear && !Array.isArray(levelData.board.rear)) {
+                            console.error('Test level rear board is not an array:', levelData.board.rear);
+                            throw new Error('Test level rear board should be an array');
+                        }
+                        
                         this.currentLevel = 'test';
                         this.testLevelData = levelData;
                         console.log(`🔧 Test mode: Loading test level from localStorage`);

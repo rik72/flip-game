@@ -643,8 +643,18 @@
                     if (oldFront[row]) {
                         const oldRow = oldFront[row];
                         
-                        // Parse space-separated format
-                        const oldCells = oldRow.split(' ');
+                        // Handle both string format (space-separated) and array format
+                        let oldCells;
+                        if (typeof oldRow === 'string') {
+                            // Parse space-separated format
+                            oldCells = oldRow.split(' ');
+                        } else if (Array.isArray(oldRow)) {
+                            // Already in array format
+                            oldCells = oldRow;
+                        } else {
+                            continue;
+                        }
+                        
                         for (let col = 0; col < Math.min(oldCells.length, this.gridWidth); col++) {
                             if (oldCells[col] && oldCells[col] !== '__') {
                                 this.board.front[row][col] = oldCells[col];
@@ -658,8 +668,18 @@
                     if (oldRear[row]) {
                         const oldRow = oldRear[row];
                         
-                        // Parse space-separated format
-                        const oldCells = oldRow.split(' ');
+                        // Handle both string format (space-separated) and array format
+                        let oldCells;
+                        if (typeof oldRow === 'string') {
+                            // Parse space-separated format
+                            oldCells = oldRow.split(' ');
+                        } else if (Array.isArray(oldRow)) {
+                            // Already in array format
+                            oldCells = oldRow;
+                        } else {
+                            continue;
+                        }
+                        
                         for (let col = 0; col < Math.min(oldCells.length, this.gridWidth); col++) {
                             if (oldCells[col] && oldCells[col] !== '__') {
                                 this.board.rear[row][col] = oldCells[col];
@@ -1191,20 +1211,32 @@
                         const levelData = JSON.parse(e.target.result);
                         
                         if (levelData.board) {
-                            this.board = levelData.board;
+                            // Convert from space-separated strings to arrays of arrays for internal use
+                            this.board = {
+                                front: [],
+                                rear: []
+                            };
                             
-                            // Update grid size based on loaded data
-                            if (this.board.front && this.board.front.length > 0) {
-                                this.gridHeight = this.board.front.length;
+                            // Convert front face
+                            if (levelData.board.front) {
+                                this.gridHeight = levelData.board.front.length;
+                                this.gridWidth = levelData.board.front[0].split(' ').length;
                                 
-                                // Parse the first row to determine grid width (space-separated format)
-                                const firstRow = this.board.front[0];
-                                this.gridWidth = firstRow.split(' ').length;
-                                
-                                // Update the input fields
-                                document.getElementById('gridHeight').value = this.gridHeight;
-                                document.getElementById('gridWidth').value = this.gridWidth;
+                                for (let row = 0; row < this.gridHeight; row++) {
+                                    this.board.front[row] = levelData.board.front[row].split(' ');
+                                }
                             }
+                            
+                            // Convert rear face
+                            if (levelData.board.rear) {
+                                for (let row = 0; row < this.gridHeight; row++) {
+                                    this.board.rear[row] = levelData.board.rear[row].split(' ');
+                                }
+                            }
+                            
+                            // Update the input fields
+                            document.getElementById('gridHeight').value = this.gridHeight;
+                            document.getElementById('gridWidth').value = this.gridWidth;
                         }
                         
                         if (levelData.balls) {
@@ -1223,8 +1255,34 @@
             }
             
             testLevel() {
+                // Convert board data to space-separated format for consistency with existing levels
+                const boardForSaving = {
+                    front: [],
+                    rear: []
+                };
+                
+                // Convert front face
+                for (let row = 0; row < this.board.front.length; row++) {
+                    const cells = [];
+                    for (let col = 0; col < this.gridWidth; col++) {
+                        const cellCode = this.board.front[row][col] || '__';
+                        cells.push(cellCode);
+                    }
+                    boardForSaving.front.push(cells.join(' '));
+                }
+                
+                // Convert rear face
+                for (let row = 0; row < this.board.rear.length; row++) {
+                    const cells = [];
+                    for (let col = 0; col < this.gridWidth; col++) {
+                        const cellCode = this.board.rear[row][col] || '__';
+                        cells.push(cellCode);
+                    }
+                    boardForSaving.rear.push(cells.join(' '));
+                }
+                
                 const levelData = {
-                    board: this.board,
+                    board: boardForSaving,
                     balls: this.balls
                 };
                 
