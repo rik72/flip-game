@@ -1384,28 +1384,22 @@ class GameManager {
         }
         
         if (this.board.front) {
-            console.log('Front board before conversion:', this.board.front);
             if (!Array.isArray(this.board.front)) {
-                console.error('Front board is not an array:', this.board.front);
                 throw new Error(`Front board should be an array, got ${typeof this.board.front}`);
             }
             this.board.front = this.board.front.map((row, index) => {
                 if (typeof row !== 'string') {
-                    console.error(`Row ${index} is not a string:`, row, typeof row);
                     throw new Error(`Expected string row at index ${index}, got ${typeof row}: ${JSON.stringify(row)}`);
                 }
                 return row.split(' ');
             });
         }
         if (this.board.rear) {
-            console.log('Rear board before conversion:', this.board.rear);
             if (!Array.isArray(this.board.rear)) {
-                console.error('Rear board is not an array:', this.board.rear);
                 throw new Error(`Rear board should be an array, got ${typeof this.board.rear}`);
             }
             this.board.rear = this.board.rear.map((row, index) => {
                 if (typeof row !== 'string') {
-                    console.error(`Row ${index} is not a string:`, row, typeof row);
                     throw new Error(`Expected string row at index ${index}, got ${typeof row}: ${JSON.stringify(row)}`);
                 }
                 return row.split(' ');
@@ -1443,7 +1437,6 @@ class GameManager {
             
             // Handle test levels
             if (levelNumber === 'test' && this.testLevelData) {
-                console.log('Loading test level data:', this.testLevelData);
                 levelData = this.testLevelData;
             } else {
                 // Load level data from JSON file
@@ -1472,9 +1465,6 @@ class GameManager {
             }
             
             this.board = this.levelData.board;
-            
-            console.log('Level data loaded:', this.levelData);
-            console.log('Board data:', this.board);
             
             // Convert board faces from space-separated strings to arrays of arrays
             this.convertBoardToArrays();
