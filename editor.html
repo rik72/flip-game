@@ -36,6 +36,20 @@
             overflow-y: auto;
         }
         
+        .editor-title {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #444;
+        }
+        
+        .editor-title h3 {
+            color: #fff;
+            margin: 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
         .main-area {
             flex: 1;
             display: flex;
@@ -45,12 +59,42 @@
         
         .editor-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             margin-bottom: 20px;
             padding: 15px;
             background-color: #333;
             border-radius: 8px;
+        }
+        
+        .level-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .level-controls .control-label {
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .level-controls .form-control {
+            width: 80px;
+            background-color: #444;
+            border: 1px solid #666;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .level-controls .form-control:focus {
+            background-color: #555;
+            border-color: #007bff;
+            color: #fff;
+            outline: none;
         }
         
         .board-container {
@@ -131,6 +175,26 @@
             color: #fff;
             border-bottom: 1px solid #555;
             padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .toolbar-title:hover {
+            background-color: #444;
+            border-radius: 4px;
+            padding: 5px;
+            margin: -5px -5px 5px -5px;
+        }
+        
+        .toolbar-title i {
+            transition: transform 0.2s ease;
+            font-size: 14px;
+        }
+        
+        .toolbar-title[aria-expanded="true"] i {
+            transform: rotate(180deg);
         }
         
         .node-tool {
@@ -301,12 +365,25 @@
             margin-bottom: 10px;
         }
         
+        .btn-row {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        
+        .btn-row .btn {
+            flex: 1;
+        }
+        
         .btn {
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .btn-primary {
@@ -393,8 +470,8 @@
         
         .grid-size-section {
             display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
             margin-top: 20px;
             padding: 15px;
         }
@@ -411,72 +488,81 @@
         .grid-size-section .grid-size-controls {
             justify-content: center;
         }
+        
+        .clear-board-section {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
     <div class="editor-container">
         <!-- Toolbar -->
         <div class="toolbar">
+            <div class="editor-title">
+                <h3>Level Editor</h3>
+            </div>
+            
             <div class="toolbar-section">
-                <div class="toolbar-title">Node Types</div>
-                <div class="node-tool" data-type="__">
-                    <div class="node-preview">__</div>
-                    <div class="node-label">Empty</div>
+                <div class="toolbar-title" data-bs-toggle="collapse" data-bs-target="#nodeTypesCollapse" aria-expanded="false" aria-controls="nodeTypesCollapse" style="cursor: pointer;">
+                    <i class="bi bi-chevron-down" id="nodeTypesIcon"></i> Node Types
                 </div>
-                <div class="node-tool" data-type="p0">
-                    <div class="node-preview">p0</div>
-                    <div class="node-label">Path (All Balls)</div>
-                </div>
-                <div class="node-tool" data-type="p1">
-                    <div class="node-preview">p1</div>
-                    <div class="node-label">Path (Ball 1)</div>
-                </div>
-                <div class="node-tool" data-type="p2">
-                    <div class="node-preview">p2</div>
-                    <div class="node-label">Path (Ball 2)</div>
-                </div>
-                <div class="node-tool" data-type="w0">
-                    <div class="node-preview">w0</div>
-                    <div class="node-label">Well</div>
-                </div>
-                <div class="node-tool" data-type="t0">
-                    <div class="node-preview">t0</div>
-                    <div class="node-label">Teleport</div>
-                </div>
-                <div class="node-tool" data-type="s0">
-                    <div class="node-preview">s0</div>
-                    <div class="node-label">Switch</div>
+                <div class="collapse" id="nodeTypesCollapse">
+                    <div class="node-tool" data-type="__">
+                        <div class="node-preview">__</div>
+                        <div class="node-label">Empty</div>
+                    </div>
+                    <div class="node-tool" data-type="p0">
+                        <div class="node-preview">p0</div>
+                        <div class="node-label">Path (All Balls)</div>
+                    </div>
+                    <div class="node-tool" data-type="p1">
+                        <div class="node-preview">p1</div>
+                        <div class="node-label">Path (Ball 1)</div>
+                    </div>
+                    <div class="node-tool" data-type="p2">
+                        <div class="node-preview">p2</div>
+                        <div class="node-label">Path (Ball 2)</div>
+                    </div>
+                    <div class="node-tool" data-type="w0">
+                        <div class="node-preview">w0</div>
+                        <div class="node-label">Well</div>
+                    </div>
+                    <div class="node-tool" data-type="t0">
+                        <div class="node-preview">t0</div>
+                        <div class="node-label">Teleport</div>
+                    </div>
+                    <div class="node-tool" data-type="s0">
+                        <div class="node-preview">s0</div>
+                        <div class="node-label">Switch</div>
+                    </div>
                 </div>
             </div>
             
             <div class="balls-section">
-                <div class="toolbar-title">Balls</div>
-                <div id="ballsList">
-                    <!-- Balls will be added here dynamically -->
+                <div class="toolbar-title" data-bs-toggle="collapse" data-bs-target="#ballsCollapse" aria-expanded="false" aria-controls="ballsCollapse" style="cursor: pointer;">
+                    <i class="bi bi-chevron-down" id="ballsIcon"></i> Balls
                 </div>
-                <button class="btn btn-sm btn-primary" onclick="addBall()">Add Ball</button>
+                <div class="collapse" id="ballsCollapse">
+                    <div id="ballsList">
+                        <!-- Balls will be added here dynamically -->
+                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="addBall()"><i class="bi bi-plus-circle"></i> Add Ball</button>
+                </div>
             </div>
             
             <div class="controls-section">
-                <div class="toolbar-title">Controls</div>
-                
-                <div class="control-group">
-                    <label class="control-label">Level Number</label>
-                    <input type="number" id="levelNumber" class="form-control" value="1" min="1">
+                <div class="toolbar-title">
+                    Controls
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="saveLevel()"><i class="bi bi-download"></i> Save</button>
+                    <button class="btn btn-primary" onclick="loadLevel()"><i class="bi bi-upload"></i> Load</button>
                 </div>
                 
                 <div class="btn-group">
-                    <button class="btn btn-primary" onclick="saveLevel()">Save</button>
-                    <button class="btn btn-primary" onclick="loadLevel()">Load</button>
-                </div>
-                
-                <div class="btn-group">
-                    <button class="btn btn-warning" onclick="testLevel()">Test</button>
-                </div>
-                
-                <div class="btn-group">
-                    <button class="btn btn-success" onclick="newLevel()">New</button>
-                    <button class="btn btn-danger" onclick="clearBoard()">Clear Board</button>
+                    <button class="btn btn-warning" onclick="testLevel()"><i class="bi bi-play-circle"></i> Test</button>
                 </div>
             </div>
         </div>
@@ -484,12 +570,9 @@
         <!-- Main Area -->
         <div class="main-area">
             <div class="editor-header">
-                <div class="level-info">
-                    <span class="level-number">Level Editor</span>
-                </div>
-                <div>
-                    <input type="file" id="fileInput" class="file-input" accept=".json">
-                    <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">Import JSON</button>
+                <div class="level-controls">
+                    <label class="control-label">Level Number</label>
+                    <input type="number" id="levelNumber" class="form-control" value="1" min="1">
                 </div>
             </div>
             
@@ -517,6 +600,9 @@
                         <span style="color: #fff;">×</span>
                         <input type="number" id="gridHeight" class="form-control size-input" value="6" min="3" max="10">
                     </div>
+                </div>
+                <div class="clear-board-section">
+                    <button class="btn btn-danger" onclick="clearBoard()"><i class="bi bi-stars"></i> Clear Board</button>
                 </div>
             </div>
         </div>
@@ -584,19 +670,30 @@
                     this.currentLevel = parseInt(e.target.value);
                 });
                 
-                // File input
-                document.getElementById('fileInput').addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        this.loadLevelFromFile(file);
-                    }
-                });
+
                 
                 // Drag and drop for node tools
                 document.querySelectorAll('.node-tool').forEach(tool => {
                     tool.addEventListener('dragstart', (e) => {
                         e.dataTransfer.setData('text/plain', tool.dataset.type);
                     });
+                });
+                
+                // Collapse event listeners for icon rotation
+                document.getElementById('nodeTypesCollapse').addEventListener('shown.bs.collapse', () => {
+                    document.getElementById('nodeTypesIcon').style.transform = 'rotate(180deg)';
+                });
+                
+                document.getElementById('nodeTypesCollapse').addEventListener('hidden.bs.collapse', () => {
+                    document.getElementById('nodeTypesIcon').style.transform = 'rotate(0deg)';
+                });
+                
+                document.getElementById('ballsCollapse').addEventListener('shown.bs.collapse', () => {
+                    document.getElementById('ballsIcon').style.transform = 'rotate(180deg)';
+                });
+                
+                document.getElementById('ballsCollapse').addEventListener('hidden.bs.collapse', () => {
+                    document.getElementById('ballsIcon').style.transform = 'rotate(0deg)';
                 });
             }
             
@@ -1192,7 +1289,21 @@
             }
             
             loadLevel() {
-                document.getElementById('fileInput').click();
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = '.json';
+                fileInput.style.display = 'none';
+                
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        this.loadLevelFromFile(file);
+                    }
+                    document.body.removeChild(fileInput);
+                });
+                
+                document.body.appendChild(fileInput);
+                fileInput.click();
             }
             
             loadLevelFromFile(file) {
@@ -1311,11 +1422,7 @@
             editor.testLevel();
         }
         
-        function newLevel() {
-            if (confirm('Create new level? Current changes will be lost.')) {
-                editor.createNewLevel();
-            }
-        }
+
         
         function clearBoard() {
             editor.clearBoard();
