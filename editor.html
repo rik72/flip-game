@@ -419,32 +419,32 @@
         <div class="toolbar">
             <div class="toolbar-section">
                 <div class="toolbar-title">Node Types</div>
-                <div class="node-tool" data-type=".">
-                    <div class="node-preview">.</div>
+                <div class="node-tool" data-type="__">
+                    <div class="node-preview">__</div>
                     <div class="node-label">Empty</div>
                 </div>
-                <div class="node-tool" data-type="0">
-                    <div class="node-preview">0</div>
+                <div class="node-tool" data-type="p0">
+                    <div class="node-preview">p0</div>
                     <div class="node-label">Path (All Balls)</div>
                 </div>
-                <div class="node-tool" data-type="1">
-                    <div class="node-preview">1</div>
+                <div class="node-tool" data-type="p1">
+                    <div class="node-preview">p1</div>
                     <div class="node-label">Path (Ball 1)</div>
                 </div>
-                <div class="node-tool" data-type="2">
-                    <div class="node-preview">2</div>
+                <div class="node-tool" data-type="p2">
+                    <div class="node-preview">p2</div>
                     <div class="node-label">Path (Ball 2)</div>
                 </div>
-                <div class="node-tool" data-type="W">
-                    <div class="node-preview">W</div>
+                <div class="node-tool" data-type="w0">
+                    <div class="node-preview">w0</div>
                     <div class="node-label">Well</div>
                 </div>
-                <div class="node-tool" data-type="T">
-                    <div class="node-preview">T</div>
+                <div class="node-tool" data-type="t0">
+                    <div class="node-preview">t0</div>
                     <div class="node-label">Teleport</div>
                 </div>
-                <div class="node-tool" data-type="S">
-                    <div class="node-preview">S</div>
+                <div class="node-tool" data-type="s0">
+                    <div class="node-preview">s0</div>
                     <div class="node-label">Switch</div>
                 </div>
             </div>
@@ -532,7 +532,7 @@
                 this.currentLevel = 1;
                 this.gridWidth = 6;
                 this.gridHeight = 6;
-                this.selectedNodeType = '.';
+                this.selectedNodeType = '__';
                 this.selectedBallIndex = -1;
                 this.balls = [];
                 this.board = {
@@ -621,8 +621,8 @@
                 this.board.rear = [];
                 
                 for (let row = 0; row < this.gridHeight; row++) {
-                    this.board.front[row] = '.'.repeat(this.gridWidth);
-                    this.board.rear[row] = '.'.repeat(this.gridWidth);
+                    this.board.front[row] = new Array(this.gridWidth).fill('__');
+                    this.board.rear[row] = new Array(this.gridWidth).fill('__');
                     
                     for (let col = 0; col < this.gridWidth; col++) {
                         const frontCell = this.createGridCell(row, col, 'front');
@@ -642,14 +642,14 @@
                 for (let row = 0; row < Math.min(oldHeight, this.gridHeight); row++) {
                     if (oldFront[row]) {
                         const oldRow = oldFront[row];
-                        let newRow = this.board.front[row];
                         
-                        for (let col = 0; col < Math.min(oldWidth, this.gridWidth); col++) {
-                            if (oldRow[col] && oldRow[col] !== '.') {
-                                newRow = newRow.substring(0, col) + oldRow[col] + newRow.substring(col + 1);
+                        // Parse space-separated format
+                        const oldCells = oldRow.split(' ');
+                        for (let col = 0; col < Math.min(oldCells.length, this.gridWidth); col++) {
+                            if (oldCells[col] && oldCells[col] !== '__') {
+                                this.board.front[row][col] = oldCells[col];
                             }
                         }
-                        this.board.front[row] = newRow;
                     }
                 }
                 
@@ -657,14 +657,14 @@
                 for (let row = 0; row < Math.min(oldHeight, this.gridHeight); row++) {
                     if (oldRear[row]) {
                         const oldRow = oldRear[row];
-                        let newRow = this.board.rear[row];
                         
-                        for (let col = 0; col < Math.min(oldWidth, this.gridWidth); col++) {
-                            if (oldRow[col] && oldRow[col] !== '.') {
-                                newRow = newRow.substring(0, col) + oldRow[col] + newRow.substring(col + 1);
+                        // Parse space-separated format
+                        const oldCells = oldRow.split(' ');
+                        for (let col = 0; col < Math.min(oldCells.length, this.gridWidth); col++) {
+                            if (oldCells[col] && oldCells[col] !== '__') {
+                                this.board.rear[row][col] = oldCells[col];
                             }
                         }
-                        this.board.rear[row] = newRow;
                     }
                 }
                 
@@ -677,6 +677,8 @@
                 // Update all border colors
                 this.updateAllBorderColors();
             }
+            
+
             
             validateBallPositions() {
                 this.balls.forEach((ball, index) => {
@@ -747,12 +749,10 @@
                 
                 // Update the board data
                 if (!this.board[face][row]) {
-                    this.board[face][row] = '.'.repeat(this.gridWidth);
+                    this.board[face][row] = new Array(this.gridWidth).fill('__');
                 }
                 
-                const rowStr = this.board[face][row];
-                const newRowStr = rowStr.substring(0, col) + type + rowStr.substring(col + 1);
-                this.board[face][row] = newRowStr;
+                this.board[face][row][col] = type;
                 
                 // Update the visual representation
                 this.updateCellVisual(cell, type);
@@ -808,20 +808,20 @@
                 const reflectedCol = this.gridWidth - 1 - col;
                 
                 // Get the node type from the other face at the reflected position
-                let otherNodeType = '.';
-                if (this.board[otherFace] && this.board[otherFace][row] && this.board[otherFace][row][reflectedCol]) {
-                    otherNodeType = this.board[otherFace][row][reflectedCol];
+                let otherNodeType = '__';
+                if (this.board[otherFace] && this.board[otherFace][row]) {
+                    otherNodeType = this.board[otherFace][row][reflectedCol] || '__';
                 }
                 
                 // Get the color for the other face's node type
                 const colors = CONSTANTS.LEVEL_CONFIG.NODE_COLORS;
-                const borderColor = otherNodeType === '.' ? '#222' : (colors[otherNodeType] || '#777');
+                const borderColor = otherNodeType === '__' ? '#222' : (colors[otherNodeType] || '#777');
                 
                 // Apply the border color
                 cell.style.borderColor = borderColor;
                 
                 // Make the border slightly thicker when there's content in the other face
-                if (otherNodeType !== '.') {
+                if (otherNodeType !== '__') {
                     cell.style.borderWidth = '2px';
                 } else {
                     cell.style.borderWidth = '1px';
@@ -905,8 +905,8 @@
                 
                 // Initialize empty boards
                 for (let row = 0; row < this.gridHeight; row++) {
-                    this.board.front[row] = '.'.repeat(this.gridWidth);
-                    this.board.rear[row] = '.'.repeat(this.gridWidth);
+                    this.board.front[row] = new Array(this.gridWidth).fill('__');
+                    this.board.rear[row] = new Array(this.gridWidth).fill('__');
                 }
                 
                 this.balls = [];
@@ -923,12 +923,12 @@
                         const rearCell = document.querySelector(`[data-row="${row}"][data-col="${col}"][data-face="rear"]`);
                         
                         if (frontCell && this.board.front[row]) {
-                            const nodeType = this.board.front[row][col] || '.';
+                            const nodeType = this.board.front[row][col] || '__';
                             this.updateCellVisual(frontCell, nodeType);
                         }
                         
                         if (rearCell && this.board.rear[row]) {
-                            const nodeType = this.board.rear[row][col] || '.';
+                            const nodeType = this.board.rear[row][col] || '__';
                             this.updateCellVisual(rearCell, nodeType);
                         }
                     }
@@ -1136,8 +1136,34 @@
             }
             
             saveLevel() {
+                // Convert board data to space-separated format for consistency with existing levels
+                const boardForSaving = {
+                    front: [],
+                    rear: []
+                };
+                
+                // Convert front face
+                for (let row = 0; row < this.board.front.length; row++) {
+                    const cells = [];
+                    for (let col = 0; col < this.gridWidth; col++) {
+                        const cellCode = this.board.front[row][col] || '__';
+                        cells.push(cellCode);
+                    }
+                    boardForSaving.front.push(cells.join(' '));
+                }
+                
+                // Convert rear face
+                for (let row = 0; row < this.board.rear.length; row++) {
+                    const cells = [];
+                    for (let col = 0; col < this.gridWidth; col++) {
+                        const cellCode = this.board.rear[row][col] || '__';
+                        cells.push(cellCode);
+                    }
+                    boardForSaving.rear.push(cells.join(' '));
+                }
+                
                 const levelData = {
-                    board: this.board,
+                    board: boardForSaving,
                     balls: this.balls
                 };
                 
@@ -1170,8 +1196,12 @@
                             // Update grid size based on loaded data
                             if (this.board.front && this.board.front.length > 0) {
                                 this.gridHeight = this.board.front.length;
-                                this.gridWidth = this.board.front[0].length;
                                 
+                                // Parse the first row to determine grid width (space-separated format)
+                                const firstRow = this.board.front[0];
+                                this.gridWidth = firstRow.split(' ').length;
+                                
+                                // Update the input fields
                                 document.getElementById('gridHeight').value = this.gridHeight;
                                 document.getElementById('gridWidth').value = this.gridWidth;
                             }

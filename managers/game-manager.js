@@ -629,7 +629,6 @@ class GameManager {
                 // Check if the well destination is occupied on the other face
                 if (this.isWellDestinationOccupied(snappedGridX, snappedGridY, this.selectedBallIndex)) {
                     // Destination is occupied, show blocked transfer animation
-                    console.log('Well transfer blocked: destination is occupied on the other face');
                     this.moveBallToPosition(finalSnapX, finalSnapY, true);
                     // Start blocked well animation after a small delay
                     setTimeout(() => {
@@ -900,7 +899,8 @@ class GameManager {
         
         // Only check paths that are adjacent to the ball's current position
         // Check horizontal connection to the right
-        if (currentBallGridX + 1 < nodes[currentBallGridY].length && 
+        const boardGridWidth = nodes[currentBallGridY] ? nodes[currentBallGridY].length : 0;
+        if (currentBallGridX + 1 < boardGridWidth && 
             this.canBallMoveToNode(ballIndex, currentBallGridX + 1, currentBallGridY) && 
             !this.isNodeOccupied(currentBallGridX + 1, currentBallGridY, ballIndex)) {
             const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX, currentBallGridY, currentBallGridX + 1, currentBallGridY);
@@ -1196,7 +1196,7 @@ class GameManager {
         this.wellAnimationState = {
             isAnimating: true,
             startTime: performance.now(),
-            duration: 800, // 800ms animation
+            duration: 500,
             ball: ball,
             wellGridX: wellGridX,
             wellGridY: wellGridY,
@@ -1215,7 +1215,7 @@ class GameManager {
         this.wellAnimationState = {
             isAnimating: true,
             startTime: performance.now(),
-            duration: 400, // Shorter animation for blocked transfer
+            duration: 300, // Shorter animation for blocked transfer
             ball: ball,
             wellGridX: wellGridX,
             wellGridY: wellGridY,
@@ -1339,6 +1339,7 @@ class GameManager {
         let mappedX = transferX;
         let mappedY = transferY;
         
+        // Ensure the ball is perfectly centered on the grid intersection
         const transferAbsX = this.boardStartX + (mappedX * this.gridSize);
         const transferAbsY = this.boardStartY + (mappedY * this.gridSize);
         
@@ -1346,10 +1347,18 @@ class GameManager {
         ball.x = transferAbsX;
         ball.y = transferAbsY;
         
+        // Reset any visual state that might cause positioning issues
+        ball.isTouched = false;
+        ball.touchOpacity = 0.0;
+        ball.touchScale = this.restScale;
+        ball.wellAnimationScale = undefined;
+        ball.wellAnimationOpacity = undefined;
+        
         // Update the ball's original start coordinates and current face based on transfer
         // If currently on front face, transfer to rear (negative coordinates)
         // If currently on rear face, transfer to front (positive coordinates)
         const currentBallFace = this.getBallCurrentFace(ball);
+        
         if (currentBallFace === 'front') {
             // Transfer from front to rear - use negative coordinates
             ball.originalStart = [-transferX, -transferY];
@@ -1365,6 +1374,16 @@ class GameManager {
         
         // Re-render to show the changes
         this.render();
+    }
+    
+    // Convert board faces from space-separated strings to arrays of arrays
+    convertBoardToArrays() {
+        if (this.board.front) {
+            this.board.front = this.board.front.map(row => row.split(' '));
+        }
+        if (this.board.rear) {
+            this.board.rear = this.board.rear.map(row => row.split(' '));
+        }
     }
 
     /**
@@ -1398,7 +1417,6 @@ class GameManager {
             // Handle test levels
             if (levelNumber === 'test' && this.testLevelData) {
                 levelData = this.testLevelData;
-                console.log('Loading test level data:', levelData);
             } else {
                 // Load level data from JSON file
                 levelData = await this.storageManager.loadLevelData(levelNumber);
@@ -1417,6 +1435,9 @@ class GameManager {
             }
             
             this.board = this.levelData.board;
+            
+            // Convert board faces from space-separated strings to arrays of arrays
+            this.convertBoardToArrays();
             
             // Calculate board positioning first
             this.calculateBoardPosition();
@@ -1519,8 +1540,6 @@ class GameManager {
     checkWinCondition() {
         if (!this.canvas || this.balls.length === 0) return;
         
-        console.log('🔍 Checking win condition for level:', this.currentLevel);
-        
         // Check if all balls are at their respective end positions AND on the correct face
         const allBallsAtGoal = this.balls.every((ball, ballIndex) => {
             // Convert ball's current position back to grid coordinates
@@ -1542,15 +1561,10 @@ class GameManager {
             const ballFace = this.getBallCurrentFace(ball);
             const correctFace = goalFace === ballFace;
             
-            console.log(`Ball ${ballIndex + 1}: position=(${ballGridX},${ballGridY}), goal=(${goalGridXConverted},${goalGridYConverted}), face=${ballFace}, goalFace=${goalFace}, correctPosition=${correctPosition}, correctFace=${correctFace}`);
-            
             return correctPosition && correctFace;
         });
         
-        console.log('🎯 All balls at goal:', allBallsAtGoal);
-        
         if (allBallsAtGoal) {
-            console.log('🏆 Level completed! Triggering completion animation...');
             this.levelCompleted();
         }
     }
@@ -1923,9 +1937,9 @@ class GameManager {
             if (!nodes) return;
             
             for (let row = 0; row < nodes.length; row++) {
-                const rowString = nodes[row];
-                for (let col = 0; col < rowString.length; col++) {
-                    const nodeType = rowString[col];
+                const rowArray = nodes[row];
+                for (let col = 0; col < rowArray.length; col++) {
+                    const nodeType = rowArray[col];
                     
                     // Render path nodes as circles
                     if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
@@ -1991,9 +2005,9 @@ class GameManager {
         if (!nodes) return;
         
         for (let row = 0; row < nodes.length; row++) {
-            const rowString = nodes[row];
-            for (let col = 0; col < rowString.length; col++) {
-                const nodeType = rowString[col];
+            const rowArray = nodes[row];
+            for (let col = 0; col < rowArray.length; col++) {
+                const nodeType = rowArray[col];
                 
                 // Process path nodes and WELL nodes
                 if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
@@ -2005,8 +2019,8 @@ class GameManager {
                     const centerY = this.boardStartY + (row * this.gridSize);
                     
                     // Check right neighbor (horizontal connection)
-                    if (col + 1 < rowString.length) {
-                        const rightNodeType = rowString[col + 1];
+                    if (col + 1 < rowArray.length) {
+                        const rightNodeType = rowArray[col + 1];
                         if (this.shouldDrawConnection(nodeType, rightNodeType)) {
                             const rightX = this.boardStartX + ((col + 1) * this.gridSize);
                             const rightY = centerY;
@@ -2018,9 +2032,9 @@ class GameManager {
                     
                     // Check bottom neighbor (vertical connection)
                     if (row + 1 < nodes.length) {
-                        const bottomRowString = nodes[row + 1];
-                        if (col < bottomRowString.length) {
-                            const bottomNodeType = bottomRowString[col];
+                        const bottomRowArray = nodes[row + 1];
+                        if (col < bottomRowArray.length) {
+                            const bottomNodeType = bottomRowArray[col];
                             if (this.shouldDrawConnection(nodeType, bottomNodeType)) {
                                 const bottomX = centerX;
                                 const bottomY = this.boardStartY + ((row + 1) * this.gridSize);
@@ -2298,8 +2312,8 @@ class GameManager {
         // Path for all balls ('0') can be used by any ball
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) return true;
         
-        // Ball-specific paths: ball 0 can use path '1', ball 1 can use path '2', etc.
-        const ballPathType = (ballIndex + 1).toString();
+        // Ball-specific paths: ball 0 can use path 'p1', ball 1 can use path 'p2', etc.
+        const ballPathType = 'p' + (ballIndex + 1).toString();
         if (nodeType === ballPathType) return true;
         
 

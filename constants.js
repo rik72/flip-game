@@ -30,7 +30,7 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 4, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 5, // Set to level number (e.g., 4) to force start at that level
 		
         // Ball configurations
         BALL_RADIUS: 15,
@@ -145,31 +145,31 @@ const CONSTANTS = {
 	// Level configurations
 	LEVEL_CONFIG: {
 		
-		// Node types (string-based)
+		// Node types (2-character codes)
 		NODE_TYPES: {
-			EMPTY: '.',
-			PATH_ALL_BALLS: '0',
-			PATH_BALL_1: '1',
-			PATH_BALL_2: '2',
-            WELL: 'W',
-			WALL: 'X',
-			TELEPORT: 'T',
-			SWITCH: 'S',
-			COLLECTIBLE: 'C'
+			EMPTY: '__',
+			PATH_ALL_BALLS: 'p0',
+			PATH_BALL_1: 'p1',
+			PATH_BALL_2: 'p2',
+            WELL: 'w0',
+			WALL: 'x0',
+			TELEPORT: 't0',
+			SWITCH: 's0',
+			COLLECTIBLE: 'c0'
 		},
 		
 		// Node colors (only for square nodes, circles use their own colors)
 		NODE_COLORS: {
-			'.': '#000000',  // Empty
-			'0': '#aaaaaa',  // Path for all balls
-			'1': '#801111',  // Path for ball 1
-			'2': '#111180',  // Path for ball 2
+			'__': '#000000',  // Empty
+			'p0': '#aaaaaa',  // Path for all balls
+			'p1': '#801111',  // Path for ball 1
+			'p2': '#111180',  // Path for ball 2
 			// TO DO
-			'W': '#FFFFFF',  // Well
-			'X': '#FF0000',  // Wall
-			'T': '#8000FF',  // Teleport
-			'S': '#FFFF00',  // Switch
-			'C': '#FF00FF'   // Collectible
+			'w0': '#FFFFFF',  // Well
+			'x0': '#FF0000',  // Wall
+			't0': '#8000FF',  // Teleport
+			's0': '#FFFF00',  // Switch
+			'c0': '#FF00FF'   // Collectible
 		},
 		
 		// Ball colors mapping

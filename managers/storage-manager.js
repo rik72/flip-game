@@ -204,7 +204,6 @@ class StorageManager {
                 return null;
             }
             const levelData = await response.json();
-            console.log(`Loaded level ${levelNumber} from file:`, levelData);
             return levelData;
         } catch (error) {
             console.error(`Error loading level ${levelNumber}:`, error);
