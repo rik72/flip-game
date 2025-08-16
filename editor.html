@@ -510,7 +510,7 @@
                 </div>
                 <div class="collapse" id="nodeTypesCollapse">
                     <div class="node-tool" data-type="__">
-                        <div class="node-preview">__</div>
+                        <div class="node-preview"></div>
                         <div class="node-label">Empty</div>
                     </div>
                     <div class="node-tool" data-type="p0">
@@ -888,7 +888,11 @@
                 
                 const nodeDiv = document.createElement('div');
                 nodeDiv.className = 'node-type';
-                nodeDiv.textContent = nodeType;
+                
+                // Only show text if it's not an empty cell
+                if (nodeType !== '__') {
+                    nodeDiv.textContent = nodeType;
+                }
                 
                 // Apply color based on node type
                 const colors = CONSTANTS.LEVEL_CONFIG.NODE_COLORS;
