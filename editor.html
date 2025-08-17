@@ -876,10 +876,18 @@
                     this.board[face][row] = new Array(this.gridWidth).fill('__');
                 }
                 
-                this.board[face][row][col] = type;
+                // Check if the cell already contains the same node type
+                const currentType = this.board[face][row][col] || '__';
+                if (currentType === type) {
+                    // If same type is selected, clear the cell
+                    this.board[face][row][col] = '__';
+                } else {
+                    // Otherwise, place the new node type
+                    this.board[face][row][col] = type;
+                }
                 
                 // Update the visual representation
-                this.updateCellVisual(cell, type);
+                this.updateCellVisual(cell, this.board[face][row][col]);
                 
                 // Update the border color of the horizontally reflected cell in the other face
                 const otherFace = face === 'front' ? 'rear' : 'front';
