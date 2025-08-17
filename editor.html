@@ -106,7 +106,7 @@
         
         .board-container {
             display: flex;
-            gap: 40px;
+            gap: 20px;
             justify-content: center;
             align-items: flex-start;
         }
@@ -115,7 +115,6 @@
             background-color: #333;
             border-radius: 8px;
             padding: 20px;
-            min-width: 400px;
         }
         
         .face-title {
@@ -479,7 +478,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 20px;
             padding: 15px;
         }
         
@@ -1265,8 +1263,7 @@
             saveLevel() {
                 // Convert board data to space-separated format for consistency with existing levels
                 const boardForSaving = {
-                    front: [],
-                    rear: []
+                    front: []
                 };
                 
                 // Convert front face
@@ -1279,14 +1276,30 @@
                     boardForSaving.front.push(cells.join(' '));
                 }
                 
-                // Convert rear face
+                // Check if rear face has any non-empty cells
+                let hasRearContent = false;
                 for (let row = 0; row < this.board.rear.length; row++) {
-                    const cells = [];
                     for (let col = 0; col < this.gridWidth; col++) {
                         const cellCode = this.board.rear[row][col] || '__';
-                        cells.push(cellCode);
+                        if (cellCode !== '__') {
+                            hasRearContent = true;
+                            break;
+                        }
                     }
-                    boardForSaving.rear.push(cells.join(' '));
+                    if (hasRearContent) break;
+                }
+                
+                // Only include rear face if it has content
+                if (hasRearContent) {
+                    boardForSaving.rear = [];
+                    for (let row = 0; row < this.board.rear.length; row++) {
+                        const cells = [];
+                        for (let col = 0; col < this.gridWidth; col++) {
+                            const cellCode = this.board.rear[row][col] || '__';
+                            cells.push(cellCode);
+                        }
+                        boardForSaving.rear.push(cells.join(' '));
+                    }
                 }
                 
                 const levelData = {
@@ -1378,8 +1391,7 @@
             testLevel() {
                 // Convert board data to space-separated format for consistency with existing levels
                 const boardForSaving = {
-                    front: [],
-                    rear: []
+                    front: []
                 };
                 
                 // Convert front face
@@ -1392,14 +1404,30 @@
                     boardForSaving.front.push(cells.join(' '));
                 }
                 
-                // Convert rear face
+                // Check if rear face has any non-empty cells
+                let hasRearContent = false;
                 for (let row = 0; row < this.board.rear.length; row++) {
-                    const cells = [];
                     for (let col = 0; col < this.gridWidth; col++) {
                         const cellCode = this.board.rear[row][col] || '__';
-                        cells.push(cellCode);
+                        if (cellCode !== '__') {
+                            hasRearContent = true;
+                            break;
+                        }
                     }
-                    boardForSaving.rear.push(cells.join(' '));
+                    if (hasRearContent) break;
+                }
+                
+                // Only include rear face if it has content
+                if (hasRearContent) {
+                    boardForSaving.rear = [];
+                    for (let row = 0; row < this.board.rear.length; row++) {
+                        const cells = [];
+                        for (let col = 0; col < this.gridWidth; col++) {
+                            const cellCode = this.board.rear[row][col] || '__';
+                            cells.push(cellCode);
+                        }
+                        boardForSaving.rear.push(cells.join(' '));
+                    }
                 }
                 
                 const levelData = {
