@@ -30,7 +30,7 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 5, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 1, // Set to level number (e.g., 4) to force start at that level
 		
         // Ball configurations
         BALL_RADIUS: 15,
@@ -120,8 +120,8 @@ const CONSTANTS = {
 		FLIP_HALFWAY_THRESHOLD: 0.5, // When to switch face content (0.0-1.0) - at halfway point
 		
 		// Ball movement animation
-		BALL_EASE_DURATION: 300, // milliseconds for final snap
-		BALL_DRAG_DURATION: 50, // milliseconds for smooth dragging
+		BALL_EASE_DURATION: 40, // milliseconds for final snap
+		BALL_DRAG_DURATION: 40, // milliseconds for smooth dragging
 		BALL_EASE_TYPE: 'ease-out', // ease-in, ease-out, ease-in-out
 		
 		// Level completion explosion animation
