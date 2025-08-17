@@ -55,6 +55,10 @@ class GameManager {
         this.touchPosition = null; // Current touch position
         this.transitionInProgress = []; // Track if each ball is in transition
         
+        // Movement trail animation system
+        this.trailAnimationId = null; // For trail animation loop
+        this.activeTrailAnimations = []; // Array of active trail animations
+        
         this.init();
     }
 
@@ -525,6 +529,10 @@ class GameManager {
             cancelAnimationFrame(this.ballAnimationId);
             this.ballAnimationId = null;
         }
+        if (this.trailAnimationId) {
+            cancelAnimationFrame(this.trailAnimationId);
+            this.trailAnimationId = null;
+        }
         
         // Clean up flip animation
         if (this.flipAnimationTimeout) {
@@ -537,6 +545,7 @@ class GameManager {
         this.isFlipping = false;
         
         this.touchAnimationState = {};
+        this.activeTrailAnimations = [];
     }
 
     // Start ball animation to target position
@@ -885,6 +894,13 @@ class GameManager {
                 ball.y = clampedY;
                 this.render();
             }
+            
+            // Create movement trail animation for non-transition movements
+            if (!this.transitionInProgress[this.selectedBallIndex]) {
+                const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                this.createMovementTrail(clampedX, clampedY, ballColor);
+            }
+            
             // Don't check win condition during drag - only when released
         }
     }
@@ -1426,6 +1442,88 @@ class GameManager {
         requestAnimationFrame(animate);
     }
 
+    // Create movement trail animation at destination node
+    createMovementTrail(x, y, ballColor) {
+        if (!this.canvas || !CONSTANTS.ANIMATION_CONFIG.TRAIL_ENABLED) return;
+        
+        const canvasRect = this.canvas.getBoundingClientRect();
+        
+        // Convert canvas coordinates to screen coordinates
+        let screenX = (x / this.displayWidth) * canvasRect.width;
+        let screenY = (y / this.displayHeight) * canvasRect.height;
+        
+        // Apply horizontal reflection for rear face (same as in render method)
+        if (this.currentFace === 'rear') {
+            screenX = canvasRect.width - screenX;
+        }
+        
+        // Calculate trail radii based on ball radius (half the size of explosion)
+        const ballRadius = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.BALL_RADIUS_RATIO;
+        const startRadius = ballRadius * 0.125; // 1/8 of ball radius (half of 0.25)
+        const maxRadius = ballRadius * 1.5; // 1.5 times ball radius (half of 3)
+        
+        // Create trail animation object
+        const trailAnimation = {
+            id: Date.now() + Math.random(), // Unique ID
+            x: screenX,
+            y: screenY,
+            startRadius: startRadius,
+            maxRadius: maxRadius,
+            startTime: performance.now(),
+            duration: CONSTANTS.ANIMATION_CONFIG.TRAIL_DURATION,
+            color: '#FFFFFF', // Always white
+            opacity: CONSTANTS.ANIMATION_CONFIG.TRAIL_OPACITY
+        };
+        
+        // Add to active animations
+        this.activeTrailAnimations.push(trailAnimation);
+        
+        // Start animation loop if not already running
+        if (!this.trailAnimationId) {
+            this.trailAnimationLoop();
+        }
+    }
+
+    // Trail animation loop
+    trailAnimationLoop() {
+        const currentTime = performance.now();
+        let hasActiveAnimations = false;
+
+        // Update all active trail animations
+        for (let i = this.activeTrailAnimations.length - 1; i >= 0; i--) {
+            const animation = this.activeTrailAnimations[i];
+            const elapsed = currentTime - animation.startTime;
+            const progress = Math.min(elapsed / animation.duration, 1);
+            
+            // Ease-out function
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            
+            // Calculate current size and opacity
+            const currentSize = animation.startRadius + (animation.maxRadius - animation.startRadius) * easeOut;
+            const currentOpacity = animation.opacity * (1 - progress);
+            
+            // Store current animation state for rendering
+            animation.currentSize = currentSize;
+            animation.currentOpacity = currentOpacity;
+            animation.progress = progress;
+            
+            if (progress >= 1) {
+                // Animation complete, remove from array
+                this.activeTrailAnimations.splice(i, 1);
+            } else {
+                hasActiveAnimations = true;
+            }
+        }
+
+        // Continue animation loop if any trails are still animating
+        if (hasActiveAnimations) {
+            this.render(); // Re-render with updated trail animations
+            this.trailAnimationId = requestAnimationFrame(() => this.trailAnimationLoop());
+        } else {
+            this.trailAnimationId = null;
+        }
+    }
+
     showLevelCompletionOverlay() {
         const canvasContainer = this.canvas?.parentElement;
         if (!canvasContainer) return;
@@ -1582,6 +1680,9 @@ class GameManager {
         
         // Draw balls LAST (on top of everything)
         this.renderBalls();
+        
+        // Draw movement trail animations (on top of balls)
+        this.renderTrailAnimations();
         
         // Restore context if we applied reflection
         if (this.currentFace === 'rear') {
@@ -1975,6 +2076,34 @@ class GameManager {
         });
     }
 
+    renderTrailAnimations() {
+        // Draw all active trail animations
+        this.activeTrailAnimations.forEach(animation => {
+            if (animation.progress >= 1) return; // Skip completed animations
+            
+            // Convert screen coordinates back to canvas coordinates
+            const canvasRect = this.canvas.getBoundingClientRect();
+            const canvasX = (animation.x / canvasRect.width) * this.displayWidth;
+            const canvasY = (animation.y / canvasRect.height) * this.displayHeight;
+            
+            // Apply horizontal reflection for rear face
+            let finalX = canvasX;
+            let finalY = canvasY; // Y coordinate doesn't change with horizontal reflection
+            if (this.currentFace === 'rear') {
+                finalX = this.displayWidth - canvasX;
+            }
+            
+            // Draw the trail animation as a disc
+            this.ctx.save();
+            this.ctx.globalAlpha = animation.currentOpacity;
+            this.ctx.fillStyle = animation.color;
+            this.ctx.beginPath();
+            this.ctx.arc(finalX, finalY, animation.currentSize, 0, 2 * Math.PI);
+            this.ctx.fill();
+            this.ctx.restore();
+        });
+    }
+
     renderEndGoals() {
         this.balls.forEach((ball, index) => {
             // Only render goals for balls that belong to the current face
@@ -2195,6 +2324,13 @@ class GameManager {
     completeBallTransition(ballIndex) {
         this.transitionInProgress[ballIndex] = false;
         this.updateBallLastNode(ballIndex);
+        
+        // Create movement trail animation at the destination node
+        const ball = this.balls[ballIndex];
+        if (ball) {
+            const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+            this.createMovementTrail(ball.x, ball.y, ballColor);
+        }
         
         // Check if we need to continue with another transition
         if (this.isBallClamped[ballIndex] && this.touchPosition) {

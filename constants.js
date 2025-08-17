@@ -127,6 +127,11 @@ const CONSTANTS = {
 		EXPLOSION_DELAY: 100, // milliseconds between explosions
 		EXPLOSION_COLOR: '#FFFFFF', // white explosion color
 		
+		// Movement trail animation
+		TRAIL_DURATION: 150, // milliseconds for movement trail animation
+		TRAIL_OPACITY: 0.4, // opacity for movement trail (lower than explosion)
+		TRAIL_ENABLED: false, // flag to enable/disable trail animations
+		
 		// Level completion delay
 		LEVEL_COMPLETION_DELAY: 2000, // milliseconds before allowing next level
 		
