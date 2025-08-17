@@ -28,8 +28,6 @@ class GameManager {
         this.balls = []; // Array of ball objects
         this.selectedBallIndex = -1; // Index of currently selected ball
         this.touchStartPos = null;
-        this.touchOffset = null; // Touch offset for better mobile dragging
-        this.touchStartTime = null; // Touch start time for gesture recognition
         this.isDragging = false;
         this.animationFrameId = null; // For smooth animations
         this.touchAnimationState = {}; // Track animation state for each ball
@@ -47,11 +45,8 @@ class GameManager {
         this.boardWidth = 0;
         this.boardHeight = 0;
         
-        // New properties for improved ball drag/snap behavior
+        // Enhanced ball movement system properties
         this.ballOriginNode = null; // Store the origin node when ball is picked up
-        this.currentUsablePath = null; // Store the current usable path being followed
-        this.pathProjectionPoint = null; // Store the projected point on the current path
-        this.isBlockedByOccupiedNode = false; // Track if ball is blocked by an occupied node
         
         // New properties for enhanced ball movement system
         this.connectedNodes = []; // List of available connected nodes for each ball
@@ -375,7 +370,7 @@ class GameManager {
             // Only consider balls on the current face
             if (this.getBallCurrentFace(ball) !== this.currentFace) continue;
             
-            const distanceToBall = Math.abs(x - ball.x) + Math.abs(y - ball.y);
+            const distanceToBall = this.manhattanDistance(x, y, ball.x, ball.y);
 
             if (distanceToBall <= touchTargetSize && distanceToBall < closestDistance) {
                 closestDistance = distanceToBall;
@@ -386,25 +381,14 @@ class GameManager {
         if (closestBallIndex !== -1) {
             const selectedBall = this.balls[closestBallIndex];
             
-            // Prevent accidental touches with a small delay
-            this.touchStartTime = Date.now();
-            
             this.selectedBallIndex = closestBallIndex;
             this.touchStartPos = { x, y };
-            this.touchOffset = {
-                x: x - selectedBall.x,
-                y: y - selectedBall.y
-            };
             this.isDragging = true;
             
             // Store the origin node when ball is picked up
             const originGridX = Math.round((selectedBall.x - this.boardStartX) / this.gridSize);
             const originGridY = Math.round((selectedBall.y - this.boardStartY) / this.gridSize);
             this.ballOriginNode = { x: originGridX, y: originGridY };
-            
-            // Reset path tracking
-            this.currentUsablePath = null;
-            this.pathProjectionPoint = null;
             
             // Mark ball as clamped
             this.isBallClamped[closestBallIndex] = true;
@@ -435,7 +419,7 @@ class GameManager {
         const originY = this.boardStartY + this.ballOriginNode.y * this.gridSize;
         
         // Calculate distance from touch to origin node
-        const distanceFromOrigin = Math.abs(touchX - originX) + Math.abs(touchY - originY);
+        const distanceFromOrigin = this.manhattanDistance(touchX, touchY, originX, originY);
         
         // Note: Removed automatic drop behavior - ball stays clamped regardless of touch distance
         
@@ -445,9 +429,6 @@ class GameManager {
         if (distanceFromOrigin <= threshold) {
             // Ball stays at origin node
             this.moveBallToPosition(originX, originY, true);
-            this.currentUsablePath = null;
-            this.pathProjectionPoint = null;
-
             return;
         }
         
@@ -506,6 +487,8 @@ class GameManager {
                 }
             } else {
                 // Snap to final position (not a well)
+                // Set isDragging to false BEFORE the final snap so it uses the fast EASE duration
+                this.isDragging = false;
                 this.moveBallToPosition(finalSnapX, finalSnapY, true);
                 
                 // Check win condition when drag is released (after a small delay for animation), but only if level is not already completed
@@ -525,16 +508,11 @@ class GameManager {
         this.touchPosition = null;
         
         this.touchStartPos = null;
-        this.touchOffset = null;
-        this.touchStartTime = null;
         this.isDragging = false;
         this.selectedBallIndex = -1; // Reset selected ball
         
         // Reset ball drag/snap tracking properties
         this.ballOriginNode = null;
-        this.currentUsablePath = null;
-        this.pathProjectionPoint = null;
-        this.isBlockedByOccupiedNode = false;
     }
 
     // Clean up animations when needed
@@ -562,7 +540,7 @@ class GameManager {
     }
 
     // Start ball animation to target position
-    animateBallToPosition(ballIndex, targetX, targetY, isDragging = false) {
+    animateBallToPosition(ballIndex, targetX, targetY) {
         if (ballIndex < 0 || ballIndex >= this.balls.length) return;
         
         const ball = this.balls[ballIndex];
@@ -582,10 +560,8 @@ class GameManager {
         animation.targetX = targetX;
         animation.targetY = targetY;
         animation.startTime = performance.now();
-        animation.duration = isDragging ? 
-            CONSTANTS.ANIMATION_CONFIG.BALL_DRAG_DURATION : 
-            CONSTANTS.ANIMATION_CONFIG.BALL_EASE_DURATION;
-        animation.easing = isDragging ? 'EASE_OUT_QUICK' : 'EASE_OUT';
+        animation.duration = CONSTANTS.ANIMATION_CONFIG.BALL_DRAG_DURATION;
+        animation.easing = 'EASE_OUT_QUICK';
         
         // Start the animation loop if not already running
         if (!this.ballAnimationId) {
@@ -750,148 +726,7 @@ class GameManager {
         return false;
     }
 
-    // Find the closest usable path within gridBoxSize distance from a touch position
-    // Only considers paths adjacent to the ball's current position
-    findClosestUsablePath(touchX, touchY, ballIndex) {
-        const nodes = this.getCurrentNodes();
-        if (!nodes) return null;
-        
-        // Get the ball's current grid position
-        const ball = this.balls[ballIndex];
-        if (!ball) return null;
-        
-        const currentBallGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
-        const currentBallGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
-        
-        let closestPath = null;
-        let closestDistance = Infinity;
-        
-        // Convert touch position to grid coordinates
-        const touchGridX = (touchX - this.boardStartX) / this.gridSize;
-        const touchGridY = (touchY - this.boardStartY) / this.gridSize;
-        
-        // Only check paths that are adjacent to the ball's current position
-        // Check horizontal connection to the right
-        const boardGridWidth = nodes[currentBallGridY] ? nodes[currentBallGridY].length : 0;
-        if (currentBallGridX + 1 < boardGridWidth && 
-            this.canBallMoveToNode(ballIndex, currentBallGridX + 1, currentBallGridY) && 
-            !this.isNodeOccupied(currentBallGridX + 1, currentBallGridY, ballIndex)) {
-            const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX, currentBallGridY, currentBallGridX + 1, currentBallGridY);
-            if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
-                closestDistance = pathDistance;
-                closestPath = { start: { x: currentBallGridX, y: currentBallGridY }, end: { x: currentBallGridX + 1, y: currentBallGridY }, isHorizontal: true };
-            }
-        }
-        
-        // Check horizontal connection to the left
-        if (currentBallGridX > 0 && 
-            this.canBallMoveToNode(ballIndex, currentBallGridX - 1, currentBallGridY) && 
-            !this.isNodeOccupied(currentBallGridX - 1, currentBallGridY, ballIndex)) {
-            const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX - 1, currentBallGridY, currentBallGridX, currentBallGridY);
-            if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
-                closestDistance = pathDistance;
-                closestPath = { start: { x: currentBallGridX - 1, y: currentBallGridY }, end: { x: currentBallGridX, y: currentBallGridY }, isHorizontal: true };
-            }
-        }
-        
-        // Check vertical connection downward
-        if (currentBallGridY + 1 < nodes.length && 
-            this.canBallMoveToNode(ballIndex, currentBallGridX, currentBallGridY + 1) && 
-            !this.isNodeOccupied(currentBallGridX, currentBallGridY + 1, ballIndex)) {
-            const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX, currentBallGridY, currentBallGridX, currentBallGridY + 1);
-            if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
-                closestDistance = pathDistance;
-                closestPath = { start: { x: currentBallGridX, y: currentBallGridY }, end: { x: currentBallGridX, y: currentBallGridY + 1 }, isHorizontal: false };
-            }
-        }
-        
-        // Check vertical connection upward
-        if (currentBallGridY > 0 && 
-            this.canBallMoveToNode(ballIndex, currentBallGridX, currentBallGridY - 1) && 
-            !this.isNodeOccupied(currentBallGridX, currentBallGridY - 1, ballIndex)) {
-            const pathDistance = this.getDistanceToPath(touchGridX, touchGridY, currentBallGridX, currentBallGridY - 1, currentBallGridX, currentBallGridY);
-            if (pathDistance <= 1.0 && pathDistance < closestDistance) { // Within gridBoxSize (1.0 in grid coordinates)
-                closestDistance = pathDistance;
-                closestPath = { start: { x: currentBallGridX, y: currentBallGridY - 1 }, end: { x: currentBallGridX, y: currentBallGridY }, isHorizontal: false };
-            }
-        }
-        
-        return closestPath;
-    }
 
-    // Calculate distance from a point to a path segment
-    getDistanceToPath(pointX, pointY, pathStartX, pathStartY, pathEndX, pathEndY) {
-        const A = pointX - pathStartX;
-        const B = pointY - pathStartY;
-        const C = pathEndX - pathStartX;
-        const D = pathEndY - pathStartY;
-        
-        const dot = A * C + B * D;
-        const lenSq = C * C + D * D;
-        
-        if (lenSq === 0) {
-            // Path is a point, return distance to that point
-            return Math.sqrt(A * A + B * B);
-        }
-        
-        let param = dot / lenSq;
-        
-        let xx, yy;
-        if (param < 0) {
-            xx = pathStartX;
-            yy = pathStartY;
-        } else if (param > 1) {
-            xx = pathEndX;
-            yy = pathEndY;
-        } else {
-            xx = pathStartX + param * C;
-            yy = pathStartY + param * D;
-        }
-        
-        const dx = pointX - xx;
-        const dy = pointY - yy;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    // Project a touch position onto a usable path
-    projectTouchOnPath(touchX, touchY, path) {
-        if (!path) return null;
-        
-        // Convert touch position to grid coordinates
-        const touchGridX = (touchX - this.boardStartX) / this.gridSize;
-        const touchGridY = (touchY - this.boardStartY) / this.gridSize;
-        
-        const startX = path.start.x;
-        const startY = path.start.y;
-        const endX = path.end.x;
-        const endY = path.end.y;
-        
-        if (path.isHorizontal) {
-            // Horizontal path: project X coordinate, clamp Y
-            const projectedX = Math.max(startX, Math.min(endX, touchGridX));
-            const projectedY = startY; // Y is fixed for horizontal path
-            
-            // Convert back to absolute coordinates
-            return {
-                x: this.boardStartX + projectedX * this.gridSize,
-                y: this.boardStartY + projectedY * this.gridSize,
-                gridX: projectedX,
-                gridY: projectedY
-            };
-        } else {
-            // Vertical path: project Y coordinate, clamp X
-            const projectedX = startX; // X is fixed for vertical path
-            const projectedY = Math.max(startY, Math.min(endY, touchGridY));
-            
-            // Convert back to absolute coordinates
-            return {
-                x: this.boardStartX + projectedX * this.gridSize,
-                y: this.boardStartY + projectedY * this.gridSize,
-                gridX: projectedX,
-                gridY: projectedY
-            };
-        }
-    }
 
     // Check if a ball can move from its current position to a target position
     isValidPathMove(ballIndex, targetGridX, targetGridY) {
@@ -1043,8 +878,7 @@ class GameManager {
         if (ball.x !== clampedX || ball.y !== clampedY) {
             if (animate) {
                 // Use smooth animation for snapping
-                const isDragging = this.isDragging;
-                this.animateBallToPosition(this.selectedBallIndex, clampedX, clampedY, isDragging);
+                this.animateBallToPosition(this.selectedBallIndex, clampedX, clampedY);
             } else {
                 // Immediate update during dragging
                 ball.x = clampedX;
@@ -1417,8 +1251,8 @@ class GameManager {
                         targetX: 0,
                         targetY: 0,
                         startTime: 0,
-                        duration: CONSTANTS.ANIMATION_CONFIG.BALL_EASE_DURATION,
-                        easing: 'EASE_OUT'
+                        duration: CONSTANTS.ANIMATION_CONFIG.BALL_DRAG_DURATION,
+                        easing: 'EASE_OUT_QUICK'
                     }
                 };
                 
@@ -2075,7 +1909,7 @@ class GameManager {
         const wellOuterRadius = this.getGoalOuterRadius();
         const dx = otherX - wellX;
         const dy = otherY - wellY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distance = this.euclideanDistance(otherX, otherY, wellX, wellY);
         
         if (distance <= wellOuterRadius) {
             // Line is completely inside the well, don't draw it
@@ -2196,7 +2030,7 @@ class GameManager {
             for (let x = 0; x < nodes[y].length; x++) {
                 // Check if this node is accessible to the ball and not occupied
                 if (this.canBallMoveToNode(ballIndex, x, y) && !this.isNodeOccupied(x, y, ballIndex)) {
-                    const distance = Math.abs(currentGridX - x) + Math.abs(currentGridY - y);
+                    const distance = this.manhattanDistance(currentGridX, currentGridY, x, y);
                     
                     if (distance < closestDistance) {
                         closestDistance = distance;
@@ -2319,7 +2153,7 @@ class GameManager {
         const lastNodeY = this.boardStartY + lastNode.y * this.gridSize;
         
         // Calculate distance from touch to current node
-        const currentDistance = Math.abs(touchPos.x - lastNodeX) + Math.abs(touchPos.y - lastNodeY);
+        const currentDistance = this.manhattanDistance(touchPos.x, touchPos.y, lastNodeX, lastNodeY);
         
         let closestNode = null;
         let closestDistance = Infinity;
@@ -2328,7 +2162,7 @@ class GameManager {
             const nodeX = this.boardStartX + node.x * this.gridSize;
             const nodeY = this.boardStartY + node.y * this.gridSize;
             
-            const distance = Math.abs(touchPos.x - nodeX) + Math.abs(touchPos.y - nodeY);
+            const distance = this.manhattanDistance(touchPos.x, touchPos.y, nodeX, nodeY);
             
             // Only consider nodes that are closer to touch than current position
             if (distance < currentDistance && distance < closestDistance) {
@@ -2354,7 +2188,7 @@ class GameManager {
         this.transitionInProgress[ballIndex] = true;
         
         // Start animation
-        this.animateBallToPosition(ballIndex, targetX, targetY, false);
+        this.animateBallToPosition(ballIndex, targetX, targetY);
     }
 
     // Complete ball transition
@@ -2385,7 +2219,7 @@ class GameManager {
         const lastNodeY = this.boardStartY + lastNode.y * this.gridSize;
         
         // Calculate distance from touch to last node
-        const touchDist = Math.abs(touchPos.x - lastNodeX) + Math.abs(touchPos.y - lastNodeY);
+        const touchDist = this.manhattanDistance(touchPos.x, touchPos.y, lastNodeX, lastNodeY);
         
         // Check if touch is far enough to start transition
         const threshold = this.gridSize * 0.75; // 3/4 * gridBoxSize
@@ -2398,6 +2232,32 @@ class GameManager {
                 this.startBallTransition(ballIndex, closestDestination);
             }
         }
+    }
+
+    /**
+     * Calculate Euclidean distance between two points
+     * @param {number} x1 - X coordinate of first point
+     * @param {number} y1 - Y coordinate of first point
+     * @param {number} x2 - X coordinate of second point
+     * @param {number} y2 - Y coordinate of second point
+     * @returns {number} Euclidean distance between the points
+     */
+    euclideanDistance(x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Calculate Manhattan distance between two points
+     * @param {number} x1 - X coordinate of first point
+     * @param {number} y1 - Y coordinate of first point
+     * @param {number} x2 - X coordinate of second point
+     * @param {number} y2 - Y coordinate of second point
+     * @returns {number} Manhattan distance between the points
+     */
+    manhattanDistance(x1, y1, x2, y2) {
+        return Math.abs(x2 - x1) + Math.abs(y2 - y1);
     }
 
 } 

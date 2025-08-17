@@ -120,9 +120,7 @@ const CONSTANTS = {
 		FLIP_HALFWAY_THRESHOLD: 0.5, // When to switch face content (0.0-1.0) - at halfway point
 		
 		// Ball movement animation
-		BALL_EASE_DURATION: 40, // milliseconds for final snap
-		BALL_DRAG_DURATION: 40, // milliseconds for smooth dragging
-		BALL_EASE_TYPE: 'ease-out', // ease-in, ease-out, ease-in-out
+		BALL_DRAG_DURATION: 30, // milliseconds for smooth ball movement
 		
 		// Level completion explosion animation
 		EXPLOSION_DURATION: 1000, // milliseconds for explosion animation
