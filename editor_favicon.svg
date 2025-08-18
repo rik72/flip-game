@@ -11,15 +11,13 @@
   <!-- Stylized black pencil laid diagonally -->
   <g transform="rotate(135 16 16) translate(0 6.5)">
     <!-- Pencil body -->
-    <rect x="6" y="7" width="20" height="5" fill="#000000" rx="0"/>
+    <rect x="6" y="7" width="20" height="5" fill="#222222" rx="0"/>
     
     <!-- Pencil tip (proper triangle pointing right) -->
-    <polygon points="26,7 30,9.5 26,12" fill="#000000"/>
+    <polygon points="26,7 30.5,9.5 26,12" fill="#222222"/>
     
     <!-- Pencil eraser -->
-    <rect x="3" y="7" width="4" height="5" fill="#FF6B6B" rx="1"/>
+    <rect x="3" y="7" width="4" height="5" fill="#222222" rx="1"/>
     
-    <!-- Pencil band -->
-    <rect x="6" y="7" width="2" height="5" fill="#FFD93D"/>
   </g>
 </svg>
