@@ -87,8 +87,22 @@ class HtmlBuilder {
                         </div>
                         <div class="modal-body">
                             <div class="setting-item">
-                                <label>Sound</label>
+                                <label>Sound Effects</label>
                                 <input type="checkbox" id="soundToggle" checked>
+                            </div>
+                            <div class="setting-item">
+                                <label>Background Music</label>
+                                <input type="checkbox" id="musicToggle" checked>
+                            </div>
+                            <div class="setting-item">
+                                <label>Sound Volume</label>
+                                <input type="range" id="soundVolumeSlider" min="0" max="1" step="0.1" value="0.7">
+                                <span id="soundVolumeValue">70%</span>
+                            </div>
+                            <div class="setting-item">
+                                <label>Music Volume</label>
+                                <input type="range" id="musicVolumeSlider" min="0" max="1" step="0.1" value="0.5">
+                                <span id="musicVolumeValue">50%</span>
                             </div>
                             <div class="setting-item">
                                 <label>Vibration</label>

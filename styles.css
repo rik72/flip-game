@@ -370,6 +370,42 @@ body {
     padding: 5px 10px;
 }
 
+.setting-item input[type="range"] {
+    flex: 1;
+    margin: 0 10px;
+    background-color: #333333;
+    border-radius: 5px;
+    height: 6px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.setting-item input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+}
+
+.setting-item input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    border: none;
+}
+
+.setting-item span {
+    color: #ffffff;
+    font-size: 14px;
+    min-width: 40px;
+    text-align: right;
+}
+
 /* Completion Stats */
 .completion-stats {
     text-align: center;

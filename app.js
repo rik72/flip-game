@@ -6,6 +6,7 @@
 class App {
     constructor() {
         this.storageManager = new StorageManager();
+        this.soundManager = new SoundManager();
         this.gameManager = null; // Will be initialized after UI is created
         
         this.currentLevel = 1;
@@ -17,6 +18,9 @@ class App {
     }
 
     init() {
+        // Make app instance globally available for sound effects
+        window.appInstance = this;
+        
         // Check for level URL parameter in development mode
         if (CONSTANTS.APP_CONFIG.DEVEL) {
             const urlLevel = Utils.getUrlParameterAsString('level');
@@ -77,6 +81,9 @@ class App {
         // Initialize game manager after UI is created
         this.gameManager = new GameManager(this.storageManager, this.currentLevel, this);
         
+        // Pass sound manager reference to game manager
+        this.gameManager.soundManager = this.soundManager;
+        
         // Store test level data if available
         if (this.testLevelData) {
             this.gameManager.testLevelData = this.testLevelData;
@@ -86,6 +93,9 @@ class App {
         this.gameManager.loadLevel(this.currentLevel).catch(error => {
             console.error('Failed to load initial level:', error);
         });
+        
+        // Don't auto-start background music due to browser autoplay policies
+        // Music will start when user first interacts with the game
         
         // Setup event listeners
         this.setupEventListeners();
@@ -127,6 +137,9 @@ class App {
             this.currentLevel = levelNumber;
             this.gameState.isPlaying = true;
             
+            // Play level start sound
+            this.soundManager.playSound('levelStart');
+            
             if (this.gameManager) {
                 await this.gameManager.loadLevel(levelNumber);
             }
@@ -160,6 +173,10 @@ class App {
     gameCompleted() {
         this.gameState.isPlaying = false;
         this.saveProgress();
+        
+        // Play game completion sound
+        this.soundManager.playSound('gameComplete');
+        
         DisplayManager.renderGameOverModal();
         Utils.showModal('gameOverModal');
     }
@@ -174,27 +191,63 @@ class App {
 
     showSettings() {
         DisplayManager.renderSettingsModal();
+        
+        // Load current audio settings
+        const audioSettings = this.soundManager.getSettings();
+        
+        // Set form values
+        document.getElementById('soundToggle').checked = audioSettings.soundEnabled;
+        document.getElementById('musicToggle').checked = audioSettings.musicEnabled;
+        document.getElementById('soundVolumeSlider').value = audioSettings.volume;
+        document.getElementById('musicVolumeSlider').value = audioSettings.musicVolume;
+        
+        // Update volume display values
+        document.getElementById('soundVolumeValue').textContent = Math.round(audioSettings.volume * 100) + '%';
+        document.getElementById('musicVolumeValue').textContent = Math.round(audioSettings.musicVolume * 100) + '%';
+        
+        // Add event listeners for volume sliders
+        this.setupVolumeSliderListeners();
+        
         Utils.showModal('settingsModal');
     }
 
     saveSettings() {
         const soundEnabled = document.getElementById('soundToggle').checked;
+        const musicEnabled = document.getElementById('musicToggle').checked;
+        const soundVolume = parseFloat(document.getElementById('soundVolumeSlider').value);
+        const musicVolume = parseFloat(document.getElementById('musicVolumeSlider').value);
         const vibrationEnabled = document.getElementById('vibrationToggle').checked;
         const difficulty = document.getElementById('difficultySelect').value;
         
+        // Update sound manager settings
+        this.soundManager.setSoundEnabled(soundEnabled);
+        this.soundManager.setMusicEnabled(musicEnabled);
+        this.soundManager.setVolume(soundVolume);
+        this.soundManager.setMusicVolume(musicVolume);
+        
         const settings = {
             soundEnabled,
+            musicEnabled,
+            soundVolume,
+            musicVolume,
             vibrationEnabled,
             difficulty
         };
         
         this.storageManager.saveGameSettings(settings);
+        
+        // Play success sound
+        this.soundManager.playSound('success');
+        
         Utils.hideModal('settingsModal');
         this.hideMenu();
     }
 
     resetProgress() {
         if (confirm(CONSTANTS.MESSAGES.RESET_CONFIRM)) {
+            // Play warning sound
+            this.soundManager.playSound('warning');
+            
             this.storageManager.clearAll();
             this.currentLevel = 1;
             if (this.gameManager) {
@@ -209,6 +262,9 @@ class App {
 
     exitGame() {
         if (confirm(CONSTANTS.MESSAGES.EXIT_CONFIRM)) {
+            // Play warning sound
+            this.soundManager.playSound('warning');
+            
             this.saveProgress();
             // In a real app, this might redirect to a menu or close the app
             window.close();
@@ -216,6 +272,9 @@ class App {
     }
 
     restartGame() {
+        // Play button click sound
+        this.soundManager.playSound('buttonClick');
+        
         this.currentLevel = 1;
         if (this.gameManager) {
             this.gameManager.currentLevel = 1;
@@ -243,5 +302,32 @@ class App {
             ...this.gameState,
             currentLevel: this.currentLevel
         };
+    }
+
+    setupVolumeSliderListeners() {
+        const soundVolumeSlider = document.getElementById('soundVolumeSlider');
+        const musicVolumeSlider = document.getElementById('musicVolumeSlider');
+        const soundVolumeValue = document.getElementById('soundVolumeValue');
+        const musicVolumeValue = document.getElementById('musicVolumeValue');
+        
+        if (soundVolumeSlider && soundVolumeValue) {
+            soundVolumeSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                soundVolumeValue.textContent = Math.round(value * 100) + '%';
+                
+                // Update sound manager in real-time
+                this.soundManager.setVolume(value);
+            });
+        }
+        
+        if (musicVolumeSlider && musicVolumeValue) {
+            musicVolumeSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                musicVolumeValue.textContent = Math.round(value * 100) + '%';
+                
+                // Update sound manager in real-time
+                this.soundManager.setMusicVolume(value);
+            });
+        }
     }
 } 

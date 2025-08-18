@@ -1,10 +1,18 @@
 // ===== UTILITY FUNCTIONS =====
 class Utils {
 	static showModal(modalId) {
+		// Play modal open sound if app instance is available
+		if (window.appInstance && window.appInstance.soundManager) {
+			window.appInstance.soundManager.playSound('modalOpen');
+		}
 		new bootstrap.Modal(document.getElementById(modalId)).show();
 	}
 
 	static hideModal(modalId) {
+		// Play modal close sound if app instance is available
+		if (window.appInstance && window.appInstance.soundManager) {
+			window.appInstance.soundManager.playSound('modalClose');
+		}
 		const modalInstance = bootstrap.Modal.getInstance(document.getElementById(modalId));
 		if (modalInstance) modalInstance.hide();
 	}

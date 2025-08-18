@@ -149,7 +149,7 @@ class ComplianceValidator {
         
         // Check if multi-language constants structure is proper in both constants files
         // Only require sections used by the current app
-        const requiredSections = ['MESSAGES','GAME_CONFIG','CANVAS_CONFIG','TOUCH_CONFIG','LEVEL_CONFIG'];
+        const requiredSections = ['MESSAGES','GAME_CONFIG','RENDER_SIZE_CONFIG','TOUCH_CONFIG','ANIMATION_CONFIG','LEVEL_CONFIG','AUDIO_CONFIG'];
         
         // Validate constants.js
         requiredSections.forEach(section => {

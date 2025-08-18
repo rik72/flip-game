@@ -29,9 +29,11 @@ managers/StorageManager → managers/GameManager → App
 Oggetto centralizzato per tutte le configurazioni:
 - `MESSAGES`: Tutti i messaggi di errore e notifiche
 
-- `GAME_CONFIG`: Configurazioni di gioco (livelli, meccaniche, difficoltà)
-- `CANVAS_CONFIG`: Configurazioni canvas (dimensioni, performance)
-- `TOUCH_CONFIG`: Configurazioni touch (sensitivity, gesture recognition)
+- `GAME_CONFIG`: Configurazioni di gioco (livelli, meccaniche)
+- `RENDER_SIZE_CONFIG`: Configurazioni dimensioni rendering (ball, grid, path)
+- `TOUCH_CONFIG`: Configurazioni touch (touch size ratios)
+- `ANIMATION_CONFIG`: Configurazioni animazioni (flip, explosion, trail)
+- `AUDIO_CONFIG`: Configurazioni audio (enabled, volume)
 
 #### **Utils** - Funzioni di Utilità
 - `formatMessage(template, type)`: Formattazione messaggi con placeholder
@@ -219,8 +221,8 @@ const canvasWidth = 800;
 const canvasHeight = 600;
 
 // ✅ Usare CONSTANTS
-const canvasWidth = CONSTANTS.CANVAS_CONFIG.width;
-const canvasHeight = CONSTANTS.CANVAS_CONFIG.height;
+const ballRadius = CONSTANTS.RENDER_SIZE_CONFIG.BALL_RADIUS_RATIO;
+const gridSize = CONSTANTS.RENDER_SIZE_CONFIG.GRID_DOT_RATIO;
 ```
 
 ### **3. Riutilizzare componenti HTML**

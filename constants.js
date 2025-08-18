@@ -9,14 +9,11 @@ const CONSTANTS = {
 		EXIT_CONFIRM: 'Are you sure you want to exit? Progress will be saved.',
 
 		// Validation messages
-		EMPTY_NAME: 'The {type} name cannot be empty',
-		DUPLICATE_NAME: 'A {type} with this name already exists',
 		LEVEL_DATA_REQUIRED: 'Level data required',
 		INVALID_LEVEL: 'Invalid level',
 		
 		// Error messages
 		LEVEL_LOAD_ERROR: 'Failed to load level {levelNumber}. Please check that the level file exists.',
-
 	},
 
 	// Application configurations
@@ -34,39 +31,6 @@ const CONSTANTS = {
 		
         // Ball configurations
         BALL_RADIUS: 15,
-        BALL_SPEED: 0.1,
-        BALL_COLOR: '#FFFFFF',
-		
-		// Board configurations
-		BOARD_TYPES: {
-			SQUARE: 'square',
-			TRIANGULAR: 'triangular'
-		},
-		ROTATION_ANGLES: {
-			SQUARE: 90,
-			TRIANGULAR: 60
-		},
-		
-		// Touch configurations
-		TOUCH_SENSITIVITY: 10,
-		DRAG_THRESHOLD: 5,
-		
-		// Difficulty configurations
-		DIFFICULTY_LEVELS: {
-			EASY: 'easy',
-			NORMAL: 'normal',
-			HARD: 'hard'
-		}
-	},
-
-	// Canvas configurations
-	CANVAS_CONFIG: {
-		DEFAULT_WIDTH: 800,
-		DEFAULT_HEIGHT: 600,
-		BACKGROUND_COLOR: '#000000',
-		GRID_COLOR: '#333333',
-		GOAL_COLOR: '#00FF00',
-		PATH_COLOR: '#666666'
 	},
 
 	// Rendering size configurations
@@ -99,41 +63,30 @@ const CONSTANTS = {
 		// Touch size and distance are now scaled with grid size
 		// These will be calculated as: gridSize * ratio
 		MIN_TOUCH_SIZE_RATIO: 1, // Minimum touch size as ratio of gridSize (120% of grid cell)
-		MAX_TOUCH_DISTANCE_RATIO: 1.1, // Maximum touch distance as ratio of gridSize (140% of grid cell)
-		TOUCH_TIMEOUT: 300,
-		GESTURE_RECOGNITION: {
-			SWIPE_THRESHOLD: 50,
-			PINCH_THRESHOLD: 0.5
-		}
 	},
 
 	// Animation configurations
 	ANIMATION_CONFIG: {
 		// Board flip animation
 		FLIP_DURATION: 600, // Animation duration in milliseconds
-		FLIP_EASING: 'ease-in-out', // CSS easing function
-		FLIP_PERSPECTIVE: 1000, // 3D perspective distance in pixels
-		FLIP_AXIS: 'Y', // Rotation axis (X, Y, or Z)
 		
 		// Animation states
-		FLIP_ANGLE: 180, // Rotation angle in degrees
 		FLIP_HALFWAY_THRESHOLD: 0.5, // When to switch face content (0.0-1.0) - at halfway point
 		
 		// Ball movement animation
-		BALL_DRAG_DURATION: 30, // milliseconds for smooth ball movement
+		BALL_DRAG_DURATION: 40, // milliseconds for smooth ball movement
 		
 		// Level completion explosion animation
 		EXPLOSION_DURATION: 1000, // milliseconds for explosion animation
 		EXPLOSION_DELAY: 100, // milliseconds between explosions
-		EXPLOSION_COLOR: '#FFFFFF', // white explosion color
 		
 		// Movement trail animation
-		TRAIL_DURATION: 150, // milliseconds for movement trail animation
-		TRAIL_OPACITY: 0.4, // opacity for movement trail (lower than explosion)
-		TRAIL_ENABLED: false, // flag to enable/disable trail animations
-		
-		// Level completion delay
-		LEVEL_COMPLETION_DELAY: 2000, // milliseconds before allowing next level
+		TRAIL_ENABLED: true, // flag to enable/disable trail animations
+        TRAIL_MIN_RADIUS_FACTOR: 1, // start trail radius as ratio of ball radius
+        TRAIL_MAX_RADIUS_FACTOR: 1.6, // max trail radius as ratio of ball radius
+		TRAIL_RING_THICKNESS_FACTOR: 0.25, // ring thickness as ratio of ball radius
+		TRAIL_DURATION: 600, // milliseconds for movement trail animation
+		TRAIL_OPACITY: 0.2, // opacity for movement trail (lower than explosion)
 		
 		// Easing functions
 		EASING: {
@@ -190,32 +143,7 @@ const CONSTANTS = {
 
 	// Audio configurations
 	AUDIO_CONFIG: {
-		ENABLED: true,
+		ENABLED: false,
 		VOLUME: 0.7,
-		SOUNDS: {
-			MOVE: 'move.mp3',
-			COLLECT: 'collect.mp3',
-			COMPLETE: 'complete.mp3',
-			ERROR: 'error.mp3'
-		}
 	},
-
-	// Vibration configurations
-	VIBRATION_CONFIG: {
-		ENABLED: true,
-		PATTERNS: {
-			MOVE: [50],
-			COLLECT: [100, 50, 100],
-			COMPLETE: [200, 100, 200],
-			ERROR: [300]
-		}
-	},
-
-	// Performance configurations
-	PERFORMANCE_CONFIG: {
-		TARGET_FPS: 60,
-		RENDER_QUALITY: 'high',
-		ENABLE_PARTICLES: true,
-		ENABLE_ANIMATIONS: true
-	}
 }; 

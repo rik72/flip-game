@@ -196,6 +196,11 @@ class GameManager {
         this.isFlipping = true;
         const targetFace = this.currentFace === 'front' ? 'rear' : 'front';
         
+        // Play board flip sound
+        if (this.soundManager) {
+            this.soundManager.playSound('boardFlip');
+        }
+        
         // Add flipping class to disable interactions and show overlay
         this.flipWrapper.classList.add('flipping');
         
@@ -397,6 +402,17 @@ class GameManager {
             // Mark ball as clamped
             this.isBallClamped[closestBallIndex] = true;
             
+            // Start background music on first user interaction
+            if (this.soundManager && !this.soundManager.musicStarted) {
+                this.soundManager.playBackgroundMusic();
+                this.soundManager.musicStarted = true;
+            }
+            
+            // Play ball pickup sound
+            if (this.soundManager) {
+                this.soundManager.playSound('ballPickup');
+            }
+            
             // Add visual feedback for touch
             this.showTouchFeedback(selectedBall);
         }
@@ -449,6 +465,11 @@ class GameManager {
             
             // Get the final position where the ball was dropped
             const ball = this.balls[this.selectedBallIndex];
+            
+            // Play ball drop sound
+            if (this.soundManager) {
+                this.soundManager.playSound('ballDrop');
+            }
             
             // First, handle snapping to closest node if needed
             let finalSnapX = ball.x;
@@ -605,6 +626,11 @@ class GameManager {
                     ball.x = animation.targetX;
                     ball.y = animation.targetY;
                     animation.isAnimating = false;
+                    
+                    // Play ball snap sound when animation completes
+                    if (this.soundManager) {
+                        this.soundManager.playSound('ballSnap');
+                    }
                     
                     // Handle enhanced ball movement system completion
                     if (this.transitionInProgress[i]) {
@@ -893,6 +919,11 @@ class GameManager {
                 ball.x = clampedX;
                 ball.y = clampedY;
                 this.render();
+            }
+            
+            // Play ball movement sound for significant movements
+            if (this.soundManager && (Math.abs(ball.x - clampedX) > 5 || Math.abs(ball.y - clampedY) > 5)) {
+                this.soundManager.playSound('ballMove', 0.3); // Lower volume for movement sounds
             }
             
             // Create movement trail animation for non-transition movements
@@ -1337,6 +1368,11 @@ class GameManager {
         // Save progress
         this.storageManager.saveGameProgress(this.currentLevel);
         
+        // Play level completion sound
+        if (this.soundManager) {
+            this.soundManager.playSound('levelComplete');
+        }
+        
         // Create explosion animations for each goal node
         this.createExplosionAnimations();
         
@@ -1459,8 +1495,9 @@ class GameManager {
         
         // Calculate trail radii based on ball radius (half the size of explosion)
         const ballRadius = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.BALL_RADIUS_RATIO;
-        const startRadius = ballRadius * 0.125; // 1/8 of ball radius (half of 0.25)
-        const maxRadius = ballRadius * 1.5; // 1.5 times ball radius (half of 3)
+        const startRadius = ballRadius * CONSTANTS.ANIMATION_CONFIG.TRAIL_MIN_RADIUS_FACTOR;
+        const maxRadius = ballRadius * CONSTANTS.ANIMATION_CONFIG.TRAIL_MAX_RADIUS_FACTOR;
+        const ringThickness = ballRadius * CONSTANTS.ANIMATION_CONFIG.TRAIL_RING_THICKNESS_FACTOR;
         
         // Create trail animation object
         const trailAnimation = {
@@ -1469,6 +1506,7 @@ class GameManager {
             y: screenY,
             startRadius: startRadius,
             maxRadius: maxRadius,
+            ringThickness: ringThickness,
             startTime: performance.now(),
             duration: CONSTANTS.ANIMATION_CONFIG.TRAIL_DURATION,
             color: '#FFFFFF', // Always white
@@ -1498,12 +1536,17 @@ class GameManager {
             // Ease-out function
             const easeOut = 1 - Math.pow(1 - progress, 3);
             
-            // Calculate current size and opacity
-            const currentSize = animation.startRadius + (animation.maxRadius - animation.startRadius) * easeOut;
+            // Calculate current ring radii and opacity
+            const currentRadius = animation.startRadius + (animation.maxRadius - animation.startRadius) * easeOut;
             const currentOpacity = animation.opacity * (1 - progress);
             
+            // Calculate inner and outer radii for the ring
+            const innerRadius = Math.max(0, currentRadius - animation.ringThickness / 2);
+            const outerRadius = currentRadius + animation.ringThickness / 2;
+            
             // Store current animation state for rendering
-            animation.currentSize = currentSize;
+            animation.currentInnerRadius = innerRadius;
+            animation.currentOuterRadius = outerRadius;
             animation.currentOpacity = currentOpacity;
             animation.progress = progress;
             
@@ -2079,12 +2122,22 @@ class GameManager {
     renderTrailAnimations() {
         // Draw all active trail animations
         this.activeTrailAnimations.forEach(animation => {
-            if (animation.progress >= 1) return; // Skip completed animations
+            if (!animation || animation.progress >= 1) return; // Skip completed or invalid animations
+            
+            // Ensure animation has required properties with fallbacks
+            const x = animation.x || 0;
+            const y = animation.y || 0;
+            const currentOpacity = animation.currentOpacity || 0.5;
+            const innerRadius = animation.currentInnerRadius || 5;
+            const outerRadius = animation.currentOuterRadius || 10;
+            const color = animation.color || '#FFFFFF';
             
             // Convert screen coordinates back to canvas coordinates
             const canvasRect = this.canvas.getBoundingClientRect();
-            const canvasX = (animation.x / canvasRect.width) * this.displayWidth;
-            const canvasY = (animation.y / canvasRect.height) * this.displayHeight;
+            if (!canvasRect || canvasRect.width === 0 || canvasRect.height === 0) return;
+            
+            const canvasX = (x / canvasRect.width) * this.displayWidth;
+            const canvasY = (y / canvasRect.height) * this.displayHeight;
             
             // Apply horizontal reflection for rear face
             let finalX = canvasX;
@@ -2093,12 +2146,18 @@ class GameManager {
                 finalX = this.displayWidth - canvasX;
             }
             
-            // Draw the trail animation as a disc
+            // Draw the trail animation as a ring
             this.ctx.save();
-            this.ctx.globalAlpha = animation.currentOpacity;
-            this.ctx.fillStyle = animation.color;
+            this.ctx.globalAlpha = currentOpacity;
+            this.ctx.fillStyle = color;
             this.ctx.beginPath();
-            this.ctx.arc(finalX, finalY, animation.currentSize, 0, 2 * Math.PI);
+            
+            // Draw outer circle
+            this.ctx.arc(finalX, finalY, outerRadius, 0, 2 * Math.PI);
+            
+            // Cut out inner circle to create ring
+            this.ctx.arc(finalX, finalY, innerRadius, 0, 2 * Math.PI, true); // true = counterclockwise for hole
+            
             this.ctx.fill();
             this.ctx.restore();
         });
@@ -2358,7 +2417,7 @@ class GameManager {
         const touchDist = this.manhattanDistance(touchPos.x, touchPos.y, lastNodeX, lastNodeY);
         
         // Check if touch is far enough to start transition
-        const threshold = this.gridSize * 0.75; // 3/4 * gridBoxSize
+        const threshold = this.gridSize * 0.65;
         
         if (touchDist > threshold) {
             // Find closest destination from connected nodes

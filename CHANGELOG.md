@@ -13,7 +13,7 @@ Tutte le modifiche importanti a questo progetto saranno documentate in questo fi
   - `MESSAGES`: Messaggi di errore e notifiche unificati
   - `MODAL_TYPES`: Configurazioni modali (titoli, bottoni)
   - `LEVEL_CONFIG`: Configurazioni livelli e mapping colori
-- `CANVAS_CONFIG`/`TOUCH_CONFIG`/`GAME_CONFIG`: Configurazioni core
+- `RENDER_SIZE_CONFIG`/`TOUCH_CONFIG`/`GAME_CONFIG`/`ANIMATION_CONFIG`/`AUDIO_CONFIG`: Configurazioni core
 
 ##### **Classe Utils**
 - `formatMessage(template, type)`: Formattazione messaggi con placeholder
@@ -82,7 +82,7 @@ Tutte le modifiche importanti a questo progetto saranno documentate in questo fi
 
 ##### **Single Source of Truth**
 - **Messaggi**: Tutti in `CONSTANTS.MESSAGES`
-- **Configurazioni**: Tutte in sezioni dedicate di `CONSTANTS`
+- **Configurazioni**: Tutte in sezioni dedicate di `CONSTANTS` (RENDER_SIZE_CONFIG, ANIMATION_CONFIG, etc.)
 - **Template HTML**: Tutti in `HtmlBuilder`
 - **Pattern Display**: Tutti in `DisplayManager`
 
