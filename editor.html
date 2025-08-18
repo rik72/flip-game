@@ -135,8 +135,8 @@
         }
         
         .grid-cell {
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             border: 1px solid #777;
             display: flex;
             align-items: center;
@@ -148,9 +148,9 @@
         
         .node-indicator {
             position: absolute;
-            top: -2px;
-            right: 2px;
-            font-size: 12px;
+            top: -1px;
+            right: 1px;
+            font-size: 10px;
             z-index: 10;
         }
         
@@ -170,8 +170,8 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 16px;
-            border-radius: 20px;
+            font-size: 12px;
+            border-radius: 15px;
         }
         
         .toolbar-title {
@@ -561,6 +561,10 @@
                 <div class="toolbar-title">
                     Controls
                 </div>
+                <div class="control-group">
+                    <label class="control-label">Level Number</label>
+                    <input type="number" id="levelNumber" class="form-control" value="1" min="1">
+                </div>
                 <div class="btn-row">
                     <button class="btn btn-primary" onclick="saveLevel()"><i class="bi bi-download"></i> Save</button>
                     <button class="btn btn-primary" onclick="loadLevel()"><i class="bi bi-upload"></i> Load</button>
@@ -574,12 +578,6 @@
         
         <!-- Main Area -->
         <div class="main-area">
-            <div class="editor-header">
-                <div class="level-controls">
-                    <label class="control-label">Level Number</label>
-                    <input type="number" id="levelNumber" class="form-control" value="1" min="1">
-                </div>
-            </div>
             
             <div class="board-container">
                 <div class="face-editor">
@@ -601,9 +599,9 @@
                 <div class="control-group">
                     <label class="control-label">Board Size</label>
                     <div class="grid-size-controls">
-                        <input type="number" id="gridWidth" class="form-control size-input" value="6" min="3" max="10">
+                        <input type="number" id="gridWidth" class="form-control size-input" value="6" min="3" max="8">
                         <span style="color: #fff;">×</span>
-                        <input type="number" id="gridHeight" class="form-control size-input" value="6" min="3" max="10">
+                        <input type="number" id="gridHeight" class="form-control size-input" value="6" min="3" max="16">
                     </div>
                 </div>
                 <div class="clear-board-section">
@@ -715,8 +713,8 @@
                 frontBoard.innerHTML = '';
                 rearBoard.innerHTML = '';
                 
-                frontBoard.style.gridTemplateColumns = `repeat(${this.gridWidth}, 40px)`;
-                rearBoard.style.gridTemplateColumns = `repeat(${this.gridWidth}, 40px)`;
+                frontBoard.style.gridTemplateColumns = `repeat(${this.gridWidth}, 30px)`;
+                rearBoard.style.gridTemplateColumns = `repeat(${this.gridWidth}, 30px)`;
                 
                 // Initialize new board arrays
                 this.board.front = [];

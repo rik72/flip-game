@@ -27,7 +27,7 @@ const CONSTANTS = {
 		// General configurations
 		MAX_LEVEL: 50,
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 1, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 9, // Set to level number (e.g., 4) to force start at that level
 		
         // Ball configurations
         BALL_RADIUS: 15,
@@ -82,11 +82,11 @@ const CONSTANTS = {
 		
 		// Movement trail animation
 		TRAIL_ENABLED: true, // flag to enable/disable trail animations
-        TRAIL_MIN_RADIUS_FACTOR: 1, // start trail radius as ratio of ball radius
+        TRAIL_MIN_RADIUS_FACTOR: .5, // start trail radius as ratio of ball radius
         TRAIL_MAX_RADIUS_FACTOR: 1.6, // max trail radius as ratio of ball radius
-		TRAIL_RING_THICKNESS_FACTOR: 0.25, // ring thickness as ratio of ball radius
-		TRAIL_DURATION: 600, // milliseconds for movement trail animation
-		TRAIL_OPACITY: 0.2, // opacity for movement trail (lower than explosion)
+		TRAIL_RING_THICKNESS_FACTOR: 0.5, // ring thickness as ratio of ball radius
+		TRAIL_DURATION: 400, // milliseconds for movement trail animation
+		TRAIL_OPACITY: 0.15, // opacity for movement trail (lower than explosion)
 		
 		// Easing functions
 		EASING: {
