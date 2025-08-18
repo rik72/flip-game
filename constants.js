@@ -14,6 +14,9 @@ const CONSTANTS = {
 		
 		// Error messages
 		LEVEL_LOAD_ERROR: 'Failed to load level {levelNumber}. Please check that the level file exists.',
+		
+		// Prize scene message
+		ALL_LEVELS_SOLVED: 'All levels solved',
 	},
 
 	// Application configurations
@@ -25,7 +28,8 @@ const CONSTANTS = {
 	// Game configurations
 	GAME_CONFIG: {
 		// General configurations
-		MAX_LEVEL: 50,
+		MAX_LEVEL: 50, // Development limit for level loading
+		ACTUAL_MAX_LEVEL: 9, // Actual final level of the game
 		// Development: Force loading specific level as first (set to null to disable)
 		FORCE_START_LEVEL: 9, // Set to level number (e.g., 4) to force start at that level
 		

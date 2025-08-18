@@ -59,7 +59,15 @@ class HtmlBuilder {
         return `
             <div class="game-container">
                 <div class="game-header">
-                    <div id="levelNumberDisplay" class="level-number">#1</div>
+                    <div class="level-navigation">
+                        <button id="prevLevelBtn" class="level-nav-btn" style="visibility: hidden;">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <div id="levelNumberDisplay" class="level-number">#1</div>
+                        <button id="nextLevelBtn" class="level-nav-btn" style="visibility: hidden;">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="game-canvas-container">
                     <div id="gameFlipWrapper" class="game-flip-wrapper">

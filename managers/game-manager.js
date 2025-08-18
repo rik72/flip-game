@@ -247,6 +247,7 @@ class GameManager {
     init() {
         this.setupCanvas();
         this.setupTouchEvents();
+        this.setupNavigationButtons();
         
         // Don't load level here - let the app handle it after setting test data
         // this.loadLevel(this.currentLevel).catch(error => {
@@ -326,6 +327,60 @@ class GameManager {
             this.calculateBoardPosition();
             this.updateToggleButton();
         }
+    }
+
+    setupNavigationButtons() {
+        // Only setup navigation buttons if in development mode
+        if (!CONSTANTS.APP_CONFIG.DEVEL) return;
+
+        // Setup navigation buttons with retry mechanism
+        const setupButtons = () => {
+            const prevBtn = document.getElementById('prevLevelBtn');
+            const nextBtn = document.getElementById('nextLevelBtn');
+
+            if (prevBtn && nextBtn) {
+                // Previous level button
+                prevBtn.addEventListener('click', () => {
+                    if (this.currentLevel > 1) {
+                        // If we're currently showing the prize scene, go back to the actual max level
+                        if (this.currentLevel > CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
+                            this.currentLevel = CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL;
+                            if (this.appReference) {
+                                this.appReference.currentLevel = this.currentLevel;
+                                this.appReference.hidePrizeScene();
+                            }
+                        } else {
+                            // Normal case: go to previous level
+                            this.currentLevel--;
+                            if (this.appReference) {
+                                this.appReference.currentLevel = this.currentLevel;
+                            }
+                        }
+                        
+                        this.loadLevel(this.currentLevel).catch(error => {
+                            console.error('Failed to load previous level:', error);
+                        });
+                    }
+                });
+
+                // Next level button
+                nextBtn.addEventListener('click', () => {
+                    if (this.currentLevel < CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
+                        this.loadLevel(this.currentLevel + 1).catch(error => {
+                            console.error('Failed to load next level:', error);
+                        });
+                    }
+                });
+
+                // Initial button state
+                this.updateLevelNavigationButtons();
+            } else {
+                // Retry after a short delay if buttons are not found
+                setTimeout(setupButtons, 100);
+            }
+        };
+
+        setupButtons();
     }
 
     setupTouchEvents() {
@@ -1179,6 +1234,9 @@ class GameManager {
         if (this.appReference) {
             this.appReference.currentLevel = levelNumber;
         }
+        
+
+        
         this.gameState.isPlaying = true;
         
         // Always start new level with front face
@@ -1615,9 +1673,17 @@ class GameManager {
         if (this.appReference) {
             this.appReference.currentLevel = this.currentLevel;
         }
-        this.loadLevel(this.currentLevel).catch(error => {
-            console.error('Failed to load next level:', error);
-        });
+        
+        if (this.currentLevel > CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
+            // Show prize scene instead of loading a level
+            if (this.appReference) {
+                this.appReference.showPrizeScene();
+            }
+        } else {
+            this.loadLevel(this.currentLevel).catch(error => {
+                console.error('Failed to load next level:', error);
+            });
+        }
     }
 
     resetLevel() {
@@ -1817,6 +1883,36 @@ class GameManager {
                     retryElement.textContent = `#${this.currentLevel}`;
                 }
             }, 100);
+        }
+
+        // Update navigation buttons if in development mode
+        if (CONSTANTS.APP_CONFIG.DEVEL) {
+            this.updateLevelNavigationButtons();
+        }
+    }
+
+    updateLevelNavigationButtons() {
+        const prevBtn = document.getElementById('prevLevelBtn');
+        const nextBtn = document.getElementById('nextLevelBtn');
+
+        if (prevBtn) {
+            if (this.currentLevel > 1) {
+                prevBtn.style.visibility = 'visible';
+                prevBtn.disabled = false;
+            } else {
+                prevBtn.style.visibility = 'hidden';
+                prevBtn.disabled = true;
+            }
+        }
+
+        if (nextBtn) {
+            if (this.currentLevel < CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
+                nextBtn.style.visibility = 'visible';
+                nextBtn.disabled = false;
+            } else {
+                nextBtn.style.visibility = 'hidden';
+                nextBtn.disabled = true;
+            }
         }
     }
 
