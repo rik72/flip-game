@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Horizontal path/bar -->
+  <rect x="4" y="15" width="24" height="2" fill="#FFFFFF" rx="0"/>
+  
+  <!-- Vertical path/bar -->
+  <rect x="15" y="4" width="2" height="24" fill="#FFFFFF" rx="0"/>
+  
+  <!-- Ball sitting on the path -->
+  <circle cx="16" cy="16" r="8" fill="#FF0000"/>
+  
+  <!-- Stylized black pencil laid diagonally -->
+  <g transform="rotate(135 16 16) translate(0 6.5)">
+    <!-- Pencil body -->
+    <rect x="6" y="7" width="20" height="5" fill="#000000" rx="0"/>
+    
+    <!-- Pencil tip (proper triangle pointing right) -->
+    <polygon points="26,7 30,9.5 26,12" fill="#000000"/>
+    
+    <!-- Pencil eraser -->
+    <rect x="3" y="7" width="4" height="5" fill="#FF6B6B" rx="1"/>
+    
+    <!-- Pencil band -->
+    <rect x="6" y="7" width="2" height="5" fill="#FFD93D"/>
+  </g>
+</svg>
