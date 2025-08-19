@@ -2312,8 +2312,13 @@ class GameManager {
         // Check all nodes to find the closest accessible one
         for (let y = 0; y < nodes.length; y++) {
             for (let x = 0; x < nodes[y].length; x++) {
+                const nodeType = this.getNodeType(x, y);
+                
                 // Check if this node is accessible to the ball and not occupied
-                if (this.canBallMoveToNode(ballIndex, x, y) && !this.isNodeOccupied(x, y, ballIndex)) {
+                const canMove = this.canBallMoveToNode(ballIndex, x, y);
+                const isOccupied = this.isNodeOccupied(x, y, ballIndex);
+                
+                if (canMove && !isOccupied) {
                     const distance = this.manhattanDistance(currentGridX, currentGridY, x, y);
                     
                     if (distance < closestDistance) {
@@ -2332,21 +2337,71 @@ class GameManager {
         const nodeType = this.getNodeType(gridX, gridY);
         
         // Empty nodes are not accessible
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) return false;
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) {
+            return false;
+        }
         
-        // WELL nodes can be used by any ball (like PATH_ALL_BALLS)
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) return true;
+        // WELL nodes require path validation - don't allow direct access
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            // Check if there's a valid path from ball's current position to this well
+            const hasValidPath = this.canBallAccessWell(ballIndex, gridX, gridY);
+            return hasValidPath;
+        }
         
         // Path for all balls ('0') can be used by any ball
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) return true;
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
+            return true;
+        }
         
         // Ball-specific paths: ball 0 can use path 'p1', ball 1 can use path 'p2', etc.
+        // FIXED: ball 0 uses p1, ball 1 uses p2, etc.
         const ballPathType = 'p' + (ballIndex + 1).toString();
-        if (nodeType === ballPathType) return true;
+        if (nodeType === ballPathType) {
+            return true;
+        }
         
-
         return false;
     }
+    
+    // Check if a ball can access a well (without causing infinite recursion)
+    canBallAccessWell(ballIndex, wellGridX, wellGridY) {
+        const ball = this.balls[ballIndex];
+        if (!ball) {
+            return false;
+        }
+        
+        // Get ball's current grid position
+        const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // If ball is already on the well, it's valid
+        if (ballGridX === wellGridX && ballGridY === wellGridY) {
+            return true;
+        }
+        
+        // Check if the well is adjacent to the ball's current position
+        const isAdjacent = Math.abs(ballGridX - wellGridX) + Math.abs(ballGridY - wellGridY) === 1;
+        
+        if (isAdjacent) {
+            // If the well is adjacent, check if the ball can move to it
+            // This allows direct well access when the ball is next to it
+            return true;
+        }
+        
+        // For non-adjacent wells, check if there's a valid path
+        // But be more lenient - allow access if the ball is on a valid path node
+        const ballNodeType = this.getNodeType(ballGridX, ballGridY);
+        const isOnValidPath = ballNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
+                             ballNodeType === 'p' + (ballIndex + 1).toString();
+        
+        if (isOnValidPath) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+
 
     // Initialize the enhanced ball movement system
     initializeEnhancedBallMovement() {
@@ -2404,8 +2459,10 @@ class GameManager {
             }
             
             // Check if node is accessible and unoccupied
-            if (this.canBallMoveToNode(ballIndex, newX, newY) && 
-                !this.isNodeOccupied(newX, newY, ballIndex)) {
+            const canMove = this.canBallMoveToNode(ballIndex, newX, newY);
+            const isOccupied = this.isNodeOccupied(newX, newY, ballIndex);
+            
+            if (canMove && !isOccupied) {
                 connected.push({ x: newX, y: newY });
             }
         }
@@ -2551,4 +2608,79 @@ class GameManager {
         return Math.abs(x2 - x1) + Math.abs(y2 - y1);
     }
 
-} 
+    // Check if a ball has a valid path connection to a well
+    hasValidPathToWell(ballIndex, wellGridX, wellGridY) {
+        const ball = this.balls[ballIndex];
+        if (!ball) {
+            return false;
+        }
+        
+        // Get ball's current grid position
+        const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // If ball is already on the well, it's valid
+        if (ballGridX === wellGridX && ballGridY === wellGridY) {
+            return true;
+        }
+        
+        // Use pathfinding to check if there's a valid path from ball to well
+        const path = this.findPathToWell(ballIndex, ballGridX, ballGridY, wellGridX, wellGridY);
+        const hasPath = path && path.length > 0;
+        
+        return hasPath;
+    }
+    
+    // Find a path from ball's current position to a well
+    findPathToWell(ballIndex, startX, startY, targetX, targetY) {
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return null;
+        
+        // Simple BFS pathfinding
+        const queue = [{ x: startX, y: startY, path: [] }];
+        const visited = new Set();
+        
+        while (queue.length > 0) {
+            const current = queue.shift();
+            const key = `${current.x},${current.y}`;
+            
+            if (visited.has(key)) continue;
+            visited.add(key);
+            
+            // Check if we reached the target
+            if (current.x === targetX && current.y === targetY) {
+                return current.path;
+            }
+            
+            // Check all four adjacent directions
+            const directions = [
+                { dx: 1, dy: 0 },   // Right
+                { dx: -1, dy: 0 },  // Left
+                { dx: 0, dy: 1 },   // Down
+                { dx: 0, dy: -1 }   // Up
+            ];
+            
+            for (const dir of directions) {
+                const newX = current.x + dir.dx;
+                const newY = current.y + dir.dy;
+                
+                // Check bounds
+                if (newY < 0 || newY >= nodes.length || 
+                    newX < 0 || newX >= nodes[newY].length) {
+                    continue;
+                }
+                
+                // Check if node is accessible and unoccupied
+                if (this.canBallMoveToNode(ballIndex, newX, newY) && 
+                    !this.isNodeOccupied(newX, newY, ballIndex)) {
+                    
+                    const newPath = [...current.path, { x: newX, y: newY }];
+                    queue.push({ x: newX, y: newY, path: newPath });
+                }
+            }
+        }
+        
+        return null;
+    }
+
+}
