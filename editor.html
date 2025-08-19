@@ -140,7 +140,9 @@
                     </div>
                 </div>
                 <div class="clear-board-section">
-                    <button class="btn btn-danger" onclick="clearBoard()"><i class="bi bi-stars"></i> Clear Board</button>
+                    <button class="mx-2 btn btn-danger" onclick="clearBoard()"><i class="bi bi-stars"></i> Clear</button>
+                    <button class="mx-2 btn btn-warning" onclick="shrinkHorizontally()"><i class="bi bi-arrows-collapse-vertical"></i> Shrink Horizontally</button>
+                    <button class="mx-2 btn btn-warning" onclick="shrinkVertically()"><i class="bi bi-arrows-collapse"></i> Shrink Vertically</button>
                 </div>
             </div>
         </div>
@@ -992,6 +994,207 @@
                     this.createNewLevel();
                 }
             }
+            
+            shrinkHorizontally() {
+                let removedFirst = false;
+                let removedLast = false;
+                
+                // Check if first column (front) / last column (rear) is empty
+                let firstColumnEmpty = true;
+                for (let row = 0; row < this.gridHeight; row++) {
+                    if ((this.board.front[row] && this.board.front[row][0] && this.board.front[row][0] !== '__') ||
+                        (this.board.rear[row] && this.board.rear[row][this.gridWidth - 1] && this.board.rear[row][this.gridWidth - 1] !== '__')) {
+                        firstColumnEmpty = false;
+                        break;
+                    }
+                }
+                
+                // Check if last column (front) / first column (rear) is empty
+                let lastColumnEmpty = true;
+                for (let row = 0; row < this.gridHeight; row++) {
+                    if ((this.board.front[row] && this.board.front[row][this.gridWidth - 1] && this.board.front[row][this.gridWidth - 1] !== '__') ||
+                        (this.board.rear[row] && this.board.rear[row][0] && this.board.rear[row][0] !== '__')) {
+                        lastColumnEmpty = false;
+                        break;
+                    }
+                }
+                
+                // Remove first column if empty
+                if (firstColumnEmpty && this.gridWidth > 1) {
+                    for (let row = 0; row < this.gridHeight; row++) {
+                        if (this.board.front[row]) {
+                            this.board.front[row].shift(); // Remove first element
+                        }
+                        if (this.board.rear[row]) {
+                            this.board.rear[row].pop(); // Remove last element
+                        }
+                    }
+                    this.gridWidth--;
+                    removedFirst = true;
+                }
+                
+                // Remove last column if empty
+                if (lastColumnEmpty && this.gridWidth > 1) {
+                    for (let row = 0; row < this.gridHeight; row++) {
+                        if (this.board.front[row]) {
+                            this.board.front[row].pop(); // Remove last element
+                        }
+                        if (this.board.rear[row]) {
+                            this.board.rear[row].shift(); // Remove first element
+                        }
+                    }
+                    this.gridWidth--;
+                    removedLast = true;
+                }
+                
+                if (removedFirst || removedLast) {
+                    // Relocate ball positions
+                    this.balls.forEach(ball => {
+                        // Adjust start position
+                        if (removedFirst) {
+                            // If first column was removed, shift all positions left by 1
+                            if (ball.start[0] >= 0) { // Front face
+                                ball.start[0] = Math.max(0, ball.start[0] - 1);
+                            } else { // Rear face
+                                ball.start[0] = Math.min(-1, ball.start[0] + 1);
+                            }
+                        }
+                        if (removedLast) {
+                            // If last column was removed, cap positions at new maximum
+                            if (ball.start[0] >= 0) { // Front face
+                                ball.start[0] = Math.min(this.gridWidth - 1, ball.start[0]);
+                            } else { // Rear face
+                                ball.start[0] = Math.max(-this.gridWidth, ball.start[0]);
+                            }
+                        }
+                        
+                        // Adjust end position
+                        if (removedFirst) {
+                            if (ball.end[0] >= 0) { // Front face
+                                ball.end[0] = Math.max(0, ball.end[0] - 1);
+                            } else { // Rear face
+                                ball.end[0] = Math.min(-1, ball.end[0] + 1);
+                            }
+                        }
+                        if (removedLast) {
+                            if (ball.end[0] >= 0) { // Front face
+                                ball.end[0] = Math.min(this.gridWidth - 1, ball.end[0]);
+                            } else { // Rear face
+                                ball.end[0] = Math.max(-this.gridWidth, ball.end[0]);
+                            }
+                        }
+                    });
+                    
+                    // Update grid size input
+                    document.getElementById('gridWidth').value = this.gridWidth;
+                    
+                    // Regenerate grid and update visuals
+                    this.generateGrid();
+                    this.updateGridVisuals();
+                    this.updateAllBorderColors();
+                    
+                    // Validate ball positions after shrinking
+                    this.validateBallPositions();
+                    this.updateGridVisuals();
+                }
+            }
+            
+            shrinkVertically() {
+                let removedFirst = false;
+                let removedLast = false;
+                
+                // Check if first row is empty in both faces
+                let firstRowEmpty = true;
+                if (this.board.front[0] && this.board.rear[0]) {
+                    for (let col = 0; col < this.gridWidth; col++) {
+                        if ((this.board.front[0][col] && this.board.front[0][col] !== '__') ||
+                            (this.board.rear[0][col] && this.board.rear[0][col] !== '__')) {
+                            firstRowEmpty = false;
+                            break;
+                        }
+                    }
+                }
+                
+                // Check if last row is empty in both faces
+                let lastRowEmpty = true;
+                const lastRowIndex = this.gridHeight - 1;
+                if (this.board.front[lastRowIndex] && this.board.rear[lastRowIndex]) {
+                    for (let col = 0; col < this.gridWidth; col++) {
+                        if ((this.board.front[lastRowIndex][col] && this.board.front[lastRowIndex][col] !== '__') ||
+                            (this.board.rear[lastRowIndex][col] && this.board.rear[lastRowIndex][col] !== '__')) {
+                            lastRowEmpty = false;
+                            break;
+                        }
+                    }
+                }
+                
+                // Remove first row if empty
+                if (firstRowEmpty && this.gridHeight > 1) {
+                    this.board.front.shift();
+                    this.board.rear.shift();
+                    this.gridHeight--;
+                    removedFirst = true;
+                }
+                
+                // Remove last row if empty
+                if (lastRowEmpty && this.gridHeight > 1) {
+                    this.board.front.pop();
+                    this.board.rear.pop();
+                    this.gridHeight--;
+                    removedLast = true;
+                }
+                
+                if (removedFirst || removedLast) {
+                    // Relocate ball positions
+                    this.balls.forEach(ball => {
+                        // Adjust start position
+                        if (removedFirst) {
+                            // If first row was removed, shift all positions up by 1
+                            if (ball.start[1] >= 0) { // Front face
+                                ball.start[1] = Math.max(0, ball.start[1] - 1);
+                            } else { // Rear face
+                                ball.start[1] = Math.min(-1, ball.start[1] + 1);
+                            }
+                        }
+                        if (removedLast) {
+                            // If last row was removed, cap positions at new maximum
+                            if (ball.start[1] >= 0) { // Front face
+                                ball.start[1] = Math.min(this.gridHeight - 1, ball.start[1]);
+                            } else { // Rear face
+                                ball.start[1] = Math.max(-this.gridHeight, ball.start[1]);
+                            }
+                        }
+                        
+                        // Adjust end position
+                        if (removedFirst) {
+                            if (ball.end[1] >= 0) { // Front face
+                                ball.end[1] = Math.max(0, ball.end[1] - 1);
+                            } else { // Rear face
+                                ball.end[1] = Math.min(-1, ball.end[1] + 1);
+                            }
+                        }
+                        if (removedLast) {
+                            if (ball.end[1] >= 0) { // Front face
+                                ball.end[1] = Math.min(this.gridHeight - 1, ball.end[1]);
+                            } else { // Rear face
+                                ball.end[1] = Math.max(-this.gridHeight, ball.end[1]);
+                            }
+                        }
+                    });
+                    
+                    // Update grid size input
+                    document.getElementById('gridHeight').value = this.gridHeight;
+                    
+                    // Regenerate grid and update visuals
+                    this.generateGrid();
+                    this.updateGridVisuals();
+                    this.updateAllBorderColors();
+                    
+                    // Validate ball positions after shrinking
+                    this.validateBallPositions();
+                    this.updateGridVisuals();
+                }
+            }
         }
         
         // Global functions for button clicks
@@ -1017,6 +1220,14 @@
         
         function clearBoard() {
             editor.clearBoard();
+        }
+        
+        function shrinkHorizontally() {
+            editor.shrinkHorizontally();
+        }
+        
+        function shrinkVertically() {
+            editor.shrinkVertically();
         }
         
         function selectPositioning(ballIndex, mode) {
