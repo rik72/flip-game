@@ -62,7 +62,15 @@ const CONSTANTS = {
 		
 		// Tail rendering configuration
 		TAIL_BALL_SIZE_RATIO: 1.0, // Tail ball size as ratio of normal ball size (1.0 = same size)
-		TAIL_LINE_WIDTH_MULTIPLIER: 2.0 // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
+		TAIL_LINE_WIDTH_MULTIPLIER: 2.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
+		
+		// Pulsating ring configuration
+		PULSATING_RING_CYCLE_TIME: 2500, // Animation cycle time in milliseconds (2 seconds)
+		PULSATING_RING_MIN_OPACITY: 0.3, // Minimum opacity for pulsating ring
+		PULSATING_RING_MAX_OPACITY: 0.8, // Maximum opacity for pulsating ring
+		PULSATING_RING_MIN_RADIUS_MULTIPLIER: 1.25, // Minimum radius as multiplier of ball radius (1.25 = 25% larger)
+		PULSATING_RING_MAX_RADIUS_MULTIPLIER: 1.5, // Maximum radius as multiplier of ball radius (1.75 = 75% larger)
+		PULSATING_RING_LINE_WIDTH_MULTIPLIER: 0.1 // Line width as multiplier of ball radius (0.1 = 10% of ball radius)
 	},
 
 	// Touch configurations
