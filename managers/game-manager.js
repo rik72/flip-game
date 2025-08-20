@@ -1107,13 +1107,10 @@ class GameManager {
         const targetGridX = Math.round((clampedX - this.boardStartX) / this.gridSize);
         const targetGridY = Math.round((clampedY - this.boardStartY) / this.gridSize);
         
-        // During dragging, we skip path validation since the new system handles it
-        // Only validate when not dragging (final placement)
-        if (!this.isDragging) {
-            // Check if this is a valid path-based move
-            if (!this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY)) {
-                return; // Skip movement if not allowed by path rules
-            }
+        // Always validate path-based moves, even during dragging
+        // This prevents balls from moving to invalid positions during drag
+        if (!this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY)) {
+            return; // Skip movement if not allowed by path rules
         }
         
         // Prevent two balls in the same node
@@ -1123,8 +1120,8 @@ class GameManager {
         
         // Only update if position actually changed
         if (ball.x !== clampedX || ball.y !== clampedY) {
-            // Handle visited nodes tracking for balls with tail during dragging
-            if (ball.hasTail && ball.visitedNodes && !this.isDragging) {
+            // Handle visited nodes tracking for balls with tail (both during dragging and final placement)
+            if (ball.hasTail && ball.visitedNodes) {
                 // Get the previous position before moving
                 const previousGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
                 const previousGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
@@ -1135,19 +1132,19 @@ class GameManager {
                 const newGridY = Math.round((clampedY - this.boardStartY) / this.gridSize);
                 const newFace = this.getBallCurrentFace(ball);
                 
-                // Check if the ball is returning to a previously visited node
-                const isReturningToVisited = ball.visitedNodes.some(node => 
-                    node.x === newGridX && node.y === newGridY && node.face === newFace
-                );
+                // Only proceed if the ball is actually moving to a different position
+                if (previousGridX !== newGridX || previousGridY !== newGridY || previousFace !== newFace) {
                 
-                if (isReturningToVisited) {
-                    // Remove the current node from visited nodes (ball is backtracking)
-                    ball.visitedNodes = ball.visitedNodes.filter(node => 
-                        !(node.x === newGridX && node.y === newGridY && node.face === newFace)
-                    );
-                    
-                    // Remove tail from the current node since it's no longer visited
-                    this.removeNodeTail(newGridX, newGridY, this.selectedBallIndex);
+                // Check if the ball is returning to the last visited node (only allow backtracking to the most recent location)
+                const lastVisitedNode = ball.visitedNodes.length > 0 ? ball.visitedNodes[ball.visitedNodes.length - 1] : null;
+                const isReturningToLastVisited = lastVisitedNode && 
+                    lastVisitedNode.x === newGridX && 
+                    lastVisitedNode.y === newGridY && 
+                    lastVisitedNode.face === newFace;
+                
+                if (isReturningToLastVisited) {
+                    // Remove the last visited node from visited nodes (ball is backtracking to the most recent location)
+                    ball.visitedNodes.pop(); // Remove the last visited node
                     
                     // Remove tail from the connection between previous and current node
                     this.removeConnectionTail(previousGridX, previousGridY, newGridX, newGridY, this.selectedBallIndex);
@@ -1175,17 +1172,27 @@ class GameManager {
                 
                 // Check if ball entered a sticker node and give it tail property
                 const currentNodeType = this.getNodeTypeAt(newGridX, newGridY);
-                if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER && !ball.hasTail) {
-                    ball.hasTail = true;
-                    // Initialize visited nodes if not already done
-                    if (!ball.visitedNodes) {
-                        ball.visitedNodes = [];
+                if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+                    // Check if this sticker is already activated by this ball
+                    const currentFace = this.getBallCurrentFace(ball);
+                    const nodeKey = `${newGridY}_${newGridX}`;
+                    const isAlreadyActivated = this.activatedStickers[currentFace] && 
+                                             this.activatedStickers[currentFace][nodeKey] && 
+                                             this.activatedStickers[currentFace][nodeKey].ballIndex === this.selectedBallIndex;
+                    
+                    if (!ball.hasTail && !isAlreadyActivated) {
+                        ball.hasTail = true;
+                        // Initialize visited nodes if not already done
+                        if (!ball.visitedNodes) {
+                            ball.visitedNodes = [];
+                        }
+                        // Activate the sticker with the ball's color
+                        this.activateSticker(newGridX, newGridY, this.selectedBallIndex, ball.color);
+                        // Update pulsating ring animation for this ball
+                        this.updatePulsatingRingForBall(this.selectedBallIndex);
                     }
-                    // Activate the sticker with the ball's color
-                    this.activateSticker(newGridX, newGridY, this.selectedBallIndex, ball.color);
-                    // Update pulsating ring animation for this ball
-                    this.updatePulsatingRingForBall(this.selectedBallIndex);
                 }
+            }
             }
             
             if (animate) {
@@ -2558,6 +2565,19 @@ class GameManager {
         this.balls.forEach((ball, index) => {
             // Only render balls that belong to the current face
             if (this.getBallCurrentFace(ball) !== this.currentFace) return;
+            
+            // Check if there's a tail disc at this ball's current position
+            // If so, don't render the ball to avoid visual conflict
+            const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+            const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+            const nodeKey = `${ballGridY}_${ballGridX}`;
+            
+            if (this.nodeTails[this.currentFace] && this.nodeTails[this.currentFace][nodeKey]) {
+                const tailData = this.nodeTails[this.currentFace][nodeKey];
+                // If there's a tail at this position, don't render the ball
+                // The tail disc will be rendered instead
+                return;
+            }
             // Use ball color from ball data, fallback to white
             const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
             
@@ -2737,11 +2757,35 @@ class GameManager {
 
     // Check if a ball can move to a specific node based on path types
     canBallMoveToNode(ballIndex, gridX, gridY) {
+        const ball = this.balls[ballIndex];
         const nodeType = this.getNodeType(gridX, gridY);
         
         // Empty nodes are not accessible
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) {
             return false;
+        }
+        
+        // For balls with tails, check if they're trying to move to a visited node
+        if (ball && ball.hasTail && ball.visitedNodes && ball.visitedNodes.length > 0) {
+            const currentFace = this.getBallCurrentFace(ball);
+            const targetNode = { x: gridX, y: gridY, face: currentFace };
+            
+            // Check if this is a visited node
+            const isVisitedNode = ball.visitedNodes.some(node => 
+                node.x === targetNode.x && node.y === targetNode.y && node.face === targetNode.face
+            );
+            
+            if (isVisitedNode) {
+                // Only allow moving to the last visited node (for backtracking)
+                const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
+                const isLastVisitedNode = lastVisitedNode.x === targetNode.x && 
+                                        lastVisitedNode.y === targetNode.y && 
+                                        lastVisitedNode.face === targetNode.face;
+                
+                if (!isLastVisitedNode) {
+                    return false; // Block access to any visited node except the last one
+                }
+            }
         }
         
         // WELL nodes require path validation - don't allow direct access
@@ -2751,8 +2795,30 @@ class GameManager {
             return hasValidPath;
         }
         
-        // STICKER nodes can be accessed by any ball (similar to PATH_ALL_BALLS)
+        // STICKER nodes can be accessed by any ball, but check if already activated
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            // Check if this sticker is already activated by this ball
+            const currentFace = this.getBallCurrentFace(ball);
+            const nodeKey = `${gridY}_${gridX}`;
+            const isAlreadyActivated = this.activatedStickers[currentFace] && 
+                                     this.activatedStickers[currentFace][nodeKey] && 
+                                     this.activatedStickers[currentFace][nodeKey].ballIndex === ballIndex;
+            
+            if (isAlreadyActivated) {
+                // Allow backtracking to the last visited sticker node
+                if (ball && ball.hasTail && ball.visitedNodes && ball.visitedNodes.length > 0) {
+                    const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
+                    const isLastVisitedNode = lastVisitedNode.x === gridX && 
+                                            lastVisitedNode.y === gridY && 
+                                            lastVisitedNode.face === currentFace;
+                    
+                    if (isLastVisitedNode) {
+                        return true; // Allow backtracking to the last visited sticker
+                    }
+                }
+                
+                return false; // Block re-entry to already activated stickers (except for backtracking)
+            }
             return true;
         }
         
