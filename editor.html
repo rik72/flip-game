@@ -578,17 +578,22 @@
                         cell.appendChild(indicator);
                     }
                     
-                    // Check end position
-                    const endRow = ball.end[1] < 0 ? -ball.end[1] : ball.end[1];
-                    const endCol = ball.end[0] < 0 ? -ball.end[0] : ball.end[0];
-                    const endFace = ball.end[0] < 0 || ball.end[1] < 0 ? 'rear' : 'front';
-                    if (row === endRow && col === endCol && face === endFace) {
-                        const indicator = document.createElement('div');
-                        indicator.className = 'node-indicator end';
-                        indicator.innerHTML = '<i class="bi bi-arrow-up-square-fill"></i>';
-                        indicator.style.backgroundColor = ballColor;
-                        cell.appendChild(indicator);
-                    }
+                    // Check end positions (handle both legacy single and new multiple)
+                    let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+                    
+                    endPositions.forEach((endPos, endIndex) => {
+                        const endRow = endPos[1] < 0 ? -endPos[1] : endPos[1];
+                        const endCol = endPos[0] < 0 ? -endPos[0] : endPos[0];
+                        const endFace = endPos[0] < 0 || endPos[1] < 0 ? 'rear' : 'front';
+                        
+                        if (row === endRow && col === endCol && face === endFace) {
+                            const indicator = document.createElement('div');
+                            indicator.className = 'node-indicator end';
+                            indicator.innerHTML = '<i class="bi bi-arrow-up-square-fill"></i>';
+                            indicator.style.backgroundColor = ballColor;
+                            cell.appendChild(indicator);
+                        }
+                    });
                 });
             }
             
@@ -633,7 +638,7 @@
             addBall() {
                 const ball = {
                     start: [0, 0],
-                    end: [this.gridWidth - 1, this.gridHeight - 1],
+                    end: [[this.gridWidth - 1, this.gridHeight - 1]], // Array of end positions
                     color: 'red'
                 };
                 
@@ -649,17 +654,18 @@
                 this.balls.forEach((ball, index) => {
                     const ballItem = document.createElement('div');
                     ballItem.className = 'ball-item';
+                    
                     ballItem.innerHTML = `
                         <div class="ball-color" style="background-color: ${CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#fff'}" onclick="editor.editBall(${index})" title="Click to change color"></div>
                         <div class="ball-position-buttons">
                             <button class="position-btn start" onclick="editor.selectPositioning(${index}, 'start')" title="Set start position">
                                 <i class="bi bi-arrow-down-square-fill"></i>
                             </button>
-                            <button class="position-btn end" onclick="editor.selectPositioning(${index}, 'end')" title="Set end position">
+                            <button class="position-btn end" onclick="editor.selectPositioning(${index}, 'end')" title="Toggle end position">
                                 <i class="bi bi-arrow-up-square-fill"></i>
                             </button>
                         </div>
-                        <div class="ball-info" style="font-size: 18px; font-weight: bold; color: ${CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#fff'}">
+                        <div class="ball-info" style="font-size: 14px; font-weight: bold; color: ${CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#fff'}">
                             ${index + 1}
                         </div>
                         <div class="ball-actions">
@@ -767,6 +773,8 @@
                 this.updateGridVisuals();
             }
             
+
+            
             selectPositioning(ballIndex, mode) {
                 this.positioningMode = mode;
                 this.positioningBallIndex = ballIndex;
@@ -804,7 +812,29 @@
                     if (this.positioningMode === 'start') {
                         ball.start = [coordCol, coordRow];
                     } else {
-                        ball.end = [coordCol, coordRow];
+                        // Handle multiple end positions - toggle behavior
+                        if (!Array.isArray(ball.end[0])) {
+                            // Convert legacy single end position to array format
+                            ball.end = [ball.end];
+                        }
+                        
+                        // Check if this position is already an end position
+                        const existingIndex = ball.end.findIndex(endPos => 
+                            endPos[0] === coordCol && endPos[1] === coordRow
+                        );
+                        
+                        if (existingIndex !== -1) {
+                            // Remove the existing end position
+                            ball.end.splice(existingIndex, 1);
+                            
+                            // Ensure at least one end position remains
+                            if (ball.end.length === 0) {
+                                ball.end = [[coordCol, coordRow]]; // Keep the current position
+                            }
+                        } else {
+                            // Add new end position
+                            ball.end.push([coordCol, coordRow]);
+                        }
                     }
                     
                     // Clear positioning mode
@@ -815,6 +845,8 @@
                     document.querySelectorAll('.position-btn').forEach(btn => {
                         btn.classList.remove('active');
                     });
+                    
+
                     
                     // Update visuals
                     this.updateGridVisuals();
@@ -836,9 +868,14 @@
                 
                 // Check if any ball's end position is in the rear face
                 for (const ball of this.balls) {
-                    // Use consistent coordinate system: front = [col, row], rear = [-col, -row]
-                    if (ball.end[0] < 0 || ball.end[1] < 0) {
-                        return true;
+                    // Handle both legacy single end position and new multiple end positions
+                    let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+                    
+                    for (const endPos of endPositions) {
+                        // Use consistent coordinate system: front = [col, row], rear = [-col, -row]
+                        if (endPos[0] < 0 || endPos[1] < 0) {
+                            return true;
+                        }
                     }
                 }
                 
@@ -956,7 +993,19 @@
                         }
                         
                         if (levelData.balls) {
-                            this.balls = levelData.balls;
+                            // Convert legacy single end positions to array format
+                            this.balls = levelData.balls.map(ball => {
+                                // Check if end is already in array format
+                                if (Array.isArray(ball.end[0])) {
+                                    return ball; // Already in new format
+                                } else {
+                                    // Convert legacy single end position to array format
+                                    return {
+                                        ...ball,
+                                        end: [ball.end]
+                                    };
+                                }
+                            });
                         }
                         
                         this.generateGrid();
@@ -1092,20 +1141,29 @@
                             }
                         }
                         
-                        // Adjust end position
-                        if (removedFirst) {
-                            if (ball.end[0] >= 0) { // Front face
-                                ball.end[0] = Math.max(0, ball.end[0] - 1);
-                            } else { // Rear face
-                                ball.end[0] = Math.min(-1, ball.end[0] + 1);
+                        // Adjust end positions (handle both legacy single and new multiple)
+                        let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+                        
+                        endPositions.forEach(endPos => {
+                            if (removedFirst) {
+                                if (endPos[0] >= 0) { // Front face
+                                    endPos[0] = Math.max(0, endPos[0] - 1);
+                                } else { // Rear face
+                                    endPos[0] = Math.min(-1, endPos[0] + 1);
+                                }
                             }
-                        }
-                        if (removedLast) {
-                            if (ball.end[0] >= 0) { // Front face
-                                ball.end[0] = Math.min(this.gridWidth - 1, ball.end[0]);
-                            } else { // Rear face
-                                ball.end[0] = Math.max(-this.gridWidth, ball.end[0]);
+                            if (removedLast) {
+                                if (endPos[0] >= 0) { // Front face
+                                    endPos[0] = Math.min(this.gridWidth - 1, endPos[0]);
+                                } else { // Rear face
+                                    endPos[0] = Math.max(-this.gridWidth, endPos[0]);
+                                }
                             }
+                        });
+                        
+                        // Update ball.end to use the new format if it was legacy
+                        if (!Array.isArray(ball.end[0])) {
+                            ball.end = endPositions;
                         }
                     });
                     
@@ -1189,20 +1247,29 @@
                             }
                         }
                         
-                        // Adjust end position
-                        if (removedFirst) {
-                            if (ball.end[1] >= 0) { // Front face
-                                ball.end[1] = Math.max(0, ball.end[1] - 1);
-                            } else { // Rear face
-                                ball.end[1] = Math.min(-1, ball.end[1] + 1);
+                        // Adjust end positions (handle both legacy single and new multiple)
+                        let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+                        
+                        endPositions.forEach(endPos => {
+                            if (removedFirst) {
+                                if (endPos[1] >= 0) { // Front face
+                                    endPos[1] = Math.max(0, endPos[1] - 1);
+                                } else { // Rear face
+                                    endPos[1] = Math.min(-1, endPos[1] + 1);
+                                }
                             }
-                        }
-                        if (removedLast) {
-                            if (ball.end[1] >= 0) { // Front face
-                                ball.end[1] = Math.min(this.gridHeight - 1, ball.end[1]);
-                            } else { // Rear face
-                                ball.end[1] = Math.max(-this.gridHeight, ball.end[1]);
+                            if (removedLast) {
+                                if (endPos[1] >= 0) { // Front face
+                                    endPos[1] = Math.min(this.gridHeight - 1, endPos[1]);
+                                } else { // Rear face
+                                    endPos[1] = Math.max(-this.gridHeight, endPos[1]);
+                                }
                             }
+                        });
+                        
+                        // Update ball.end to use the new format if it was legacy
+                        if (!Array.isArray(ball.end[0])) {
+                            ball.end = endPositions;
                         }
                     });
                     

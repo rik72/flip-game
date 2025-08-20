@@ -38,7 +38,10 @@ class GameManager {
         // Flip animation state
         this.isFlipping = false; // Track if flip animation is currently running
         this.flipWrapper = null; // Reference to the flip wrapper element
-        this.flipAnimationTimeout = null; // Track animation timing
+        this.flipAnimationTimeout = null;
+        
+        // Level progression state
+        this.isLevelProgression = false; // Track if we're proceeding to next level from completion // Track animation timing
         
         this.gridSize = 40; // Grid cell size for snapping
         this.boardStartX = 0;
@@ -629,7 +632,18 @@ class GameManager {
             this.flipAnimationTimeout = null;
         }
         if (this.flipWrapper) {
-            this.flipWrapper.classList.remove('flipping', 'flip-to-rear', 'flip-to-front');
+            // Only remove the 'flipping' class, preserve the current face state
+            this.flipWrapper.classList.remove('flipping');
+            // Ensure the flip wrapper state matches the current face
+            if (this.currentFace === 'rear') {
+                this.flipWrapper.classList.add('flip-to-rear');
+                this.flipWrapper.classList.remove('flip-to-front');
+                console.log('🔄 Cleanup: Preserved rear face state');
+            } else {
+                this.flipWrapper.classList.add('flip-to-front');
+                this.flipWrapper.classList.remove('flip-to-rear');
+                console.log('🔄 Cleanup: Preserved front face state');
+            }
         }
         this.isFlipping = false;
         
@@ -1468,11 +1482,20 @@ class GameManager {
         
         this.gameState.isPlaying = true;
         
-        // Always start new level with front face
-        this.currentFace = 'front';
-        
-        // Reset flip wrapper CSS classes to match front face state
-        this.resetFlipWrapperState();
+        // Only reset to front face if this is not a level progression (i.e., not coming from level completion)
+        // This prevents the strange "flip to itself" effect when proceeding to next level
+        if (!this.isLevelProgression) {
+            this.currentFace = 'front';
+            // Reset flip wrapper CSS classes to match front face state
+            this.resetFlipWrapperState();
+            console.log('🔄 Fresh level load - reset to front face');
+        } else {
+            // For level progression, ensure flip wrapper state matches current face without animation
+            this.syncFlipWrapperState();
+            console.log('🔄 Level progression - preserving face state:', this.currentFace);
+        }
+        // Reset the flag for next time
+        this.isLevelProgression = false;
         
         // Reset completion status for this level when entering it (only for numbered levels)
         if (typeof levelNumber === 'number') {
@@ -1562,8 +1585,29 @@ class GameManager {
                 // Editor uses: front = [col, row], rear = [-col, -row]
                 const startX = ballData.start[0] < 0 ? -ballData.start[0] : ballData.start[0];
                 const startY = ballData.start[1] < 0 ? -ballData.start[1] : ballData.start[1];
-                const endX = ballData.end[0] < 0 ? -ballData.end[0] : ballData.end[0];
-                const endY = ballData.end[1] < 0 ? -ballData.end[1] : ballData.end[1];
+                
+                // Handle multiple end positions - convert to array format
+                let endPositions = [];
+                if (Array.isArray(ballData.end[0])) {
+                    // New format: end is array of arrays [[x1,y1], [x2,y2], ...]
+                    endPositions = ballData.end;
+                } else {
+                    // Legacy format: end is single [x,y] array
+                    endPositions = [ballData.end];
+                }
+                
+                // Convert end positions to absolute coordinates
+                const endPositionsAbsolute = endPositions.map(endPos => {
+                    const endX = endPos[0] < 0 ? -endPos[0] : endPos[0];
+                    const endY = endPos[1] < 0 ? -endPos[1] : endPos[1];
+                    return {
+                        x: this.boardStartX + (endX * this.gridSize),
+                        y: this.boardStartY + (endY * this.gridSize),
+                        gridX: endX,
+                        gridY: endY,
+                        face: endPos[0] < 0 || endPos[1] < 0 ? 'rear' : 'front'
+                    };
+                });
                 
                 const ball = {
                     x: this.boardStartX + (startX * this.gridSize),
@@ -1576,12 +1620,15 @@ class GameManager {
                     touchScale: this.restScale, // Animation scale
                     // Store original coordinates for reference
                     originalStart: ballData.start,
-                    originalEnd: ballData.end,
+                    originalEnd: ballData.end, // Keep for backward compatibility
+                    endPositions: endPositions, // New: array of end positions
+                    endPositionsAbsolute: endPositionsAbsolute, // New: converted to absolute coordinates
                     // Track which face the ball is currently on
                     currentFace: ballData.start[0] < 0 || ballData.start[1] < 0 ? 'rear' : 'front',
-                    endPosition: {
-                        x: this.boardStartX + (endX * this.gridSize),
-                        y: this.boardStartY + (endY * this.gridSize)
+                    // Legacy: keep single endPosition for backward compatibility
+                    endPosition: endPositionsAbsolute[0] || {
+                        x: this.boardStartX + (4 * this.gridSize),
+                        y: this.boardStartY + (4 * this.gridSize)
                     },
                     // Tail system property
                     hasTail: false,
@@ -1617,9 +1664,17 @@ class GameManager {
                 currentFace: 'front', // Default ball starts on front face
                 hasTail: false, // Tail system property
                 visitedNodes: [], // Array of {x, y, face} objects representing visited nodes
-                endPosition: {
+                endPositions: [[4, 2]], // New: array of end positions
+                endPositionsAbsolute: [{ // New: converted to absolute coordinates
                     x: this.boardStartX + (4 * this.gridSize),
-                    y: this.boardStartY + (4 * this.gridSize)
+                    y: this.boardStartY + (2 * this.gridSize),
+                    gridX: 4,
+                    gridY: 2,
+                    face: 'front'
+                }],
+                endPosition: { // Legacy: keep single endPosition for backward compatibility
+                    x: this.boardStartX + (4 * this.gridSize),
+                    y: this.boardStartY + (2 * this.gridSize)
                 }
             };
             this.balls.push(defaultBall);
@@ -1634,34 +1689,77 @@ class GameManager {
     checkWinCondition() {
         if (!this.canvas || this.balls.length === 0) return;
         
-        // Check if all balls are at their respective end positions AND on the correct face
+        // Check if all balls satisfy their win conditions
         const allBallsAtGoal = this.balls.every((ball, ballIndex) => {
-            // Convert ball's current position back to grid coordinates
-            const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
-            const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
-            
-            // Get the goal coordinates from the original coordinate system
-            const goalGridX = ball.originalEnd[0];
-            const goalGridY = ball.originalEnd[1];
-            
-            // Check if ball is at the correct grid position
-            // Use same coordinate conversion as editor: front = [col, row], rear = [-col, -row]
-            const goalGridXConverted = goalGridX < 0 ? -goalGridX : goalGridX;
-            const goalGridYConverted = goalGridY < 0 ? -goalGridY : goalGridY;
-            const correctPosition = ballGridX === goalGridXConverted && ballGridY === goalGridYConverted;
-            
-            // Check if ball is on the correct face
-            const goalFace = goalGridX < 0 || goalGridY < 0 ? 'rear' : 'front';
-            const ballFace = this.getBallCurrentFace(ball);
-            const correctFace = goalFace === ballFace;
-            
-            return correctPosition && correctFace;
+            return this.isBallAtGoal(ball, ballIndex);
         });
         
         if (allBallsAtGoal) {
             this.levelCompleted();
         }
     }
+
+    /**
+     * Checks if a specific ball satisfies its win condition
+     * @param {Object} ball - The ball object to check
+     * @param {number} ballIndex - The index of the ball
+     * @returns {boolean} True if the ball satisfies its win condition
+     */
+    isBallAtGoal(ball, ballIndex) {
+        // Convert ball's current position back to grid coordinates
+        const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        const ballFace = this.getBallCurrentFace(ball);
+        
+        // Get all end positions for this ball
+        const endPositions = ball.endPositionsAbsolute || [];
+        
+        if (endPositions.length === 0) {
+            // Fallback to legacy single end position
+            const goalGridX = ball.originalEnd[0];
+            const goalGridY = ball.originalEnd[1];
+            const goalGridXConverted = goalGridX < 0 ? -goalGridX : goalGridX;
+            const goalGridYConverted = goalGridY < 0 ? -goalGridY : goalGridY;
+            const goalFace = goalGridX < 0 || goalGridY < 0 ? 'rear' : 'front';
+            
+            return ballGridX === goalGridXConverted && 
+                   ballGridY === goalGridYConverted && 
+                   ballFace === goalFace;
+        }
+        
+        // Check if ball is at one of its end positions
+        const ballAtEndPosition = endPositions.some(endPos => {
+            return ballGridX === endPos.gridX && 
+                   ballGridY === endPos.gridY && 
+                   ballFace === endPos.face;
+        });
+        
+        if (!ballAtEndPosition) {
+            return false; // Ball is not at any end position
+        }
+        
+        // Check if all other end positions have tail discs from this ball
+        const allOtherEndPositionsHaveTail = endPositions.every(endPos => {
+            // Skip the end position where the ball currently is
+            if (ballGridX === endPos.gridX && 
+                ballGridY === endPos.gridY && 
+                ballFace === endPos.face) {
+                return true; // This is the position where the ball is, so it's "satisfied"
+            }
+            
+            // Check if this end position has a tail disc from this ball
+            const nodeKey = `${endPos.gridY}_${endPos.gridX}`;
+            const face = endPos.face;
+            
+            return this.nodeTails[face] && 
+                   this.nodeTails[face][nodeKey] && 
+                   this.nodeTails[face][nodeKey].ballIndex === ballIndex;
+        });
+        
+        return allOtherEndPositionsHaveTail;
+    }
+
+
 
     levelCompleted() {
         this.gameState.isPlaying = false;
@@ -1673,6 +1771,9 @@ class GameManager {
         if (this.soundManager) {
             this.soundManager.playSound('levelComplete');
         }
+        
+        // Stop all animations immediately when win condition is met
+        this.cleanupAnimations();
         
         // Remove all pulsating rings at level completion
         this.removeAllPulsatingRings();
@@ -1689,17 +1790,32 @@ class GameManager {
         
         const config = CONSTANTS.ANIMATION_CONFIG;
         
-        // Only create explosions for balls that have goals on the current face
-        const visibleBalls = this.balls.filter((ball, index) => {
-            // Check if this ball's goal is on the current face
-            return this.getGoalCurrentFace(ball) === this.currentFace;
-        });
+        // Create explosions for all end positions on the current face
+        let explosionIndex = 0;
         
-        visibleBalls.forEach((ball, index) => {
-            // Create explosion with delay based on ball index
-            setTimeout(() => {
-                this.createExplosionDisc(ball.endPosition.x, ball.endPosition.y, config, index);
-            }, index * config.EXPLOSION_DELAY);
+        this.balls.forEach((ball, ballIndex) => {
+            const endPositions = ball.endPositionsAbsolute || [];
+            
+            if (endPositions.length === 0) {
+                // Fallback to legacy single end position
+                if (this.getGoalCurrentFace(ball) === this.currentFace) {
+                    setTimeout(() => {
+                        this.createExplosionDisc(ball.endPosition.x, ball.endPosition.y, config, explosionIndex);
+                    }, explosionIndex * config.EXPLOSION_DELAY);
+                    explosionIndex++;
+                }
+                return;
+            }
+            
+            // Create explosions for all end positions on the current face
+            endPositions.forEach(endPos => {
+                if (endPos.face === this.currentFace) {
+                    setTimeout(() => {
+                        this.createExplosionDisc(endPos.x, endPos.y, config, explosionIndex);
+                    }, explosionIndex * config.EXPLOSION_DELAY);
+                    explosionIndex++;
+                }
+            });
         });
     }
 
@@ -1920,6 +2036,10 @@ class GameManager {
             this.appReference.currentLevel = this.currentLevel;
         }
         
+        // Set flag to indicate this is a level progression (not a fresh start)
+        this.isLevelProgression = true;
+        console.log('🔄 Level progression flag set - will preserve current face state');
+        
         if (this.currentLevel > CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
             // Show prize scene instead of loading a level
             if (this.appReference) {
@@ -1998,6 +2118,33 @@ class GameManager {
         // Restore transition and visibility
         this.flipWrapper.style.transition = originalTransition || '';
         this.flipWrapper.style.visibility = originalVisibility || 'visible';
+    }
+
+    // Sync flip wrapper state to match current face without animation
+    syncFlipWrapperState() {
+        if (!this.ensureFlipWrapper()) {
+            return;
+        }
+        
+        // Temporarily disable transitions
+        const originalTransition = this.flipWrapper.style.transition;
+        this.flipWrapper.style.transition = 'none';
+        
+        // Remove all flip-related classes
+        this.flipWrapper.classList.remove('flipping', 'flip-to-rear', 'flip-to-front');
+        
+        // Set the correct transform based on current face
+        if (this.currentFace === 'rear') {
+            this.flipWrapper.style.transform = 'rotateY(180deg)';
+        } else {
+            this.flipWrapper.style.transform = 'rotateY(0deg)';
+        }
+        
+        // Force a reflow to ensure the changes are applied
+        this.flipWrapper.offsetHeight;
+        
+        // Restore transition
+        this.flipWrapper.style.transition = originalTransition || '';
     }
 
 
@@ -2684,31 +2831,67 @@ class GameManager {
 
     renderEndGoals() {
         this.balls.forEach((ball, index) => {
-            // Only render goals for balls that belong to the current face
-            if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
-            const endX = ball.endPosition.x;
-            const endY = ball.endPosition.y;
+            // Get all end positions for this ball
+            const endPositions = ball.endPositionsAbsolute || [];
             
-            // Use the same color as the ball for the square frame
-            const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+            if (endPositions.length === 0) {
+                // Fallback to legacy single end position
+                if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
+                const endX = ball.endPosition.x;
+                const endY = ball.endPosition.y;
+                
+                // Use the same color as the ball for the square frame
+                const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                
+                // Get the radii for the square frame and circular hole
+                const innerRadius = this.getGoalInnerRadius();
+                const outerRadius = this.getGoalOuterRadius();
+                
+                // Calculate square dimensions (side length = outer radius * 2)
+                const squareHalfSize = outerRadius;
+                
+                this.ctx.fillStyle = colorHex;
+                this.ctx.beginPath();
+                
+                // Draw the outer square
+                this.ctx.rect(endX - squareHalfSize, endY - squareHalfSize, squareHalfSize * 2, squareHalfSize * 2);
+                
+                // Cut out the circular hole in the middle
+                this.ctx.arc(endX, endY, innerRadius, 0, 2 * Math.PI, true); // true = counterclockwise for hole
+                
+                this.ctx.fill();
+                return;
+            }
             
-            // Get the radii for the square frame and circular hole
-            const innerRadius = this.getGoalInnerRadius();
-            const outerRadius = this.getGoalOuterRadius();
-            
-            // Calculate square dimensions (side length = outer radius * 2)
-            const squareHalfSize = outerRadius;
-            
-            this.ctx.fillStyle = colorHex;
-            this.ctx.beginPath();
-            
-            // Draw the outer square
-            this.ctx.rect(endX - squareHalfSize, endY - squareHalfSize, squareHalfSize * 2, squareHalfSize * 2);
-            
-            // Cut out the circular hole in the middle
-            this.ctx.arc(endX, endY, innerRadius, 0, 2 * Math.PI, true); // true = counterclockwise for hole
-            
-            this.ctx.fill();
+            // Render all end positions for this ball
+            endPositions.forEach(endPos => {
+                // Only render goals for the current face
+                if (endPos.face !== this.currentFace) return;
+                
+                const endX = endPos.x;
+                const endY = endPos.y;
+                
+                // Use the same color as the ball for the square frame
+                const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                
+                // Get the radii for the square frame and circular hole
+                const innerRadius = this.getGoalInnerRadius();
+                const outerRadius = this.getGoalOuterRadius();
+                
+                // Calculate square dimensions (side length = outer radius * 2)
+                const squareHalfSize = outerRadius;
+                
+                this.ctx.fillStyle = colorHex;
+                this.ctx.beginPath();
+                
+                // Draw the outer square
+                this.ctx.rect(endX - squareHalfSize, endY - squareHalfSize, squareHalfSize * 2, squareHalfSize * 2);
+                
+                // Cut out the circular hole in the middle
+                this.ctx.arc(endX, endY, innerRadius, 0, 2 * Math.PI, true); // true = counterclockwise for hole
+                
+                this.ctx.fill();
+            });
         });
     }
 

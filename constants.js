@@ -30,7 +30,7 @@ const CONSTANTS = {
 		// General configurations
 		ACTUAL_MAX_LEVEL: 10, // Actual final level of the game
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 10, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 4, // Set to level number (e.g., 4) to force start at that level
 		
         // Ball configurations
         BALL_RADIUS: 15,
