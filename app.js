@@ -56,7 +56,7 @@ class App {
                     console.error('Error parsing test level data:', error);
                     this.loadDefaultLevel();
                 }
-            } else if (urlLevel !== null && !isNaN(urlLevel) && urlLevel >= 1 && urlLevel <= CONSTANTS.GAME_CONFIG.MAX_LEVEL) {
+            } else if (urlLevel !== null && !isNaN(urlLevel) && urlLevel >= 1) {
                 this.currentLevel = parseInt(urlLevel);
                 console.log(`🔧 Development mode: Loading level ${this.currentLevel} from URL parameter`);
             } else if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
@@ -471,8 +471,6 @@ class App {
                 particlePattern = this.createBurstPattern(particleCount);
                 break;
         }
-        
-        console.log(`🎆 Creating ${type} firework with ${particleCount} particles at position (${x.toFixed(1)}, ${y.toFixed(1)})`);
         
         // Create firework object for canvas animation
         const firework = {

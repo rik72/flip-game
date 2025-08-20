@@ -59,6 +59,13 @@ class GameManager {
         this.trailAnimationId = null; // For trail animation loop
         this.activeTrailAnimations = []; // Array of active trail animations
         
+        // Tail system properties
+        this.nodeTails = {}; // Track nodes with tail property: {face: {row_col: {ballIndex, color}}}
+        this.connectionTails = {}; // Track connections with tail property: {face: {row1_col1_row2_col2: {ballIndex, color}}}
+        
+        // Sticker activation tracking
+        this.activatedStickers = {}; // Track activated stickers: {face: {row_col: {ballIndex, color}}}
+        
         this.init();
     }
 
@@ -739,6 +746,11 @@ class GameManager {
             movingBallFace = this.getBallCurrentFace(this.balls[ignoreBallIndex]);
         }
         
+        // Check if node has a tail property (occupied by any ball)
+        if (this.nodeTails[movingBallFace] && this.nodeTails[movingBallFace][`${gridY}_${gridX}`]) {
+            return true;
+        }
+        
         return this.balls.some((otherBall, idx) => {
             if (idx === ignoreBallIndex) return false;
             
@@ -1299,6 +1311,9 @@ class GameManager {
             // Initialize enhanced ball movement system
             this.initializeEnhancedBallMovement();
             
+            // Initialize tail system
+            this.initializeTailSystem();
+            
             // Update level number display in DOM
             this.updateLevelNumberDisplay();
             
@@ -1348,6 +1363,8 @@ class GameManager {
                         x: this.boardStartX + (endX * this.gridSize),
                         y: this.boardStartY + (endY * this.gridSize)
                     },
+                    // Tail system property
+                    hasTail: false,
                     // Animation properties for smooth movement
                     animation: {
                         isAnimating: false,
@@ -1360,6 +1377,8 @@ class GameManager {
                         easing: 'EASE_OUT_QUICK'
                     }
                 };
+                
+                // Note: Sticker detection and activation is now handled in initializeTailSystem()
                 
                 this.balls.push(ball);
             });
@@ -1374,6 +1393,7 @@ class GameManager {
                 touchOpacity: 0.0, // Animation opacity
                 touchScale: this.restScale, // Animation scale
                 currentFace: 'front', // Default ball starts on front face
+                hasTail: false, // Tail system property
                 endPosition: {
                     x: this.boardStartX + (4 * this.gridSize),
                     y: this.boardStartY + (4 * this.gridSize)
@@ -1784,6 +1804,12 @@ class GameManager {
         // Draw board nodes on top of path lines
         this.renderBoard();
         
+        // Draw tail connections on top of normal path lines
+        this.renderTailConnections();
+        
+        // Draw tail nodes on top of board nodes
+        this.renderTailNodes();
+        
         // Draw end goals
         this.renderEndGoals();
         
@@ -1984,6 +2010,61 @@ class GameManager {
                         this.ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
                         this.ctx.fill();
                     }
+                    
+                    // Render STICKER nodes as orange hollow rings with four segments pointing to center
+                    else if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+                        const centerX = this.boardStartX + (col * this.gridSize);
+                        const centerY = this.boardStartY + (row * this.gridSize);
+                        
+                        // Use same radii as goal nodes
+                        const innerRadius = this.getGoalInnerRadius();
+                        const outerRadius = this.getGoalOuterRadius();
+                        
+                        // Check if this sticker is activated
+                        const nodeKey = `${row}_${col}`;
+                        const isActivated = this.activatedStickers[this.currentFace] && 
+                                          this.activatedStickers[this.currentFace][nodeKey];
+                        
+                        // Use ball color if activated, otherwise use default sticker color
+                        const stickerColor = isActivated ? 
+                            CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF' :
+                            CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
+                        
+                        // Draw hollow ring (stroke only, no fill)
+                        this.ctx.strokeStyle = stickerColor;
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
+                        this.ctx.stroke();
+                        
+                        // Draw four segments pointing from ring border to center
+                        // Each segment starts at the outer radius and ends at the ball's rest radius
+                        const ballRestRadius = this.getLogicalBallRadius() * this.restScale;
+                        const segmentEndRadius = ballRestRadius;
+                        
+                        // Four directions: top, right, bottom, left
+                        const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+                        
+                        // Use same line width as path connections for visual consistency
+                        this.ctx.lineWidth = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_MIN_WIDTH, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_RATIO);
+                        this.ctx.strokeStyle = stickerColor;
+                        
+                        angles.forEach(angle => {
+                            // Calculate start point (on outer ring)
+                            const startX = centerX + outerRadius * Math.cos(angle);
+                            const startY = centerY + outerRadius * Math.sin(angle);
+                            
+                            // Calculate end point (at ball rest radius)
+                            const endX = centerX + segmentEndRadius * Math.cos(angle);
+                            const endY = centerY + segmentEndRadius * Math.sin(angle);
+                            
+                            // Draw segment
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(startX, startY);
+                            this.ctx.lineTo(endX, endY);
+                            this.ctx.stroke();
+                        });
+                    }
                 }
             }
         }
@@ -2011,7 +2092,8 @@ class GameManager {
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1 ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2 ||
-                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
                     
                     const centerX = this.boardStartX + (col * this.gridSize);
                     const centerY = this.boardStartY + (row * this.gridSize);
@@ -2060,7 +2142,8 @@ class GameManager {
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2,
-            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER
         ];
         
         if (!pathTypes.includes(nodeType1) || !pathTypes.includes(nodeType2)) {
@@ -2105,23 +2188,31 @@ class GameManager {
             return true;
         }
         
+        // STICKER nodes connect to any path type (allowing balls to enter stickers)
+        if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER || 
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            return true;
+        }
+        
         // Different specific ball paths don't connect
         return false;
     }
 
     // Get the color for a connection between two node types
     getConnectionColor(nodeType1, nodeType2) {
-        // If one is PATH_ALL_BALLS, VERTICAL_ALL_BALLS, HORIZONTAL_ALL_BALLS, or WELL, use the color of the specific ball path
+        // If one is PATH_ALL_BALLS, VERTICAL_ALL_BALLS, HORIZONTAL_ALL_BALLS, WELL, or STICKER, use the color of the specific ball path
         if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
             nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
             nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
-            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
+            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
             return this.getPathColor(nodeType2);
         }
         if (nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
             nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
             nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
-            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
             return this.getPathColor(nodeType1);
         }
         
@@ -2131,18 +2222,6 @@ class GameManager {
 
     // Get the color for a specific path type
     getPathColor(nodeType) {
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
-            return '#BBBBBB'; // light gray for all-ball paths
-        }
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS) {
-            return '#BBBBBB'; // light gray for all-ball vertical paths
-        }
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS) {
-            return '#BBBBBB'; // light gray for all-ball horizontal paths
-        }
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
-            return '#BBBBBB'; // light gray for well nodes (same as PATH_ALL_BALLS)
-        }
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1) {
             // Use the color of the first ball (ball 0) from the level data
             if (this.balls && this.balls.length > 0) {
@@ -2191,6 +2270,14 @@ class GameManager {
             }
             return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Fallback to blue
         }
+        
+        // For general path types (p0, v0, h0), use default gray
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
+            nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
+            nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS) {
+            return CONSTANTS.LEVEL_CONFIG.NODE_COLORS[CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS];
+        }
+        
         return '#666666'; // Default gray
     }
 
@@ -2431,6 +2518,11 @@ class GameManager {
             return hasValidPath;
         }
         
+        // STICKER nodes can be accessed by any ball (similar to PATH_ALL_BALLS)
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            return true;
+        }
+        
         // Check if the ball can access this node type (ignoring directional constraints)
         const canAccessNodeType = this.canBallAccessNodeType(ballIndex, nodeType);
         if (!canAccessNodeType) {
@@ -2477,6 +2569,16 @@ class GameManager {
         // Ball-specific horizontal paths: ball 0 can use h1, ball 1 can use h2, etc.
         const ballHorizontalType = 'h' + (ballIndex + 1).toString();
         if (nodeType === ballHorizontalType) {
+            return true;
+        }
+        
+        // STICKER nodes can be used by any ball
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            return true;
+        }
+        
+        // WELL nodes can be used by any ball
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
             return true;
         }
         
@@ -2641,7 +2743,17 @@ class GameManager {
             return direction.dy === 0 && Math.abs(direction.dx) === 1;
         }
         
-        // For other node types (well, wall, etc.), no movement allowed
+        // If the ball is on a sticker node, it can move in any direction
+        if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            return true;
+        }
+        
+        // If the ball is on a well node, it can move in any direction
+        if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            return true;
+        }
+        
+        // For other node types (wall, etc.), no movement allowed
         return false;
     }
 
@@ -2710,14 +2822,40 @@ class GameManager {
     // Complete ball transition
     completeBallTransition(ballIndex) {
         this.transitionInProgress[ballIndex] = false;
+        
+        const ball = this.balls[ballIndex];
+        if (!ball) return;
+        
+        // Get the node the ball just left (previous position)
+        const previousNode = this.lastNodePositions[ballIndex];
+        const previousGridX = previousNode.x;
+        const previousGridY = previousNode.y;
+        
+        // Get the node the ball just entered (current position)
+        const currentGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const currentGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // Check if ball has tail property and create tail on the node it left
+        if (ball.hasTail) {
+            this.createNodeTail(previousGridX, previousGridY, ballIndex, ball.color);
+            
+            // Create tail on the connection between previous and current node
+            this.createConnectionTail(previousGridX, previousGridY, currentGridX, currentGridY, ballIndex, ball.color);
+        }
+        
+        // Check if ball entered a sticker node and give it tail property
+        const currentNodeType = this.getNodeTypeAt(currentGridX, currentGridY);
+        if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            ball.hasTail = true;
+            // Activate the sticker with the ball's color
+            this.activateSticker(currentGridX, currentGridY, ballIndex, ball.color);
+        }
+        
         this.updateBallLastNode(ballIndex);
         
         // Create movement trail animation at the destination node
-        const ball = this.balls[ballIndex];
-        if (ball) {
-            const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
-            this.createMovementTrail(ball.x, ball.y, ballColor);
-        }
+        const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+        this.createMovementTrail(ball.x, ball.y, ballColor);
         
         // Check if we need to continue with another transition
         if (this.isBallClamped[ballIndex] && this.touchPosition) {
@@ -2856,6 +2994,170 @@ class GameManager {
         }
         
         return null;
+    }
+
+    renderTailNodes() {
+        // Render tail nodes (nodes with tail property)
+        if (!this.nodeTails[this.currentFace]) return;
+        
+        Object.keys(this.nodeTails[this.currentFace]).forEach(nodeKey => {
+            const tailData = this.nodeTails[this.currentFace][nodeKey];
+            const [row, col] = nodeKey.split('_').map(Number);
+            
+            const centerX = this.boardStartX + (col * this.gridSize);
+            const centerY = this.boardStartY + (row * this.gridSize);
+            
+            // Get ball color
+            const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
+            
+            // Calculate tail ball size
+            const normalBallRadius = this.getVisualBallRadius({});
+            const tailBallRadius = normalBallRadius * CONSTANTS.RENDER_SIZE_CONFIG.TAIL_BALL_SIZE_RATIO;
+            
+            // Draw tail ball
+            this.ctx.fillStyle = ballColor;
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, tailBallRadius, 0, 2 * Math.PI);
+            this.ctx.fill();
+        });
+    }
+
+    renderTailConnections() {
+        // Render tail connections (connections with tail property)
+        if (!this.connectionTails[this.currentFace]) return;
+        
+        Object.keys(this.connectionTails[this.currentFace]).forEach(connectionKey => {
+            const tailData = this.connectionTails[this.currentFace][connectionKey];
+            const [row1, col1, row2, col2] = connectionKey.split('_').map(Number);
+            
+            const x1 = this.boardStartX + (col1 * this.gridSize);
+            const y1 = this.boardStartY + (row1 * this.gridSize);
+            const x2 = this.boardStartX + (col2 * this.gridSize);
+            const y2 = this.boardStartY + (row2 * this.gridSize);
+            
+            // Get ball color
+            const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
+            
+            // Calculate tail line width
+            const normalLineWidth = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_MIN_WIDTH, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_RATIO);
+            const tailLineWidth = normalLineWidth * CONSTANTS.RENDER_SIZE_CONFIG.TAIL_LINE_WIDTH_MULTIPLIER;
+            
+            // Draw tail connection
+            this.ctx.strokeStyle = ballColor;
+            this.ctx.lineWidth = tailLineWidth;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x1, y1);
+            this.ctx.lineTo(x2, y2);
+            this.ctx.stroke();
+        });
+    }
+
+    // Get the node type at a specific grid position
+    getNodeTypeAt(gridX, gridY) {
+        const nodes = this.getCurrentNodes();
+        if (!nodes || gridY < 0 || gridY >= nodes.length || gridX < 0 || gridX >= nodes[gridY].length) {
+            return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+        }
+        return nodes[gridY][gridX] || CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+    }
+
+    // Create a tail on a node
+    createNodeTail(gridX, gridY, ballIndex, ballColor) {
+        const face = this.currentFace;
+        const nodeKey = `${gridY}_${gridX}`;
+        
+        // Initialize face if it doesn't exist
+        if (!this.nodeTails[face]) {
+            this.nodeTails[face] = {};
+        }
+        
+        // Set tail data
+        this.nodeTails[face][nodeKey] = {
+            ballIndex: ballIndex,
+            color: ballColor
+        };
+    }
+
+    // Create a tail on a connection
+    createConnectionTail(fromGridX, fromGridY, toGridX, toGridY, ballIndex, ballColor) {
+        const face = this.currentFace;
+        // Create a consistent key for the connection (smaller coordinates first)
+        const connectionKey = this.getConnectionKey(fromGridX, fromGridY, toGridX, toGridY);
+        
+        // Initialize face if it doesn't exist
+        if (!this.connectionTails[face]) {
+            this.connectionTails[face] = {};
+        }
+        
+        // Set tail data
+        this.connectionTails[face][connectionKey] = {
+            ballIndex: ballIndex,
+            color: ballColor
+        };
+    }
+
+    // Activate a sticker with a ball's color
+    activateSticker(gridX, gridY, ballIndex, ballColor) {
+        const face = this.currentFace;
+        const nodeKey = `${gridY}_${gridX}`;
+        
+        // Initialize face if it doesn't exist
+        if (!this.activatedStickers[face]) {
+            this.activatedStickers[face] = {};
+        }
+        
+        // Set activated sticker data
+        this.activatedStickers[face][nodeKey] = {
+            ballIndex: ballIndex,
+            color: ballColor
+        };
+    }
+
+    // Get a consistent connection key (smaller coordinates first)
+    getConnectionKey(x1, y1, x2, y2) {
+        // Sort coordinates to ensure consistent key regardless of direction
+        const [smallerX, smallerY, largerX, largerY] = 
+            (x1 < x2 || (x1 === x2 && y1 < y2)) ? [x1, y1, x2, y2] : [x2, y2, x1, y1];
+        return `${smallerY}_${smallerX}_${largerY}_${largerX}`;
+    }
+
+    /**
+     * Initialize the tail system for a new level
+     * Resets all tail data structures
+     */
+    initializeTailSystem() {
+        // Reset tail data structures
+        this.nodeTails = {
+            front: {},
+            rear: {}
+        };
+        this.connectionTails = {
+            front: {},
+            rear: {}
+        };
+        
+        // Reset activated stickers
+        this.activatedStickers = {
+            front: {},
+            rear: {}
+        };
+        
+        // Check for balls that start on sticker nodes and activate them
+        this.balls.forEach((ball, ballIndex) => {
+            // Get the ball's starting grid position
+            const startX = ball.originalStart[0] < 0 ? -ball.originalStart[0] : ball.originalStart[0];
+            const startY = ball.originalStart[1] < 0 ? -ball.originalStart[1] : ball.originalStart[1];
+            
+            // Check if ball starts on a sticker node
+            const startNodeType = this.getNodeTypeAt(startX, startY);
+            if (startNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+                ball.hasTail = true;
+                // Activate the sticker with the ball's color
+                this.activateSticker(startX, startY, ballIndex, ball.color);
+            } else {
+                ball.hasTail = false;
+            }
+        });
     }
 
 }

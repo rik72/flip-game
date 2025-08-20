@@ -28,10 +28,9 @@ const CONSTANTS = {
 	// Game configurations
 	GAME_CONFIG: {
 		// General configurations
-		MAX_LEVEL: 50, // Development limit for level loading
-		ACTUAL_MAX_LEVEL: 9, // Actual final level of the game
+		ACTUAL_MAX_LEVEL: 10, // Actual final level of the game
 		// Development: Force loading specific level as first (set to null to disable)
-		FORCE_START_LEVEL: 9, // Set to level number (e.g., 4) to force start at that level
+		FORCE_START_LEVEL: 10, // Set to level number (e.g., 4) to force start at that level
 		
         // Ball configurations
         BALL_RADIUS: 15,
@@ -59,7 +58,11 @@ const CONSTANTS = {
 		GOAL_INNER_MIN_OFFSET: 1, // Minimum inner goal ring offset from ball radius
 		GOAL_INNER_RATIO: 0.01, // Goal inner ring offset as ratio of gridSize
 		GOAL_OUTER_MIN_OFFSET: 4, // Minimum outer goal ring offset from ball radius
-		GOAL_OUTER_RATIO: 0.07 // Goal outer ring offset as ratio of gridSize
+		GOAL_OUTER_RATIO: 0.07, // Goal outer ring offset as ratio of gridSize
+		
+		// Tail rendering configuration
+		TAIL_BALL_SIZE_RATIO: 1.0, // Tail ball size as ratio of normal ball size (1.0 = same size)
+		TAIL_LINE_WIDTH_MULTIPLIER: 2.0 // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
 	},
 
 	// Touch configurations
@@ -121,19 +124,20 @@ const CONSTANTS = {
 			WALL: 'x0',
 			TELEPORT: 't0',
 			SWITCH: 's0',
-			COLLECTIBLE: 'c0'
+			COLLECTIBLE: 'c0',
+			STICKER: '$0'
 		},
 		
 		// Node colors (only for square nodes, circles use their own colors)
 		NODE_COLORS: {
 			'__': '#000000',  // Empty
-			'p0': '#aaaaaa',  // Path for all balls
+			'p0': '#999999',  // Path for all balls
 			'p1': '#801111',  // Path for ball 1
 			'p2': '#111180',  // Path for ball 2
-			'v0': '#aaaaaa',  // Vertical path for all balls
+			'v0': '#999999',  // Vertical path for all balls
 			'v1': '#801111',  // Vertical path for ball 1
 			'v2': '#111180',  // Vertical path for ball 2
-			'h0': '#aaaaaa',  // Horizontal path for all balls
+			'h0': '#999999',  // Horizontal path for all balls
 			'h1': '#801111',  // Horizontal path for ball 1
 			'h2': '#111180',  // Horizontal path for ball 2
 			// TO DO
@@ -141,7 +145,8 @@ const CONSTANTS = {
 			'x0': '#FF0000',  // Wall
 			't0': '#8000FF',  // Teleport
 			's0': '#FFFF00',  // Switch
-			'c0': '#FF00FF'   // Collectible
+			'c0': '#FF00FF',  // Collectible
+			'$0': '#FFFFFF'   // Sticker (orange)
 		},
 		
 		// Ball colors mapping

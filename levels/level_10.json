@@ -1,0 +1,36 @@
+{
+  "level": 10,
+  "board": {
+    "front": [
+      "p0 p0 p0 p0 p0",
+      "$0 $0 p0 p0 p0",
+      "p0 p0 p0 p0 p0",
+      "p0 p0 p0 p0 p0",
+      "p0 p0 p0 p0 p0"
+    ]
+  },
+  "balls": [
+    {
+      "start": [
+        0,
+        1
+      ],
+      "end": [
+        4,
+        1
+      ],
+      "color": "red"
+    },
+    {
+      "start": [
+        1,
+        0
+      ],
+      "end": [
+        1,
+        4
+      ],
+      "color": "blue"
+    }
+  ]
+}
