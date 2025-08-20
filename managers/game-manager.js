@@ -1927,10 +1927,16 @@ class GameManager {
                 for (let col = 0; col < rowArray.length; col++) {
                     const nodeType = rowArray[col];
                     
-                    // Render path nodes as circles
+                    // Render path nodes as circles (including new v# and h# nodes)
                     if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
                         nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1 ||
-                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2) {
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2 ||
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_1 ||
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_2 ||
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1 ||
+                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2) {
                         
                         const centerX = this.boardStartX + (col * this.gridSize);
                         const centerY = this.boardStartY + (row * this.gridSize);
@@ -1995,10 +2001,16 @@ class GameManager {
             for (let col = 0; col < rowArray.length; col++) {
                 const nodeType = rowArray[col];
                 
-                // Process path nodes and WELL nodes
+                // Process path nodes and WELL nodes (including new v# and h# nodes)
                 if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1 ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2 ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_1 ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_2 ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1 ||
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2 ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
                     
                     const centerX = this.boardStartX + (col * this.gridSize);
@@ -2007,7 +2019,7 @@ class GameManager {
                     // Check right neighbor (horizontal connection)
                     if (col + 1 < rowArray.length) {
                         const rightNodeType = rowArray[col + 1];
-                        if (this.shouldDrawConnection(nodeType, rightNodeType)) {
+                        if (this.shouldDrawConnection(nodeType, rightNodeType, 'horizontal')) {
                             const rightX = this.boardStartX + ((col + 1) * this.gridSize);
                             const rightY = centerY;
                             
@@ -2021,7 +2033,7 @@ class GameManager {
                         const bottomRowArray = nodes[row + 1];
                         if (col < bottomRowArray.length) {
                             const bottomNodeType = bottomRowArray[col];
-                            if (this.shouldDrawConnection(nodeType, bottomNodeType)) {
+                            if (this.shouldDrawConnection(nodeType, bottomNodeType, 'vertical')) {
                                 const bottomX = centerX;
                                 const bottomY = this.boardStartY + ((row + 1) * this.gridSize);
                                 
@@ -2036,12 +2048,18 @@ class GameManager {
     }
 
     // Check if two node types should be connected with a line
-    shouldDrawConnection(nodeType1, nodeType2) {
+    shouldDrawConnection(nodeType1, nodeType2, direction) {
         // Both nodes must be path nodes (not empty) or WELL nodes
         const pathTypes = [
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_1,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_2,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1,
+            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL
         ];
         
@@ -2049,12 +2067,35 @@ class GameManager {
             return false;
         }
         
-        // Same path types are always connected
+        // Check directional constraints for v# and h# nodes
+        if (direction === 'horizontal') {
+            // For horizontal connections, v# nodes are not allowed (all v# nodes are vertical-only)
+            if (nodeType1.startsWith('v')) {
+                return false; // v# nodes don't allow horizontal connections
+            }
+            if (nodeType2.startsWith('v')) {
+                return false; // v# nodes don't allow horizontal connections
+            }
+        } else if (direction === 'vertical') {
+            // For vertical connections, h# nodes are not allowed (all h# nodes are horizontal-only)
+            if (nodeType1.startsWith('h')) {
+                return false; // h# nodes don't allow vertical connections
+            }
+            if (nodeType2.startsWith('h')) {
+                return false; // h# nodes don't allow vertical connections
+            }
+        }
+        
+        // Same path types are always connected (if direction is allowed)
         if (nodeType1 === nodeType2) return true;
         
-        // PATH_ALL_BALLS ('0') connects to any specific ball path
+        // PATH_ALL_BALLS, VERTICAL_ALL_BALLS, and HORIZONTAL_ALL_BALLS ('0') connect to any specific ball path
         if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
-            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
+            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS || 
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
+            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS || 
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS) {
             return true;
         }
         
@@ -2070,12 +2111,16 @@ class GameManager {
 
     // Get the color for a connection between two node types
     getConnectionColor(nodeType1, nodeType2) {
-        // If one is PATH_ALL_BALLS or WELL, use the color of the specific ball path
+        // If one is PATH_ALL_BALLS, VERTICAL_ALL_BALLS, HORIZONTAL_ALL_BALLS, or WELL, use the color of the specific ball path
         if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
+            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
+            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
             nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
             return this.getPathColor(nodeType2);
         }
         if (nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
             nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
             return this.getPathColor(nodeType1);
         }
@@ -2089,6 +2134,12 @@ class GameManager {
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
             return '#BBBBBB'; // light gray for all-ball paths
         }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS) {
+            return '#BBBBBB'; // light gray for all-ball vertical paths
+        }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS) {
+            return '#BBBBBB'; // light gray for all-ball horizontal paths
+        }
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
             return '#BBBBBB'; // light gray for well nodes (same as PATH_ALL_BALLS)
         }
@@ -2100,7 +2151,39 @@ class GameManager {
             }
             return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Fallback to red
         }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_1) {
+            // Use the color of the first ball (ball 0) from the level data
+            if (this.balls && this.balls.length > 0) {
+                const ballColor = this.balls[0].color;
+                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#FF0000';
+            }
+            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Fallback to red
+        }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1) {
+            // Use the color of the first ball (ball 0) from the level data
+            if (this.balls && this.balls.length > 0) {
+                const ballColor = this.balls[0].color;
+                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#FF0000';
+            }
+            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Fallback to red
+        }
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2) {
+            // Use the color of the second ball (ball 1) from the level data
+            if (this.balls && this.balls.length > 1) {
+                const ballColor = this.balls[1].color;
+                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#0000FF';
+            }
+            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Fallback to blue
+        }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_2) {
+            // Use the color of the second ball (ball 1) from the level data
+            if (this.balls && this.balls.length > 1) {
+                const ballColor = this.balls[1].color;
+                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#0000FF';
+            }
+            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Fallback to blue
+        }
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2) {
             // Use the color of the second ball (ball 1) from the level data
             if (this.balls && this.balls.length > 1) {
                 const ballColor = this.balls[1].color;
@@ -2348,19 +2431,82 @@ class GameManager {
             return hasValidPath;
         }
         
+        // Check if the ball can access this node type (ignoring directional constraints)
+        const canAccessNodeType = this.canBallAccessNodeType(ballIndex, nodeType);
+        if (!canAccessNodeType) {
+            return false;
+        }
+        
+        // For directional nodes (v# and h#), check movement direction constraints
+        if (nodeType.startsWith('v') || nodeType.startsWith('h')) {
+            return this.canBallMoveInDirection(ballIndex, gridX, gridY, nodeType);
+        }
+        
+        return true;
+    }
+    
+    // Check if a ball can access a specific node type (ignoring directional constraints)
+    canBallAccessNodeType(ballIndex, nodeType) {
         // Path for all balls ('0') can be used by any ball
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
             return true;
         }
         
         // Ball-specific paths: ball 0 can use path 'p1', ball 1 can use path 'p2', etc.
-        // FIXED: ball 0 uses p1, ball 1 uses p2, etc.
         const ballPathType = 'p' + (ballIndex + 1).toString();
         if (nodeType === ballPathType) {
             return true;
         }
         
+        // Vertical paths for all balls ('v0') can be used by any ball
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS) {
+            return true;
+        }
+        
+        // Ball-specific vertical paths: ball 0 can use v1, ball 1 can use v2, etc.
+        const ballVerticalType = 'v' + (ballIndex + 1).toString();
+        if (nodeType === ballVerticalType) {
+            return true;
+        }
+        
+        // Horizontal paths for all balls ('h0') can be used by any ball
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS) {
+            return true;
+        }
+        
+        // Ball-specific horizontal paths: ball 0 can use h1, ball 1 can use h2, etc.
+        const ballHorizontalType = 'h' + (ballIndex + 1).toString();
+        if (nodeType === ballHorizontalType) {
+            return true;
+        }
+        
         return false;
+    }
+    
+    // Check if a ball can move to a directional node based on movement direction
+    canBallMoveInDirection(ballIndex, targetGridX, targetGridY, nodeType) {
+        const ball = this.balls[ballIndex];
+        if (!ball) return false;
+        
+        // Get ball's current grid position
+        const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // Calculate movement direction
+        const deltaX = targetGridX - ballGridX;
+        const deltaY = targetGridY - ballGridY;
+        
+        // For vertical nodes (v#), only allow vertical movement (up/down)
+        if (nodeType.startsWith('v')) {
+            return deltaX === 0 && Math.abs(deltaY) === 1;
+        }
+        
+        // For horizontal nodes (h#), only allow horizontal movement (left/right)
+        if (nodeType.startsWith('h')) {
+            return deltaY === 0 && Math.abs(deltaX) === 1;
+        }
+        
+        return true;
     }
     
     // Check if a ball can access a well (without causing infinite recursion)
@@ -2391,8 +2537,7 @@ class GameManager {
         // For non-adjacent wells, check if there's a valid path
         // But be more lenient - allow access if the ball is on a valid path node
         const ballNodeType = this.getNodeType(ballGridX, ballGridY);
-        const isOnValidPath = ballNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
-                             ballNodeType === 'p' + (ballIndex + 1).toString();
+        const isOnValidPath = this.canBallAccessNodeType(ballIndex, ballNodeType);
         
         if (isOnValidPath) {
             return true;
@@ -2440,6 +2585,9 @@ class GameManager {
         const currentPos = this.getBallGridPosition(ballIndex);
         const connected = [];
         
+        // Get the current node type to check for directional constraints
+        const currentNodeType = this.getNodeType(currentPos.x, currentPos.y);
+        
         // Check all four adjacent directions
         const directions = [
             { dx: 1, dy: 0 },   // Right
@@ -2458,6 +2606,12 @@ class GameManager {
                 continue;
             }
             
+            // Check if the ball can move in this direction from its current position
+            const canMoveInDirection = this.canBallMoveInDirectionFromCurrent(ballIndex, dir, currentNodeType);
+            if (!canMoveInDirection) {
+                continue;
+            }
+            
             // Check if node is accessible and unoccupied
             const canMove = this.canBallMoveToNode(ballIndex, newX, newY);
             const isOccupied = this.isNodeOccupied(newX, newY, ballIndex);
@@ -2468,6 +2622,27 @@ class GameManager {
         }
         
         return connected;
+    }
+    
+    // Check if a ball can move in a specific direction from its current position
+    canBallMoveInDirectionFromCurrent(ballIndex, direction, currentNodeType) {
+        // If the ball is on a regular path node (p#), it can move in any direction
+        if (currentNodeType.startsWith('p')) {
+            return true;
+        }
+        
+        // If the ball is on a vertical node (v#), it can only move vertically
+        if (currentNodeType.startsWith('v')) {
+            return direction.dx === 0 && Math.abs(direction.dy) === 1;
+        }
+        
+        // If the ball is on a horizontal node (h#), it can only move horizontally
+        if (currentNodeType.startsWith('h')) {
+            return direction.dy === 0 && Math.abs(direction.dx) === 1;
+        }
+        
+        // For other node types (well, wall, etc.), no movement allowed
+        return false;
     }
 
     // Recalculate connected nodes for all balls

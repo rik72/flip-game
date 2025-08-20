@@ -111,6 +111,12 @@ const CONSTANTS = {
 			PATH_ALL_BALLS: 'p0',
 			PATH_BALL_1: 'p1',
 			PATH_BALL_2: 'p2',
+			VERTICAL_ALL_BALLS: 'v0',
+			VERTICAL_BALL_1: 'v1',
+			VERTICAL_BALL_2: 'v2',
+			HORIZONTAL_ALL_BALLS: 'h0',
+			HORIZONTAL_BALL_1: 'h1',
+			HORIZONTAL_BALL_2: 'h2',
             WELL: 'w0',
 			WALL: 'x0',
 			TELEPORT: 't0',
@@ -124,6 +130,12 @@ const CONSTANTS = {
 			'p0': '#aaaaaa',  // Path for all balls
 			'p1': '#801111',  // Path for ball 1
 			'p2': '#111180',  // Path for ball 2
+			'v0': '#aaaaaa',  // Vertical path for all balls
+			'v1': '#801111',  // Vertical path for ball 1
+			'v2': '#111180',  // Vertical path for ball 2
+			'h0': '#aaaaaa',  // Horizontal path for all balls
+			'h1': '#801111',  // Horizontal path for ball 1
+			'h2': '#111180',  // Horizontal path for ball 2
 			// TO DO
 			'w0': '#FFFFFF',  // Well
 			'x0': '#FF0000',  // Wall
