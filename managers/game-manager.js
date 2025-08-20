@@ -585,22 +585,34 @@ class GameManager {
                 this.isDragging = false;
                 this.moveBallToPosition(finalSnapX, finalSnapY, true);
                 
-                // Check win condition when drag is released (after a small delay for animation), but only if level is not already completed
-                setTimeout(() => {
-                    // For test levels, always check win condition
-                    if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
-                        this.checkWinCondition();
-                    }
-                }, 50); // Small delay to let animation start
+                // Check win condition when drag is released, but wait for touch feedback animations to complete
+                this.checkWinConditionAfterTouchAnimations();
             }
         }
         
         // Reset enhanced ball movement properties
+        let justUnclampedBallIndex = -1;
         if (this.selectedBallIndex !== -1) {
+            justUnclampedBallIndex = this.selectedBallIndex;
             this.isBallClamped[this.selectedBallIndex] = false;
             // Update pulsating ring animation for this ball
             this.updatePulsatingRingForBall(this.selectedBallIndex);
         }
+        
+        // Ensure all balls return to rest scale when touch ends
+        this.balls.forEach((ball, ballIndex) => {
+            if (ball.isTouched) {
+                // Always clean up touch feedback for the ball that was just unclamped
+                // or for any ball that is not clamped
+                if (ballIndex === justUnclampedBallIndex || !this.isBallClamped[ballIndex]) {
+                    ball.isTouched = false;
+                    ball.touchOpacity = 0.0;
+                    ball.touchScale = this.restScale;
+                    console.log(`🔄 Animation forced removal: Ball ${ballIndex} touch feedback cleared (touch ended)`);
+                }
+            }
+        });
+        
         this.touchPosition = null;
         
         this.touchStartPos = null;
@@ -649,6 +661,7 @@ class GameManager {
         
         this.touchAnimationState = {};
         this.activeTrailAnimations = [];
+        console.log(`🔄 Animation forced removal: All animations cleared in cleanupAnimations()`);
     }
 
     // Start ball animation to target position
@@ -890,12 +903,18 @@ class GameManager {
     showTouchFeedback(ball) {
         // Initialize animation state for this ball
         const ballId = this.balls.indexOf(ball);
+        
+        // Check if level is completed - if so, don't animate to clamped state
+        const isLevelCompleted = this.storageManager.isLevelCompleted(this.currentLevel);
+        
         this.touchAnimationState[ballId] = {
             isAnimating: true,
             startTime: Date.now(),
             duration: 150, // 150ms fade-in
             opacity: 0.0,
-            scale: this.restScale
+            scale: this.restScale,
+            // Don't animate to clamped state if level is completed
+            skipClampedAnimation: isLevelCompleted
         };
         
         // Start animation loop if not already running
@@ -907,16 +926,18 @@ class GameManager {
 
 
     hideTouchFeedback() {
-        if (this.selectedBallIndex !== -1) {
-            const ballId = this.selectedBallIndex;
-            if (this.touchAnimationState[ballId]) {
+        // Hide touch feedback for all balls that have active animations
+        // This is called when touch ends, so we want to fade out all active touch feedback
+        Object.keys(this.touchAnimationState).forEach(ballId => {
+            const state = this.touchAnimationState[ballId];
+            if (state && state.isAnimating && !state.fadeOut) {
                 // Start fade out animation
-                this.touchAnimationState[ballId].isAnimating = true;
-                this.touchAnimationState[ballId].startTime = Date.now();
-                this.touchAnimationState[ballId].duration = 200; // 200ms fade out
-                this.touchAnimationState[ballId].fadeOut = true;
+                state.isAnimating = true;
+                state.startTime = Date.now();
+                state.duration = 200; // 200ms fade out
+                state.fadeOut = true;
             }
-        }
+        });
     }
 
     animateTouchFeedback() {
@@ -943,19 +964,34 @@ class GameManager {
                     state.isAnimating = false;
                     this.balls[ballId].isTouched = false;
                     this.balls[ballId].touchOpacity = 0.0;
-                                         this.balls[ballId].touchScale = this.restScale;
+                    this.balls[ballId].touchScale = this.restScale;
+                    console.log(`🎯 Animation stopped: Ball ${ballId} returned to rest scale`);
                 }
             } else {
                 // Fade in animation
                 state.opacity = progress;
-                // Scale so that at peak the visual ball radius equals goal inner radius
-                const logical = this.getLogicalBallRadius();
-                const targetScaleAtPeak = this.getGoalInnerRadius() / logical;
-                state.scale = this.restScale + (targetScaleAtPeak - this.restScale) * progress;
                 
-                if (progress >= 1.0) {
-                    state.opacity = 1.0;
-                    state.scale = targetScaleAtPeak;
+                // Check if we should skip the clamped animation (level completed)
+                if (state.skipClampedAnimation) {
+                    // Keep ball at rest scale if level is completed
+                    state.scale = this.restScale;
+                    
+                    if (progress >= 1.0) {
+                        state.opacity = 1.0;
+                        state.scale = this.restScale;
+                        console.log(`🎯 Animation stopped: Ball ${ballId} kept at rest scale (level completed)`);
+                    }
+                } else {
+                    // Normal clamped animation - scale so that at peak the visual ball radius equals goal inner radius
+                    const logical = this.getLogicalBallRadius();
+                    const targetScaleAtPeak = this.getGoalInnerRadius() / logical;
+                    state.scale = this.restScale + (targetScaleAtPeak - this.restScale) * progress;
+                    
+                    if (progress >= 1.0) {
+                        state.opacity = 1.0;
+                        state.scale = targetScaleAtPeak;
+                        console.log(`🎯 Animation stopped: Ball ${ballId} reached clamped state`);
+                    }
                 }
             }
 
@@ -1695,7 +1731,35 @@ class GameManager {
         });
         
         if (allBallsAtGoal) {
+            console.log(`🏆 Level completion successful: All balls at goal!`);
             this.levelCompleted();
+        }
+    }
+
+    /**
+     * Checks win condition after touch feedback animations have completed
+     * @returns {void}
+     */
+    checkWinConditionAfterTouchAnimations() {
+        // Check if there are any active touch feedback animations
+        const hasActiveTouchAnimations = Object.keys(this.touchAnimationState).some(ballId => {
+            const state = this.touchAnimationState[ballId];
+            return state && state.isAnimating;
+        });
+
+        if (hasActiveTouchAnimations) {
+            // Wait for animations to complete, then check win condition
+            console.log(`⏳ Waiting for touch animations to complete before checking win condition...`);
+            setTimeout(() => {
+                this.checkWinConditionAfterTouchAnimations();
+            }, 50); // Check again in 50ms
+        } else {
+            // All touch animations are complete, now check win condition
+            console.log(`✅ Touch animations completed, checking win condition...`);
+            // For test levels, always check win condition
+            if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
+                this.checkWinCondition();
+            }
         }
     }
 
@@ -1762,6 +1826,7 @@ class GameManager {
 
 
     levelCompleted() {
+        console.log(`🎉 Level ${this.currentLevel} completed! Starting completion sequence...`);
         this.gameState.isPlaying = false;
         
         // Save progress
@@ -1771,6 +1836,20 @@ class GameManager {
         if (this.soundManager) {
             this.soundManager.playSound('levelComplete');
         }
+        
+        // First, ensure all balls return to rest scale
+        this.balls.forEach((ball, ballIndex) => {
+            if (ball.isTouched) {
+                ball.isTouched = false;
+                ball.touchOpacity = 0.0;
+                ball.touchScale = this.restScale;
+                console.log(`🔄 Animation forced removal: Ball ${ballIndex} touch feedback cleared during level completion`);
+            }
+        });
+        
+        // Clear all touch animation states
+        this.touchAnimationState = {};
+        console.log(`🔄 Animation forced removal: All touch animation states cleared during level completion`);
         
         // Stop all animations immediately when win condition is met
         this.cleanupAnimations();
@@ -3401,6 +3480,35 @@ class GameManager {
         // Create movement trail animation at the destination node
         const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
         this.createMovementTrail(ball.x, ball.y, ballColor);
+        
+        // Handle touch feedback based on ball state
+        if (this.touchAnimationState[ballIndex]) {
+            const isAtGoal = this.isBallAtGoal(ball, ballIndex);
+            
+            if (!this.isBallClamped[ballIndex]) {
+                // Ball is not clamped - check if it's at a goal
+                if (isAtGoal) {
+                    // Ball is at goal - set to rest scale
+                    this.balls[ballIndex].isTouched = false;
+                    this.balls[ballIndex].touchOpacity = 0.0;
+                    this.balls[ballIndex].touchScale = this.restScale;
+                    // Remove the animation state
+                    delete this.touchAnimationState[ballIndex];
+                    console.log(`🔄 Animation forced removal: Ball ${ballIndex} touch feedback cleared (reached goal)`);
+                } else {
+                    // Ball is not at goal and not clamped - should be at rest scale
+                    this.balls[ballIndex].isTouched = false;
+                    this.balls[ballIndex].touchOpacity = 0.0;
+                    this.balls[ballIndex].touchScale = this.restScale;
+                    // Remove the animation state
+                    delete this.touchAnimationState[ballIndex];
+                    console.log(`🔄 Animation forced removal: Ball ${ballIndex} touch feedback cleared (not at goal, not clamped)`);
+                }
+            } else {
+                // Ball is still clamped - keep it in clamped state (enlarged)
+                // Don't remove the animation state, let it continue
+            }
+        }
         
         // Check if we need to continue with another transition
         if (this.isBallClamped[ballIndex] && this.touchPosition) {
