@@ -1514,22 +1514,16 @@ class GameManager {
             this.appReference.currentLevel = levelNumber;
         }
         
-
+        // Always flip board to front face before level loading (invisible to user)
+        this.flipToFrontFaceSilently();
         
         this.gameState.isPlaying = true;
         
-        // Only reset to front face if this is not a level progression (i.e., not coming from level completion)
-        // This prevents the strange "flip to itself" effect when proceeding to next level
-        if (!this.isLevelProgression) {
-            this.currentFace = 'front';
-            // Reset flip wrapper CSS classes to match front face state
-            this.resetFlipWrapperState();
-            console.log('🔄 Fresh level load - reset to front face');
-        } else {
-            // For level progression, ensure flip wrapper state matches current face without animation
-            this.syncFlipWrapperState();
-            console.log('🔄 Level progression - preserving face state:', this.currentFace);
-        }
+        // Since we already silently flipped to front face, just ensure the flip wrapper state is correct
+        // This prevents any visual glitches during level loading
+        this.syncFlipWrapperState();
+        console.log('🔄 Level load - board is now on front face');
+        
         // Reset the flag for next time
         this.isLevelProgression = false;
         
@@ -2224,6 +2218,53 @@ class GameManager {
         
         // Restore transition
         this.flipWrapper.style.transition = originalTransition || '';
+    }
+
+    // Flip board to front face without animation (invisible to user)
+    flipToFrontFaceSilently() {
+        if (!this.board || !this.board.rear || this.currentFace === 'front') {
+            return; // Already on front face or no rear face
+        }
+        
+        // If a flip animation is currently running, stop it first
+        if (this.isFlipping) {
+            // Clear any pending animation timeout
+            if (this.flipAnimationTimeout) {
+                clearTimeout(this.flipAnimationTimeout);
+                this.flipAnimationTimeout = null;
+            }
+            this.isFlipping = false;
+        }
+        
+        // Ensure flip wrapper is initialized
+        if (!this.ensureFlipWrapper()) {
+            return;
+        }
+        
+        // Temporarily disable transitions and hide the flip wrapper
+        const originalTransition = this.flipWrapper.style.transition;
+        const originalVisibility = this.flipWrapper.style.visibility;
+        this.flipWrapper.style.transition = 'none';
+        this.flipWrapper.style.visibility = 'hidden';
+        
+        // Remove all flip-related classes
+        this.flipWrapper.classList.remove('flipping', 'flip-to-rear', 'flip-to-front');
+        
+        // Set to front face state
+        this.currentFace = 'front';
+        this.flipWrapper.style.transform = 'rotateY(0deg)';
+        
+        // Force a reflow to ensure the changes are applied
+        this.flipWrapper.offsetHeight;
+        
+        // Restore transition and visibility
+        this.flipWrapper.style.transition = originalTransition || '';
+        this.flipWrapper.style.visibility = originalVisibility || 'visible';
+        
+        // Recalculate connected nodes for all balls after face change
+        this.recalculateAllConnectedNodes();
+        
+        console.log('🔄 Silently flipped board to front face before level load');
     }
 
 

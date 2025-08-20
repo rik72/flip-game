@@ -162,6 +162,17 @@ window.FlipgameApp = {
             console.error('❌ No level data available for validation');
             return false;
         }
+    },
+
+    // Test silent flip to front face
+    testSilentFlipToFront: function() {
+        if (appInstance && appInstance.gameManager) {
+            appInstance.gameManager.flipToFrontFaceSilently();
+            return 'Silent flip to front face executed';
+        } else {
+            console.error('Game manager not available');
+            return 'Game manager not available';
+        }
     }
 };
 
