@@ -608,7 +608,6 @@ class GameManager {
                     ball.isTouched = false;
                     ball.touchOpacity = 0.0;
                     ball.touchScale = this.restScale;
-                    console.log(`🔄 Animation forced removal: Ball ${ballIndex} touch feedback cleared (touch ended)`);
                 }
             }
         });
@@ -650,18 +649,15 @@ class GameManager {
             if (this.currentFace === 'rear') {
                 this.flipWrapper.classList.add('flip-to-rear');
                 this.flipWrapper.classList.remove('flip-to-front');
-                console.log('🔄 Cleanup: Preserved rear face state');
             } else {
                 this.flipWrapper.classList.add('flip-to-front');
                 this.flipWrapper.classList.remove('flip-to-rear');
-                console.log('🔄 Cleanup: Preserved front face state');
             }
         }
         this.isFlipping = false;
         
         this.touchAnimationState = {};
         this.activeTrailAnimations = [];
-        console.log(`🔄 Animation forced removal: All animations cleared in cleanupAnimations()`);
     }
 
     // Start ball animation to target position
@@ -965,7 +961,6 @@ class GameManager {
                     this.balls[ballId].isTouched = false;
                     this.balls[ballId].touchOpacity = 0.0;
                     this.balls[ballId].touchScale = this.restScale;
-                    console.log(`🎯 Animation stopped: Ball ${ballId} returned to rest scale`);
                 }
             } else {
                 // Fade in animation
@@ -979,7 +974,6 @@ class GameManager {
                     if (progress >= 1.0) {
                         state.opacity = 1.0;
                         state.scale = this.restScale;
-                        console.log(`🎯 Animation stopped: Ball ${ballId} kept at rest scale (level completed)`);
                     }
                 } else {
                     // Normal clamped animation - scale so that at peak the visual ball radius equals goal inner radius
@@ -990,7 +984,6 @@ class GameManager {
                     if (progress >= 1.0) {
                         state.opacity = 1.0;
                         state.scale = targetScaleAtPeak;
-                        console.log(`🎯 Animation stopped: Ball ${ballId} reached clamped state`);
                     }
                 }
             }
@@ -1522,7 +1515,6 @@ class GameManager {
         // Since we already silently flipped to front face, just ensure the flip wrapper state is correct
         // This prevents any visual glitches during level loading
         this.syncFlipWrapperState();
-        console.log('🔄 Level load - board is now on front face');
         
         // Reset the flag for next time
         this.isLevelProgression = false;
@@ -1725,7 +1717,6 @@ class GameManager {
         });
         
         if (allBallsAtGoal) {
-            console.log(`🏆 Level completion successful: All balls at goal!`);
             this.levelCompleted();
         }
     }
@@ -1743,13 +1734,11 @@ class GameManager {
 
         if (hasActiveTouchAnimations) {
             // Wait for animations to complete, then check win condition
-            console.log(`⏳ Waiting for touch animations to complete before checking win condition...`);
             setTimeout(() => {
                 this.checkWinConditionAfterTouchAnimations();
             }, 50); // Check again in 50ms
         } else {
             // All touch animations are complete, now check win condition
-            console.log(`✅ Touch animations completed, checking win condition...`);
             // For test levels, always check win condition
             if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
                 this.checkWinCondition();
@@ -1820,7 +1809,6 @@ class GameManager {
 
 
     levelCompleted() {
-        console.log(`🎉 Level ${this.currentLevel} completed! Starting completion sequence...`);
         this.gameState.isPlaying = false;
         
         // Save progress
@@ -1837,13 +1825,11 @@ class GameManager {
                 ball.isTouched = false;
                 ball.touchOpacity = 0.0;
                 ball.touchScale = this.restScale;
-                console.log(`🔄 Animation forced removal: Ball ${ballIndex} touch feedback cleared during level completion`);
             }
         });
         
         // Clear all touch animation states
         this.touchAnimationState = {};
-        console.log(`🔄 Animation forced removal: All touch animation states cleared during level completion`);
         
         // Stop all animations immediately when win condition is met
         this.cleanupAnimations();
@@ -2111,7 +2097,6 @@ class GameManager {
         
         // Set flag to indicate this is a level progression (not a fresh start)
         this.isLevelProgression = true;
-        console.log('🔄 Level progression flag set - will preserve current face state');
         
         if (this.currentLevel > CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
             // Show prize scene instead of loading a level
@@ -2263,8 +2248,6 @@ class GameManager {
         
         // Recalculate connected nodes for all balls after face change
         this.recalculateAllConnectedNodes();
-        
-        console.log('🔄 Silently flipped board to front face before level load');
     }
 
 
@@ -3535,7 +3518,6 @@ class GameManager {
                     this.balls[ballIndex].touchScale = this.restScale;
                     // Remove the animation state
                     delete this.touchAnimationState[ballIndex];
-                    console.log(`🔄 Animation forced removal: Ball ${ballIndex} touch feedback cleared (reached goal)`);
                 } else {
                     // Ball is not at goal and not clamped - should be at rest scale
                     this.balls[ballIndex].isTouched = false;
@@ -3543,7 +3525,6 @@ class GameManager {
                     this.balls[ballIndex].touchScale = this.restScale;
                     // Remove the animation state
                     delete this.touchAnimationState[ballIndex];
-                    console.log(`🔄 Animation forced removal: Ball ${ballIndex} touch feedback cleared (not at goal, not clamped)`);
                 }
             } else {
                 // Ball is still clamped - keep it in clamped state (enlarged)
