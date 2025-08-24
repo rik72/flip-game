@@ -55,6 +55,7 @@ temp/
 # Build outputs
 dist/
 build/
+flipgame-deploy/
 
 # AI Configuration files (KEEP THESE)
 # These files are intentionally tracked for AI assistant compliance

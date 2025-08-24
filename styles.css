@@ -185,11 +185,15 @@ body {
     /* Mobile touch optimizations */
     touch-action: none;
     -webkit-tap-highlight-color: transparent;
-    cursor: none; /* Hide cursor on mobile */
     /* Prevent aspect ratio deformation */
     object-fit: contain;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
+}
+
+/* Desktop cursor support */
+body {
+    cursor: pointer;
 }
 
 /* Game Footer */

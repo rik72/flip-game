@@ -273,6 +273,24 @@ class GameManager {
             return;
         }
         
+        // Set cursor style for desktop support
+        if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+            this.canvas.style.cursor = 'pointer';
+            // Also set cursor on the canvas container
+            const canvasContainer = document.querySelector('.game-canvas-container');
+            if (canvasContainer) {
+                canvasContainer.style.cursor = 'pointer';
+            }
+            // Set cursor on the game container as well
+            const gameContainer = document.getElementById('gameContainer');
+            if (gameContainer) {
+                gameContainer.style.cursor = 'pointer';
+            }
+            console.log('Desktop detected, cursor set to pointer');
+        } else {
+            console.log('Mobile detected, cursor hidden');
+        }
+        
         // Initialize flip wrapper reference - retry if not available
         this.flipWrapper = document.getElementById('gameFlipWrapper');
         if (!this.flipWrapper) {
@@ -422,6 +440,32 @@ class GameManager {
             e.stopPropagation();
             this.handleTouchEnd(e);
         }, { passive: false });
+
+        // Add mouse event support for desktop
+        this.canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleMouseDown(e);
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleMouseMove(e);
+        });
+
+        this.canvas.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleMouseUp(e);
+        });
+
+        // Handle mouse leaving the canvas
+        this.canvas.addEventListener('mouseleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleMouseUp(e);
+        });
     }
 
     handleTouchStart(e) {
@@ -600,6 +644,201 @@ class GameManager {
         }
         
         // Ensure all balls return to rest scale when touch ends
+        this.balls.forEach((ball, ballIndex) => {
+            if (ball.isTouched) {
+                // Always clean up touch feedback for the ball that was just unclamped
+                // or for any ball that is not clamped
+                if (ballIndex === justUnclampedBallIndex || !this.isBallClamped[ballIndex]) {
+                    ball.isTouched = false;
+                    ball.touchOpacity = 0.0;
+                    ball.touchScale = this.restScale;
+                }
+            }
+        });
+        
+        this.touchPosition = null;
+        
+        this.touchStartPos = null;
+        this.isDragging = false;
+        this.selectedBallIndex = -1; // Reset selected ball
+        
+        // Reset ball drag/snap tracking properties
+        this.ballOriginNode = null;
+    }
+
+    // Mouse event handlers for desktop support
+    handleMouseDown(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        
+        // Calculate mouse position using CSS coordinates
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Use grid-scaled mouse target (minimum 100% of grid size for accessibility)
+        const mouseTargetSize = Math.max(this.gridSize * CONSTANTS.TOUCH_CONFIG.MIN_TOUCH_SIZE_RATIO, CONSTANTS.GAME_CONFIG.BALL_RADIUS * 3);
+        
+        // Check if mouse is near any ball - find the closest one within mouse range
+        let closestBallIndex = -1;
+        let closestDistance = Infinity;
+        
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            
+            // Only consider balls on the current face
+            if (this.getBallCurrentFace(ball) !== this.currentFace) continue;
+            
+            const distanceToBall = this.manhattanDistance(x, y, ball.x, ball.y);
+
+            if (distanceToBall <= mouseTargetSize && distanceToBall < closestDistance) {
+                closestDistance = distanceToBall;
+                closestBallIndex = i;
+            }
+        }
+        
+        if (closestBallIndex !== -1) {
+            const selectedBall = this.balls[closestBallIndex];
+            
+            this.selectedBallIndex = closestBallIndex;
+            this.touchStartPos = { x, y };
+            this.isDragging = true;
+            
+            // Store the origin node when ball is picked up
+            const originGridX = Math.round((selectedBall.x - this.boardStartX) / this.gridSize);
+            const originGridY = Math.round((selectedBall.y - this.boardStartY) / this.gridSize);
+            this.ballOriginNode = { x: originGridX, y: originGridY };
+            
+            // Mark ball as clamped
+            this.isBallClamped[closestBallIndex] = true;
+            
+            // Update pulsating ring animation for this ball
+            this.updatePulsatingRingForBall(closestBallIndex);
+            
+            // Start background music on first user interaction
+            if (this.soundManager && !this.soundManager.musicStarted) {
+                this.soundManager.playBackgroundMusic();
+                this.soundManager.musicStarted = true;
+            }
+            
+            // Play ball pickup sound
+            if (this.soundManager) {
+                this.soundManager.playSound('ballPickup');
+            }
+            
+            // Add visual feedback for mouse interaction
+            this.showTouchFeedback(selectedBall);
+        }
+    }
+
+    handleMouseMove(e) {
+        if (!this.isDragging || this.selectedBallIndex === -1 || !this.ballOriginNode) return;
+        
+        const rect = this.canvas.getBoundingClientRect();
+        
+        // Calculate mouse position using CSS coordinates
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Store current mouse position for enhanced system
+        this.touchPosition = { x: mouseX, y: mouseY };
+        
+        const ball = this.balls[this.selectedBallIndex];
+        if (!ball) return;
+        
+        // Convert origin node to absolute coordinates
+        const originX = this.boardStartX + this.ballOriginNode.x * this.gridSize;
+        const originY = this.boardStartY + this.ballOriginNode.y * this.gridSize;
+        
+        // Calculate distance from mouse to origin node
+        const distanceFromOrigin = this.manhattanDistance(mouseX, mouseY, originX, originY);
+        
+        const threshold = this.gridSize / 4; // gridBoxSize / 4
+        
+        // Step 2: As long as mouse distance from origin node is <= gridBoxSize / 4, stay there
+        if (distanceFromOrigin <= threshold) {
+            // Ball stays at origin node
+            this.moveBallToPosition(originX, originY, true);
+            return;
+        }
+        
+        // Step 3: Enhanced ball movement system
+        // Handle clamped ball movement using the new system
+        // This will automatically continue transitions until mouse distance is within threshold
+        this.handleClampedBallMovement(this.selectedBallIndex, this.touchPosition);
+    }
+
+    handleMouseUp(e) {
+        if (this.isDragging && this.selectedBallIndex !== -1) {
+            // Hide touch feedback with fade out
+            this.hideTouchFeedback();
+            
+            // Get the final position where the ball was dropped
+            const ball = this.balls[this.selectedBallIndex];
+            
+            // Play ball drop sound
+            if (this.soundManager) {
+                this.soundManager.playSound('ballDrop');
+            }
+            
+            // First, handle snapping to closest node if needed
+            let finalSnapX = ball.x;
+            let finalSnapY = ball.y;
+            
+            // Check if ball is at an exact grid position (on a node)
+            const isOnNode = (ball.x - this.boardStartX) % this.gridSize === 0 && 
+                            (ball.y - this.boardStartY) % this.gridSize === 0;
+            
+            if (!isOnNode) {
+                // Ball is mid-course, snap to closest accessible node
+                const closestNode = this.findClosestAccessibleNode(this.selectedBallIndex, ball.x, ball.y);
+                if (closestNode) {
+                    finalSnapX = this.boardStartX + closestNode.x * this.gridSize;
+                    finalSnapY = this.boardStartY + closestNode.y * this.gridSize;
+                }
+            }
+            
+            // Now check if the snapped position is on a WELL node
+            const snappedGridX = Math.round((finalSnapX - this.boardStartX) / this.gridSize);
+            const snappedGridY = Math.round((finalSnapY - this.boardStartY) / this.gridSize);
+            const nodeType = this.getNodeType(snappedGridX, snappedGridY);
+            
+            if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+                // Check if the well destination is occupied on the other face
+                if (this.isWellDestinationOccupied(snappedGridX, snappedGridY, this.selectedBallIndex)) {
+                    // Destination is occupied, show blocked transfer animation
+                    this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                    // Start blocked well animation after a small delay
+                    setTimeout(() => {
+                        this.startBlockedWellAnimation(ball, snappedGridX, snappedGridY);
+                    }, 100);
+                } else {
+                    // Destination is free, proceed with well transfer
+                    this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                    // Start well animation after a small delay to let the snap complete
+                    setTimeout(() => {
+                        this.startWellAnimation(ball, snappedGridX, snappedGridY);
+                    }, 100); // Small delay to let snap animation complete
+                }
+            } else {
+                // Snap to final position (not a well)
+                // Set isDragging to false BEFORE the final snap so it uses the fast EASE duration
+                this.isDragging = false;
+                this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                
+                // Check win condition when drag is released, but wait for touch feedback animations to complete
+                this.checkWinConditionAfterTouchAnimations();
+            }
+        }
+        
+        // Reset enhanced ball movement properties
+        let justUnclampedBallIndex = -1;
+        if (this.selectedBallIndex !== -1) {
+            justUnclampedBallIndex = this.selectedBallIndex;
+            this.isBallClamped[this.selectedBallIndex] = false;
+            // Update pulsating ring animation for this ball
+            this.updatePulsatingRingForBall(this.selectedBallIndex);
+        }
+        
+        // Ensure all balls return to rest scale when mouse interaction ends
         this.balls.forEach((ball, ballIndex) => {
             if (ball.isTouched) {
                 // Always clean up touch feedback for the ball that was just unclamped
@@ -2314,23 +2553,41 @@ class GameManager {
         // Calculate grid size based on available canvas space with margins
         // Use display dimensions (CSS size) for calculations, not actual canvas size
         const margin = 80; // Space for level number and menus
+        
+        // Add desktop-specific vertical margins (15% of view height)
+        let desktopVerticalMargin = 0;
+        if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+            desktopVerticalMargin = this.displayHeight * 0.15; // 15% of view height
+        }
+        
         const availableWidth = this.displayWidth - (margin * 2);
-        const availableHeight = this.displayHeight - (margin * 2);
+        const availableHeight = this.displayHeight - (margin * 2) - (desktopVerticalMargin * 2);
         
         // For node-oriented grid: we need spacing between nodes, not cell sizes
         // For N nodes, we need (N-1) spaces between them
         const gridSpacingX = boardCols > 1 ? availableWidth / (boardCols - 1) : availableWidth;
         const gridSpacingY = boardRows > 1 ? availableHeight / (boardRows - 1) : availableHeight;
         
-        // Use the smaller spacing to ensure grid fits
-        const gridSize = Math.min(gridSpacingX, gridSpacingY);
+        // On desktop, ensure grid width is 40% of visual width
+        let gridSize;
+        if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+            const targetGridWidth = this.displayWidth * 0.4; // 40% of visual width
+            const requiredGridSpacingX = boardCols > 1 ? targetGridWidth / (boardCols - 1) : targetGridWidth;
+            gridSize = Math.min(requiredGridSpacingX, gridSpacingY);
+        } else {
+            // Use the smaller spacing to ensure grid fits (mobile behavior)
+            gridSize = Math.min(gridSpacingX, gridSpacingY);
+        }
         
         // Calculate board position to center it
         // Board area spans from first node to last node
         const boardWidth = (boardCols - 1) * gridSize;
         const boardHeight = (boardRows - 1) * gridSize;
         const boardStartX = (this.displayWidth - boardWidth) / 2;
-        const boardStartY = (this.displayHeight - boardHeight) / 2;
+        
+        // Ensure the entire grid fits within the available space with margins
+        const totalAvailableHeight = this.displayHeight - (desktopVerticalMargin * 2);
+        const boardStartY = (totalAvailableHeight - boardHeight) / 2 + desktopVerticalMargin;
         
         // Store grid info for other methods to use
         this.gridSize = gridSize;
