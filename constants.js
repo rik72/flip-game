@@ -61,8 +61,8 @@ const CONSTANTS = {
 		GOAL_OUTER_RATIO: 0.01, // Goal outer ring offset as ratio of gridSize
 		
 		// Tail rendering configuration
-		TAIL_BALL_SIZE_RATIO: 1.0, // Tail ball size as ratio of normal ball size (1.0 = same size)
-		TAIL_LINE_WIDTH_MULTIPLIER: 1.1, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
+		TAIL_BALL_SIZE_RATIO: .6, // Tail ball size as ratio of normal ball size (1.0 = same size)
+		TAIL_LINE_WIDTH_MULTIPLIER: 1.2, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
 		
 		// Pulsating ring configuration
 		PULSATING_RING_CYCLE_TIME: 2500, // Animation cycle time in milliseconds (2 seconds)
