@@ -1169,7 +1169,8 @@ class GameManager {
         const ballId = this.balls.indexOf(ball);
         
         // Check if level is completed - if so, don't animate to clamped state
-        const isLevelCompleted = this.storageManager.isLevelCompleted(this.currentLevel);
+        // For test levels, always allow clamping animation (test levels are never "completed")
+        const isLevelCompleted = this.currentLevel === 'test' ? false : this.storageManager.isLevelCompleted(this.currentLevel);
         
         this.touchAnimationState[ballId] = {
             isAnimating: true,
@@ -1244,9 +1245,10 @@ class GameManager {
                         state.scale = this.restScale;
                     }
                 } else {
-                    // Normal clamped animation - scale so that at peak the visual ball radius equals goal inner radius
+                    // Normal clamped animation - scale so that at peak the visual ball radius equals goal outer radius
+                    // This provides the same visual feedback as the old halo but without the confusing darker appearance
                     const logical = this.getLogicalBallRadius();
-                    const targetScaleAtPeak = this.getGoalInnerRadius() / logical;
+                    const targetScaleAtPeak = this.getGoalOuterRadius() / logical;
                     state.scale = this.restScale + (targetScaleAtPeak - this.restScale) * progress;
                     
                     if (progress >= 1.0) {
@@ -2509,6 +2511,11 @@ class GameManager {
             gridSize = Math.min(gridSpacingX, gridSpacingY);
         }
         
+        // Ensure minimum grid size for consistent visual scaling across different window sizes
+        // This prevents test levels from having different visual scaling than normal levels
+        const minGridSize = 40; // Minimum grid size in pixels
+        gridSize = Math.max(gridSize, minGridSize);
+        
         // Calculate board position to center it
         // Board area spans from first node to last node
         const boardWidth = (boardCols - 1) * gridSize;
@@ -3088,17 +3095,9 @@ class GameManager {
             
             // Add touch feedback glow effect with animation
             if (ball.isTouched && ball.touchOpacity > 0) {
-                				// Ensure halo matches the goal ring outer radius for consistency
-				const haloRadius = this.getGoalOuterRadius();
-				
-				// Use globalAlpha for reliable alpha on all browsers
-                this.ctx.save();
-                this.ctx.globalAlpha = Math.min(1, Math.max(0, (ball.touchOpacity || 1.0) * 0.35));
-                this.ctx.fillStyle = colorHex;
-                this.ctx.beginPath();
-                this.ctx.arc(ball.x, ball.y, haloRadius, 0, 2 * Math.PI);
-                this.ctx.fill();
-                this.ctx.restore();
+                // For clamped balls, don't show a separate halo - just enlarge the ball itself
+                // The ball scaling in getVisualBallRadius() will handle the enlargement
+                // This prevents the "darker halo" effect that can be confusing
             }
             
             // Apply well animation effects if active
