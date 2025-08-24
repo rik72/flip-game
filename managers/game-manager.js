@@ -2564,6 +2564,9 @@ class GameManager {
     renderGrid() {
         if (!this.board || !this.board.front) return;
         
+        // Check if empty nodes should be rendered
+        if (!CONSTANTS.RENDER_SIZE_CONFIG.RENDER_EMPTY_NODES) return;
+        
         // Ensure board position is calculated
         this.calculateBoardPosition();
         
@@ -2798,6 +2801,9 @@ class GameManager {
     renderPathLines() {
         // Draw lines between connected path nodes
         if (!this.board || !this.board.front) return;
+        
+        // Check if connections should be rendered
+        if (!CONSTANTS.RENDER_SIZE_CONFIG.RENDER_CONNECTIONS) return;
         
         const nodes = this.getCurrentNodes();
         if (!nodes) return;

@@ -38,6 +38,10 @@ const CONSTANTS = {
 
 	// Rendering size configurations
 	RENDER_SIZE_CONFIG: {
+		// Rendering toggles
+		RENDER_CONNECTIONS: false, // true => current behaviour, false => connections edges are not rendered
+		RENDER_EMPTY_NODES: false, // true => current behaviour, false => empty nodes are not rendered
+		
 		// Ball sizing
 		BALL_RADIUS_RATIO: 0.375, // Ball radius as ratio of gridSize (37.5% of grid cell)
 		BALL_REST_SCALE: 0.75, // Resting visual scale for balls during animations
