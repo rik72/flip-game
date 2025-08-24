@@ -41,6 +41,7 @@ const CONSTANTS = {
 		// Ball sizing
 		BALL_RADIUS_RATIO: 0.375, // Ball radius as ratio of gridSize (37.5% of grid cell)
 		BALL_REST_SCALE: 0.75, // Resting visual scale for balls during animations
+		BALL_TAIL_REST_SCALE: 1.2, // Resting visual scale for balls with tails (1.2x larger)
 		
 		// Grid dot sizing (for empty intersections)
 		GRID_DOT_MIN_SIZE: 2, // Minimum grid dot radius in pixels
@@ -64,13 +65,7 @@ const CONSTANTS = {
 		TAIL_BALL_SIZE_RATIO: .6, // Tail ball size as ratio of normal ball size (1.0 = same size)
 		TAIL_LINE_WIDTH_MULTIPLIER: 4.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
 		
-		// Pulsating ring configuration
-		PULSATING_RING_CYCLE_TIME: 2500, // Animation cycle time in milliseconds (2 seconds)
-		PULSATING_RING_MIN_OPACITY: 0.6, // Minimum opacity for pulsating ring
-		PULSATING_RING_MAX_OPACITY: 0.8, // Maximum opacity for pulsating ring
-		PULSATING_RING_MIN_RADIUS_MULTIPLIER: 1.3, // Minimum radius as multiplier of ball radius (1.25 = 25% larger)
-		PULSATING_RING_MAX_RADIUS_MULTIPLIER: 1.2, // Maximum radius as multiplier of ball radius (1.75 = 75% larger)
-		PULSATING_RING_LINE_WIDTH_MULTIPLIER: 0.1 // Line width as multiplier of ball radius (0.1 = 10% of ball radius)
+		
 	},
 
 	// Touch configurations

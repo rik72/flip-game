@@ -31,7 +31,7 @@ class GameManager {
         this.isDragging = false;
         this.animationFrameId = null; // For smooth animations
         this.touchAnimationState = {}; // Track animation state for each ball
-        this.pulsatingRingState = {}; // Track pulsating ring animations for tail heads
+
         this.ballAnimationId = null; // For ball movement animations
         this.restScale = CONSTANTS.RENDER_SIZE_CONFIG.BALL_REST_SCALE; // Resting visual scale for balls
         
@@ -534,9 +534,6 @@ class GameManager {
             // Mark ball as clamped
             this.isBallClamped[closestBallIndex] = true;
             
-            // Update pulsating ring animation for this ball
-            this.updatePulsatingRingForBall(closestBallIndex);
-            
             // Start background music on first user interaction
             if (this.soundManager && !this.soundManager.musicStarted) {
                 this.soundManager.playBackgroundMusic();
@@ -661,8 +658,6 @@ class GameManager {
         if (this.selectedBallIndex !== -1) {
             justUnclampedBallIndex = this.selectedBallIndex;
             this.isBallClamped[this.selectedBallIndex] = false;
-            // Update pulsating ring animation for this ball
-            this.updatePulsatingRingForBall(this.selectedBallIndex);
         }
         
         // Ensure all balls return to rest scale when touch ends
@@ -731,9 +726,6 @@ class GameManager {
             
             // Mark ball as clamped
             this.isBallClamped[closestBallIndex] = true;
-            
-            // Update pulsating ring animation for this ball
-            this.updatePulsatingRingForBall(closestBallIndex);
             
             // Start background music on first user interaction
             if (this.soundManager && !this.soundManager.musicStarted) {
@@ -856,8 +848,6 @@ class GameManager {
         if (this.selectedBallIndex !== -1) {
             justUnclampedBallIndex = this.selectedBallIndex;
             this.isBallClamped[this.selectedBallIndex] = false;
-            // Update pulsating ring animation for this ball
-            this.updatePulsatingRingForBall(this.selectedBallIndex);
         }
         
         // Ensure all balls return to rest scale when mouse interaction ends
@@ -1010,7 +1000,18 @@ class GameManager {
     }
 
     getVisualScale(ball) {
-        return typeof ball.touchScale === 'number' ? ball.touchScale : this.restScale;
+        // If ball has a touch scale (being dragged), use that
+        if (typeof ball.touchScale === 'number') {
+            return ball.touchScale;
+        }
+        
+        // If ball has a tail, use the tail rest scale
+        if (ball.hasTail) {
+            return CONSTANTS.RENDER_SIZE_CONFIG.BALL_TAIL_REST_SCALE;
+        }
+        
+        // Otherwise use the normal rest scale
+        return this.restScale;
     }
 
     getVisualBallRadius(ball) {
@@ -1255,134 +1256,20 @@ class GameManager {
             hasActiveAnimations = true;
         });
 
-        // Update pulsating ring animations
-        this.updatePulsatingRings();
+
 
         // Render the frame
         this.render();
 
-        // Continue animation if there are active touch animations or pulsating rings
-        if (hasActiveAnimations || this.hasActivePulsatingRings()) {
+        // Continue animation if there are active touch animations
+        if (hasActiveAnimations) {
             this.animationFrameId = requestAnimationFrame(() => this.animateTouchFeedback());
         } else {
             this.animationFrameId = null;
         }
     }
 
-    // Update pulsating ring animations for tail heads
-    updatePulsatingRings() {
-        const currentTime = Date.now();
-        let hasActivePulsatingRings = false;
 
-        this.balls.forEach((ball, ballIndex) => {
-            const ringState = this.pulsatingRingState[ballIndex];
-            if (!ringState) return;
-
-            // Check if ball should have pulsating ring (has tail and not clamped)
-            const shouldHaveRing = ball.hasTail && 
-                                  ball.visitedNodes && 
-                                  ball.visitedNodes.length > 0 && 
-                                  !this.isBallClamped[ballIndex];
-
-            if (shouldHaveRing) {
-                if (!ringState.isAnimating) {
-                    // Start pulsating animation
-                    ringState.isAnimating = true;
-                    ringState.startTime = currentTime;
-                }
-
-                // Calculate pulsating effect
-                const elapsed = currentTime - ringState.startTime;
-                const cycleTime = CONSTANTS.RENDER_SIZE_CONFIG.PULSATING_RING_CYCLE_TIME;
-                const cycleProgress = (elapsed % cycleTime) / cycleTime;
-                
-                // Create a smooth sine wave for opacity
-                const minOpacity = CONSTANTS.RENDER_SIZE_CONFIG.PULSATING_RING_MIN_OPACITY;
-                const maxOpacity = CONSTANTS.RENDER_SIZE_CONFIG.PULSATING_RING_MAX_OPACITY;
-                const opacityRange = maxOpacity - minOpacity;
-                ringState.opacity = minOpacity + opacityRange * (0.5 + 0.5 * Math.sin(cycleProgress * 2 * Math.PI));
-                
-                // Create a smooth sine wave for radius
-                const baseRadius = this.getVisualBallRadius(ball);
-                const minRadiusMultiplier = CONSTANTS.RENDER_SIZE_CONFIG.PULSATING_RING_MIN_RADIUS_MULTIPLIER;
-                const maxRadiusMultiplier = CONSTANTS.RENDER_SIZE_CONFIG.PULSATING_RING_MAX_RADIUS_MULTIPLIER;
-                const radiusMultiplierRange = maxRadiusMultiplier - minRadiusMultiplier;
-                const currentRadiusMultiplier = minRadiusMultiplier + radiusMultiplierRange * (0.5 + 0.5 * Math.sin(cycleProgress * 2 * Math.PI));
-                ringState.radius = baseRadius * currentRadiusMultiplier;
-                
-                hasActivePulsatingRings = true;
-            } else {
-                // Stop animation if ball shouldn't have ring
-                ringState.isAnimating = false;
-                ringState.opacity = 0.0;
-            }
-        });
-
-        // Continue animation if there are active pulsating rings
-        if (hasActivePulsatingRings) {
-            if (!this.animationFrameId) {
-                this.animationFrameId = requestAnimationFrame(() => this.animateTouchFeedback());
-            }
-        }
-    }
-
-    // Check if there are any active pulsating rings
-    hasActivePulsatingRings() {
-        return this.balls.some((ball, ballIndex) => {
-            const ringState = this.pulsatingRingState[ballIndex];
-            return ringState && ringState.isAnimating;
-        });
-    }
-
-    // Remove all pulsating rings (called at level completion)
-    removeAllPulsatingRings() {
-        Object.keys(this.pulsatingRingState).forEach(ballIndex => {
-            const ringState = this.pulsatingRingState[ballIndex];
-            if (ringState) {
-                ringState.isAnimating = false;
-                ringState.opacity = 0.0;
-            }
-        });
-    }
-
-    // Start pulsating ring animation loop
-    startPulsatingRingAnimation() {
-        // Start the animation loop if not already running
-        if (!this.animationFrameId) {
-            this.animationFrameId = requestAnimationFrame(() => this.animateTouchFeedback());
-        }
-    }
-
-    // Update pulsating ring animation for a specific ball
-    updatePulsatingRingForBall(ballIndex) {
-        const ball = this.balls[ballIndex];
-        const ringState = this.pulsatingRingState[ballIndex];
-        
-        if (!ball || !ringState) return;
-        
-        // Check if ball should have pulsating ring (has tail and not clamped)
-        const shouldHaveRing = ball.hasTail && 
-                              ball.visitedNodes && 
-                              ball.visitedNodes.length > 0 && 
-                              !this.isBallClamped[ballIndex];
-        
-        if (shouldHaveRing) {
-            if (!ringState.isAnimating) {
-                // Start pulsating animation
-                ringState.isAnimating = true;
-                ringState.startTime = Date.now();
-            }
-        } else {
-            // Stop animation if ball shouldn't have ring
-            ringState.isAnimating = false;
-            ringState.opacity = 0.0;
-        }
-        
-        // Ensure animation loop is running
-        if (!this.animationFrameId) {
-            this.animationFrameId = requestAnimationFrame(() => this.animateTouchFeedback());
-        }
-    }
 
     moveBallToPosition(x, y, animate = false) {
         if (this.selectedBallIndex === -1) return;
@@ -1456,8 +1343,6 @@ class GameManager {
                     // Check if ball has no more visited nodes and should lose tail property
                     if (ball.visitedNodes.length === 0) {
                         ball.hasTail = false;
-                        // Update pulsating ring animation for this ball
-                        this.updatePulsatingRingForBall(this.selectedBallIndex);
                     }
                 } else {
                     // Add the previous node to visited nodes (ball is moving forward)
@@ -1492,8 +1377,6 @@ class GameManager {
                         }
                         // Activate the sticker with the ball's color
                         this.activateSticker(newGridX, newGridY, this.selectedBallIndex, ball.color);
-                        // Update pulsating ring animation for this ball
-                        this.updatePulsatingRingForBall(this.selectedBallIndex);
                     }
                 }
             }
@@ -1842,8 +1725,7 @@ class GameManager {
             
             this.render();
             
-            // Start pulsating ring animation loop
-            this.startPulsatingRingAnimation();
+
         } catch (error) {
             console.error('Error loading level:', error);
             // Show error message to user
@@ -2095,8 +1977,7 @@ class GameManager {
         // Stop all animations immediately when win condition is met
         this.cleanupAnimations();
         
-        // Remove all pulsating rings at level completion
-        this.removeAllPulsatingRings();
+
         
         // Create explosion animations for each goal node
         this.createExplosionAnimations();
@@ -3147,19 +3028,7 @@ class GameManager {
             this.ctx.arc(ball.x, ball.y, finalBallRadius, 0, 2 * Math.PI);
             this.ctx.fill();
             
-            // Draw pulsating ring for tail heads
-            const ringState = this.pulsatingRingState[index];
-            if (ringState && ringState.isAnimating && ringState.opacity > 0) {
-                this.ctx.save();
-                this.ctx.globalAlpha = ringState.opacity;
-                this.ctx.strokeStyle = colorHex;
-                const baseRadius = this.getVisualBallRadius(ball);
-                this.ctx.lineWidth = baseRadius * CONSTANTS.RENDER_SIZE_CONFIG.PULSATING_RING_LINE_WIDTH_MULTIPLIER;
-                this.ctx.beginPath();
-                this.ctx.arc(ball.x, ball.y, ringState.radius, 0, 2 * Math.PI);
-                this.ctx.stroke();
-                this.ctx.restore();
-            }
+
             
             this.ctx.restore();
             
@@ -3522,20 +3391,12 @@ class GameManager {
         this.lastNodePositions = [];
         this.isBallClamped = [];
         this.transitionInProgress = [];
-        this.pulsatingRingState = {};
-        
         // Initialize for each ball
         for (let i = 0; i < this.balls.length; i++) {
             this.connectedNodes[i] = [];
             this.lastNodePositions[i] = this.getBallGridPosition(i);
             this.isBallClamped[i] = false;
             this.transitionInProgress[i] = false;
-            this.pulsatingRingState[i] = {
-                isAnimating: false,
-                startTime: Date.now(),
-                opacity: 0.0,
-                radius: 0
-            };
         }
         
         // Calculate initial connected nodes for all balls
@@ -3731,8 +3592,6 @@ class GameManager {
                 // Check if ball has no more visited nodes and should lose tail property
                 if (ball.visitedNodes.length === 0) {
                     ball.hasTail = false;
-                    // Update pulsating ring animation for this ball
-                    this.updatePulsatingRingForBall(ballIndex);
                 }
             } else {
                 // Add the previous node to visited nodes (ball is moving forward)
@@ -3776,8 +3635,6 @@ class GameManager {
             }
             // Activate the sticker with the ball's color
             this.activateSticker(currentGridX, currentGridY, ballIndex, ball.color);
-            // Update pulsating ring animation for this ball
-            this.updatePulsatingRingForBall(ballIndex);
         }
         
         this.updateBallLastNode(ballIndex);
@@ -4144,16 +4001,12 @@ class GameManager {
                 }
                 // Activate the sticker with the ball's color
                 this.activateSticker(startX, startY, ballIndex, ball.color);
-                // Update pulsating ring animation for this ball
-                this.updatePulsatingRingForBall(ballIndex);
             } else {
                 ball.hasTail = false;
                 // Initialize visited nodes as empty array for all balls
                 if (!ball.visitedNodes) {
                     ball.visitedNodes = [];
                 }
-                // Update pulsating ring animation for this ball
-                this.updatePulsatingRingForBall(ballIndex);
             }
         });
     }
