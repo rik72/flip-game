@@ -70,8 +70,8 @@ class GameManager {
         // Sticker activation tracking
         this.activatedStickers = {}; // Track activated stickers: {face: {row_col: {ballIndex, color}}}
         
-        // Level completion flag for goal rendering
-        this.levelCompletedFlag = false;
+        // Track which goal nodes are currently exploding
+        this.explodingGoals = new Set();
         
         this.init();
     }
@@ -103,7 +103,7 @@ class GameManager {
     }
 
     // Helper function to darken a hex color
-    darkenColor(hexColor, factor = 0.6) {
+    darkenColor(hexColor, factor = 0.5) {
         // Remove # if present
         const hex = hexColor.replace('#', '');
         
@@ -1669,8 +1669,8 @@ class GameManager {
         // Reset the flag for next time
         this.isLevelProgression = false;
         
-        // Reset level completion flag for goal rendering
-        this.levelCompletedFlag = false;
+        // Reset exploding goals tracking
+        this.explodingGoals.clear();
         
         // Reset completion status for this level when entering it (only for numbered levels)
         if (typeof levelNumber === 'number') {
@@ -1986,12 +1986,6 @@ class GameManager {
         // Stop all animations immediately when win condition is met
         this.cleanupAnimations();
         
-        // Set flag to indicate level completion for goal rendering
-        this.levelCompletedFlag = true;
-        
-        // Re-render to show goal nodes in exact ball colors
-        this.render();
-        
         // Create explosion animations for each goal node
         this.createExplosionAnimations();
         
@@ -2054,6 +2048,16 @@ class GameManager {
         const ballRadius = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.BALL_RADIUS_RATIO;
         const startRadius = ballRadius * 0.25; // 1/4 of ball radius
         const maxRadius = ballRadius * 3; // 3 times ball radius
+        
+        // Mark this goal position as having started its explosion
+        const goalKey = `${x}_${y}_${this.currentFace}`;
+        if (!this.explodingGoals) {
+            this.explodingGoals = new Set();
+        }
+        this.explodingGoals.add(goalKey);
+        
+        // Re-render to show this goal node in exact ball color
+        this.render();
         
         const disc = document.createElement('div');
         disc.className = 'explosion-disc';
@@ -2742,7 +2746,7 @@ class GameManager {
                             } else {
                                 // Ball has left the sticker - use darker shade
                                 const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
-                                stickerColor = this.darkenColor(ballColorHex, 0.6);
+                                stickerColor = this.darkenColor(ballColorHex, 0.5);
                                 console.log(`Sticker at ${nodeKey}: ball ${ballIndex} is not on it, using dark color ${stickerColor} (from ${ballColorHex})`);
                             }
                         } else {
@@ -3176,9 +3180,10 @@ class GameManager {
                 const endX = ball.endPosition.x;
                 const endY = ball.endPosition.y;
                 
-                // Use exact ball color if level is completed, otherwise use darker shade
+                // Use exact ball color if this goal is exploding, otherwise use darker shade
                 const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
-                const colorHex = this.levelCompletedFlag ? ballColorHex : this.darkenColor(ballColorHex, 0.6);
+                const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                const colorHex = this.explodingGoals.has(goalKey) ? ballColorHex : this.darkenColor(ballColorHex, 0.5);
                 
                 // Get the radii for the square frame and circular hole
                 const innerRadius = this.getGoalInnerRadius();
@@ -3208,9 +3213,10 @@ class GameManager {
                 const endX = endPos.x;
                 const endY = endPos.y;
                 
-                // Use exact ball color if level is completed, otherwise use darker shade
+                // Use exact ball color if this goal is exploding, otherwise use darker shade
                 const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
-                const colorHex = this.levelCompletedFlag ? ballColorHex : this.darkenColor(ballColorHex, 0.6);
+                const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                const colorHex = this.explodingGoals.has(goalKey) ? ballColorHex : this.darkenColor(ballColorHex, 0.5);
                 
                 // Get the radii for the square frame and circular hole
                 const innerRadius = this.getGoalInnerRadius();
@@ -3907,7 +3913,7 @@ class GameManager {
             
             // Get ball color and darken it for tail
             const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
-            const ballColor = this.darkenColor(ballColorHex, 0.6);
+            const ballColor = this.darkenColor(ballColorHex, 0.5);
             
             // Calculate tail ball size
             const normalBallRadius = this.getVisualBallRadius({});
@@ -3936,7 +3942,7 @@ class GameManager {
             
             // Get ball color and darken it for tail
             const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
-            const ballColor = this.darkenColor(ballColorHex, 0.6);
+            const ballColor = this.darkenColor(ballColorHex, 0.5);
             
             // Calculate tail line width
             const normalLineWidth = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_MIN_WIDTH, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_RATIO);
