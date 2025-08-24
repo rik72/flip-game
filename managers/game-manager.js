@@ -70,6 +70,9 @@ class GameManager {
         // Sticker activation tracking
         this.activatedStickers = {}; // Track activated stickers: {face: {row_col: {ballIndex, color}}}
         
+        // Level completion flag for goal rendering
+        this.levelCompletedFlag = false;
+        
         this.init();
     }
 
@@ -115,10 +118,13 @@ class GameManager {
         const newB = Math.max(0, Math.floor(b * factor));
         
         // Convert back to hex
-        return '#' + 
+        const result = '#' + 
             newR.toString(16).padStart(2, '0') + 
             newG.toString(16).padStart(2, '0') + 
             newB.toString(16).padStart(2, '0');
+        
+        console.log(`Darkening color: ${hexColor} -> ${result} (factor: ${factor})`);
+        return result;
     }
 
     // Update the toggle button visibility based on whether the board has a rear face
@@ -1663,6 +1669,9 @@ class GameManager {
         // Reset the flag for next time
         this.isLevelProgression = false;
         
+        // Reset level completion flag for goal rendering
+        this.levelCompletedFlag = false;
+        
         // Reset completion status for this level when entering it (only for numbered levels)
         if (typeof levelNumber === 'number') {
             this.storageManager.resetLevelCompletion(levelNumber);
@@ -1977,7 +1986,11 @@ class GameManager {
         // Stop all animations immediately when win condition is met
         this.cleanupAnimations();
         
-
+        // Set flag to indicate level completion for goal rendering
+        this.levelCompletedFlag = true;
+        
+        // Re-render to show goal nodes in exact ball colors
+        this.render();
         
         // Create explosion animations for each goal node
         this.createExplosionAnimations();
@@ -1996,12 +2009,13 @@ class GameManager {
         
         this.balls.forEach((ball, ballIndex) => {
             const endPositions = ball.endPositionsAbsolute || [];
+            const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
             
             if (endPositions.length === 0) {
                 // Fallback to legacy single end position
                 if (this.getGoalCurrentFace(ball) === this.currentFace) {
                     setTimeout(() => {
-                        this.createExplosionDisc(ball.endPosition.x, ball.endPosition.y, config, explosionIndex);
+                        this.createExplosionDisc(ball.endPosition.x, ball.endPosition.y, config, explosionIndex, ballColorHex);
                     }, explosionIndex * config.EXPLOSION_DELAY);
                     explosionIndex++;
                 }
@@ -2012,7 +2026,7 @@ class GameManager {
             endPositions.forEach(endPos => {
                 if (endPos.face === this.currentFace) {
                     setTimeout(() => {
-                        this.createExplosionDisc(endPos.x, endPos.y, config, explosionIndex);
+                        this.createExplosionDisc(endPos.x, endPos.y, config, explosionIndex, ballColorHex);
                     }, explosionIndex * config.EXPLOSION_DELAY);
                     explosionIndex++;
                 }
@@ -2022,7 +2036,7 @@ class GameManager {
 
 
 
-    createExplosionDisc(x, y, config, index) {
+    createExplosionDisc(x, y, config, index, ballColorHex) {
         if (!this.canvas) return;
         
         const canvasRect = this.canvas.getBoundingClientRect();
@@ -2053,6 +2067,9 @@ class GameManager {
         disc.style.width = `${startRadius * 2}px`;
         disc.style.height = `${startRadius * 2}px`;
         disc.style.opacity = '0.5';
+        
+        // Set the explosion color to the exact ball color
+        disc.style.backgroundColor = ballColorHex;
         
         // Set higher z-index for later explosions to ensure they're visible
         disc.style.zIndex = 150 + index;
@@ -2457,28 +2474,34 @@ class GameManager {
         // Use display dimensions (CSS size) for calculations, not actual canvas size
         const margin = 80; // Space for level number and menus
         
-        // Add desktop-specific vertical margins (15% of view height)
-        let desktopVerticalMargin = 0;
+        // Desktop-specific settings
+        let isDesktop = false;
         if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-            desktopVerticalMargin = this.displayHeight * 0.15; // 15% of view height
+            isDesktop = true;
         }
         
         const availableWidth = this.displayWidth - (margin * 2);
-        const availableHeight = this.displayHeight - (margin * 2) - (desktopVerticalMargin * 2);
+        const availableHeight = this.displayHeight - (margin * 2);
         
         // For node-oriented grid: we need spacing between nodes, not cell sizes
         // For N nodes, we need (N-1) spaces between them
         const gridSpacingX = boardCols > 1 ? availableWidth / (boardCols - 1) : availableWidth;
         const gridSpacingY = boardRows > 1 ? availableHeight / (boardRows - 1) : availableHeight;
         
-        // On desktop, ensure grid width is 40% of visual width
+        // Calculate grid size with maximum constraints
         let gridSize;
-        if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-            const targetGridWidth = this.displayWidth * 0.4; // 40% of visual width
-            const requiredGridSpacingX = boardCols > 1 ? targetGridWidth / (boardCols - 1) : targetGridWidth;
-            gridSize = Math.min(requiredGridSpacingX, gridSpacingY);
+        if (isDesktop) {
+            // Desktop: limit to 20% width and 70% height
+            const maxGridWidth = this.displayWidth * 0.2;
+            const maxGridHeight = this.displayHeight * 0.7;
+            
+            const maxGridSpacingX = boardCols > 1 ? maxGridWidth / (boardCols - 1) : maxGridWidth;
+            const maxGridSpacingY = boardRows > 1 ? maxGridHeight / (boardRows - 1) : maxGridHeight;
+            
+            // Use the smaller spacing to ensure grid fits within both constraints
+            gridSize = Math.min(maxGridSpacingX, maxGridSpacingY, gridSpacingX, gridSpacingY);
         } else {
-            // Use the smaller spacing to ensure grid fits (mobile behavior)
+            // Mobile: use available space
             gridSize = Math.min(gridSpacingX, gridSpacingY);
         }
         
@@ -2486,11 +2509,23 @@ class GameManager {
         // Board area spans from first node to last node
         const boardWidth = (boardCols - 1) * gridSize;
         const boardHeight = (boardRows - 1) * gridSize;
-        const boardStartX = (this.displayWidth - boardWidth) / 2;
         
-        // Ensure the entire grid fits within the available space with margins
-        const totalAvailableHeight = this.displayHeight - (desktopVerticalMargin * 2);
-        const boardStartY = (totalAvailableHeight - boardHeight) / 2 + desktopVerticalMargin;
+        // Center the grid both horizontally and vertically
+        const boardStartX = (this.displayWidth - boardWidth) / 2;
+        const boardStartY = (this.displayHeight - boardHeight) / 2;
+        
+        // Debug logging for desktop
+        if (isDesktop) {
+            console.log('Desktop grid positioning:', {
+                displayHeight: this.displayHeight,
+                displayWidth: this.displayWidth,
+                boardWidth,
+                boardHeight,
+                boardStartX,
+                boardStartY,
+                gridSize
+            });
+        }
         
         // Store grid info for other methods to use
         this.gridSize = gridSize;
@@ -2498,6 +2533,28 @@ class GameManager {
         this.boardStartY = boardStartY;
         this.boardWidth = boardWidth;
         this.boardHeight = boardHeight;
+        
+        // Position footer on desktop - 2 grid box sizes below grid
+        if (isDesktop) {
+            const footer = document.querySelector('.game-footer');
+            if (footer) {
+                const footerHeight = 60; // Footer height in pixels
+                const calculatedFooterTop = boardStartY + boardHeight + (gridSize * 2);
+                const maxFooterTop = this.displayHeight - footerHeight; // Maximum top position to stay in view
+                
+                if (calculatedFooterTop > maxFooterTop) {
+                    // Footer would go outside view - make it fixed at bottom
+                    footer.style.position = 'fixed';
+                    footer.style.bottom = '0px';
+                    footer.style.top = 'auto';
+                } else {
+                    // Footer fits in view - position it 2 grid spaces below grid
+                    footer.style.position = 'absolute';
+                    footer.style.top = calculatedFooterTop + 'px';
+                    footer.style.bottom = 'auto';
+                }
+            }
+        }
     }
 
     renderGrid() {
@@ -2661,10 +2718,38 @@ class GameManager {
                         const isActivated = this.activatedStickers[this.currentFace] && 
                                           this.activatedStickers[this.currentFace][nodeKey];
                         
-                        // Use ball color if activated, otherwise use default sticker color
-                        const stickerColor = isActivated ? 
-                            CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF' :
-                            CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
+                        // Check if a ball is currently positioned on this sticker
+                        let stickerColor;
+                        if (isActivated) {
+                            // Check if the ball that activated this sticker is currently on it
+                            const ballIndex = isActivated.ballIndex;
+                            const ball = this.balls[ballIndex];
+                            let isBallOnSticker = false;
+                            
+                            if (ball && ball.currentFace === this.currentFace) {
+                                // Convert ball position to grid coordinates
+                                const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+                                const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+                                
+                                // Check if ball is on this sticker
+                                isBallOnSticker = (ballGridX === col && ballGridY === row);
+                            }
+                            
+                            if (isBallOnSticker) {
+                                // Ball is currently on the sticker - use ball color
+                                stickerColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
+                                console.log(`Sticker at ${nodeKey}: ball ${ballIndex} is on it, using ball color ${stickerColor}`);
+                            } else {
+                                // Ball has left the sticker - use darker shade
+                                const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
+                                stickerColor = this.darkenColor(ballColorHex, 0.6);
+                                console.log(`Sticker at ${nodeKey}: ball ${ballIndex} is not on it, using dark color ${stickerColor} (from ${ballColorHex})`);
+                            }
+                        } else {
+                            // Not activated - use default sticker color
+                            stickerColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
+                            console.log(`Sticker at ${nodeKey}: not activated, using default color ${stickerColor}`);
+                        }
                         
                         // Draw hollow ring (stroke only, no fill)
                         this.ctx.strokeStyle = stickerColor;
@@ -3091,9 +3176,9 @@ class GameManager {
                 const endX = ball.endPosition.x;
                 const endY = ball.endPosition.y;
                 
-                // Use a darker shade of the ball color for the goal frame
+                // Use exact ball color if level is completed, otherwise use darker shade
                 const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
-                const colorHex = this.darkenColor(ballColorHex, 0.6);
+                const colorHex = this.levelCompletedFlag ? ballColorHex : this.darkenColor(ballColorHex, 0.6);
                 
                 // Get the radii for the square frame and circular hole
                 const innerRadius = this.getGoalInnerRadius();
@@ -3123,9 +3208,9 @@ class GameManager {
                 const endX = endPos.x;
                 const endY = endPos.y;
                 
-                // Use a darker shade of the ball color for the goal frame
+                // Use exact ball color if level is completed, otherwise use darker shade
                 const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
-                const colorHex = this.darkenColor(ballColorHex, 0.6);
+                const colorHex = this.levelCompletedFlag ? ballColorHex : this.darkenColor(ballColorHex, 0.6);
                 
                 // Get the radii for the square frame and circular hole
                 const innerRadius = this.getGoalInnerRadius();
