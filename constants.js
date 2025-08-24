@@ -47,12 +47,12 @@ const CONSTANTS = {
 		GRID_DOT_RATIO: 0.06, // Grid dot radius as ratio of gridSize
 		
 		// Path node sizing (for path intersections)
-		PATH_NODE_MIN_SIZE: 3, // Minimum path node radius in pixels
-		PATH_NODE_RATIO: 0.08, // Path node radius as ratio of gridSize
+		PATH_NODE_MIN_SIZE: 2, // Minimum path node radius in pixels
+		PATH_NODE_RATIO: 0.04, // Path node radius as ratio of gridSize
 		
 		// Path line sizing
-		PATH_LINE_MIN_WIDTH: 3, // Minimum path line width in pixels
-		PATH_LINE_RATIO: 0.08, // Path line width as ratio of gridSize
+		PATH_LINE_MIN_WIDTH: 1, // Minimum path line width in pixels
+		PATH_LINE_RATIO: 0.02, // Path line width as ratio of gridSize
 		
 		// Goal ring sizing
 		GOAL_INNER_MIN_OFFSET: 1, // Minimum inner goal ring offset from ball radius
@@ -62,7 +62,7 @@ const CONSTANTS = {
 		
 		// Tail rendering configuration
 		TAIL_BALL_SIZE_RATIO: .6, // Tail ball size as ratio of normal ball size (1.0 = same size)
-		TAIL_LINE_WIDTH_MULTIPLIER: 1.2, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
+		TAIL_LINE_WIDTH_MULTIPLIER: 4.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
 		
 		// Pulsating ring configuration
 		PULSATING_RING_CYCLE_TIME: 2500, // Animation cycle time in milliseconds (2 seconds)
@@ -98,10 +98,10 @@ const CONSTANTS = {
 		// Movement trail animation
 		TRAIL_ENABLED: true, // flag to enable/disable trail animations
         TRAIL_MIN_RADIUS_FACTOR: .5, // start trail radius as ratio of ball radius
-        TRAIL_MAX_RADIUS_FACTOR: 1.6, // max trail radius as ratio of ball radius
+        TRAIL_MAX_RADIUS_FACTOR: 1.8, // max trail radius as ratio of ball radius
 		TRAIL_RING_THICKNESS_FACTOR: 0.5, // ring thickness as ratio of ball radius
-		TRAIL_DURATION: 400, // milliseconds for movement trail animation
-		TRAIL_OPACITY: 0.15, // opacity for movement trail (lower than explosion)
+		TRAIL_DURATION: 500, // milliseconds for movement trail animation
+		TRAIL_OPACITY: 0.25, // opacity for movement trail (lower than explosion)
 		
 		// Easing functions
 		EASING: {

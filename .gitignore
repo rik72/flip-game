@@ -57,6 +57,9 @@ dist/
 build/
 flipgame-deploy/
 
+# secrets
+appunti-deploy.txt
+
 # AI Configuration files (KEEP THESE)
 # These files are intentionally tracked for AI assistant compliance
 # .ai-context.md

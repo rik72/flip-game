@@ -99,6 +99,28 @@ class GameManager {
         return isRearGoal ? 'rear' : 'front';
     }
 
+    // Helper function to darken a hex color
+    darkenColor(hexColor, factor = 0.6) {
+        // Remove # if present
+        const hex = hexColor.replace('#', '');
+        
+        // Parse RGB values
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Darken by multiplying by factor
+        const newR = Math.max(0, Math.floor(r * factor));
+        const newG = Math.max(0, Math.floor(g * factor));
+        const newB = Math.max(0, Math.floor(b * factor));
+        
+        // Convert back to hex
+        return '#' + 
+            newR.toString(16).padStart(2, '0') + 
+            newG.toString(16).padStart(2, '0') + 
+            newB.toString(16).padStart(2, '0');
+    }
+
     // Update the toggle button visibility based on whether the board has a rear face
     updateToggleButton() {
         const gameFooter = document.querySelector('.game-footer');
@@ -3200,8 +3222,9 @@ class GameManager {
                 const endX = ball.endPosition.x;
                 const endY = ball.endPosition.y;
                 
-                // Use the same color as the ball for the square frame
-                const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                // Use a darker shade of the ball color for the goal frame
+                const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                const colorHex = this.darkenColor(ballColorHex, 0.6);
                 
                 // Get the radii for the square frame and circular hole
                 const innerRadius = this.getGoalInnerRadius();
@@ -3231,8 +3254,9 @@ class GameManager {
                 const endX = endPos.x;
                 const endY = endPos.y;
                 
-                // Use the same color as the ball for the square frame
-                const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                // Use a darker shade of the ball color for the goal frame
+                const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                const colorHex = this.darkenColor(ballColorHex, 0.6);
                 
                 // Get the radii for the square frame and circular hole
                 const innerRadius = this.getGoalInnerRadius();
@@ -3939,8 +3963,9 @@ class GameManager {
             const centerX = this.boardStartX + (col * this.gridSize);
             const centerY = this.boardStartY + (row * this.gridSize);
             
-            // Get ball color
-            const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
+            // Get ball color and darken it for tail
+            const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
+            const ballColor = this.darkenColor(ballColorHex, 0.6);
             
             // Calculate tail ball size
             const normalBallRadius = this.getVisualBallRadius({});
@@ -3967,8 +3992,9 @@ class GameManager {
             const x2 = this.boardStartX + (col2 * this.gridSize);
             const y2 = this.boardStartY + (row2 * this.gridSize);
             
-            // Get ball color
-            const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
+            // Get ball color and darken it for tail
+            const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
+            const ballColor = this.darkenColor(ballColorHex, 0.6);
             
             // Calculate tail line width
             const normalLineWidth = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_MIN_WIDTH, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_RATIO);
