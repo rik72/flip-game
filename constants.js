@@ -49,12 +49,12 @@ const CONSTANTS = {
 		BALL_TAIL_REST_SCALE: 1.2, // Resting visual scale for balls with tails (1.2x larger)
 		
 		// Grid dot sizing (for empty intersections)
-		GRID_DOT_MIN_SIZE: 2, // Minimum grid dot radius in pixels
+		GRID_DOT_MIN_SIZE: 3, // Minimum grid dot radius in pixels
 		GRID_DOT_RATIO: 0.06, // Grid dot radius as ratio of gridSize
 		
 		// Path node sizing (for path intersections)
-		PATH_NODE_MIN_SIZE: 2, // Minimum path node radius in pixels
-		PATH_NODE_RATIO: 0.04, // Path node radius as ratio of gridSize
+		PATH_NODE_MIN_SIZE: 3, // Minimum path node radius in pixels
+		PATH_NODE_RATIO: 0.06, // Path node radius as ratio of gridSize
 		
 		// Path line sizing
 		PATH_LINE_MIN_WIDTH: 1, // Minimum path line width in pixels
