@@ -204,6 +204,7 @@
                 this.generateGrid();
                 this.createNewLevel();
                 this.updateToolbarColors();
+                this.updateAddBallButton();
             }
             
             setupEventListeners() {
@@ -575,6 +576,7 @@
                         indicator.className = 'node-indicator start';
                         indicator.innerHTML = '<i class="bi bi-arrow-down-square-fill"></i>';
                         indicator.style.backgroundColor = ballColor;
+                        indicator.style.color = this.getContrastColor(ballColor);
                         cell.appendChild(indicator);
                     }
                     
@@ -591,6 +593,7 @@
                             indicator.className = 'node-indicator end';
                             indicator.innerHTML = '<i class="bi bi-arrow-up-square-fill"></i>';
                             indicator.style.backgroundColor = ballColor;
+                            indicator.style.color = this.getContrastColor(ballColor);
                             cell.appendChild(indicator);
                         }
                     });
@@ -636,15 +639,147 @@
             }
             
             addBall() {
+                // Check if we've reached the maximum number of balls
+                if (this.balls.length >= CONSTANTS.GAME_CONFIG.MAX_BALLS) {
+                    alert(`Maximum number of balls (${CONSTANTS.GAME_CONFIG.MAX_BALLS}) reached. Remove a ball first to add a new one.`);
+                    return;
+                }
+                
+                // Find available positions that don't conflict with existing balls
+                const availablePositions = this.findAvailablePositions();
+                
+                // Find available colors that aren't already used
+                const availableColor = this.findAvailableColor();
+                
                 const ball = {
-                    start: [0, 0],
-                    end: [[this.gridWidth - 1, this.gridHeight - 1]], // Array of end positions
-                    color: 'red'
+                    start: availablePositions.start,
+                    end: [availablePositions.end], // Array of end positions
+                    color: availableColor
                 };
                 
                 this.balls.push(ball);
                 this.updateBallsList();
                 this.updateGridVisuals();
+            }
+            
+            findAvailableColor() {
+                // Get all colors currently used by existing balls
+                const usedColors = new Set();
+                this.balls.forEach(ball => {
+                    usedColors.add(ball.color);
+                });
+                
+                // Get all available colors from constants
+                const allColors = Object.keys(CONSTANTS.LEVEL_CONFIG.BALL_COLORS);
+                
+                // Filter out used colors
+                const availableColors = allColors.filter(color => !usedColors.has(color));
+                
+                // If no colors are available (shouldn't happen with current MAX_BALLS=2), fallback to red
+                if (availableColors.length === 0) {
+                    return 'red';
+                }
+                
+                // Choose a random color from available ones
+                const randomIndex = Math.floor(Math.random() * availableColors.length);
+                return availableColors[randomIndex];
+            }
+            
+            findAvailablePositions() {
+                // Get all occupied positions from existing balls
+                const occupiedPositions = new Set();
+                
+                this.balls.forEach(ball => {
+                    // Add start position
+                    const startKey = `${ball.start[0]},${ball.start[1]}`;
+                    occupiedPositions.add(startKey);
+                    
+                    // Add end positions (handle both legacy single and new multiple)
+                    let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+                    endPositions.forEach(endPos => {
+                        const endKey = `${endPos[0]},${endPos[1]}`;
+                        occupiedPositions.add(endKey);
+                    });
+                });
+                
+                // Try to find available start and end positions
+                let startPos = [0, 0];
+                let endPos = [this.gridWidth - 1, this.gridHeight - 1];
+                
+                // Try different start positions
+                const startCandidates = [
+                    [0, 0], // Top-left
+                    [this.gridWidth - 1, 0], // Top-right
+                    [0, this.gridHeight - 1], // Bottom-left
+                    [this.gridWidth - 1, this.gridHeight - 1], // Bottom-right
+                    [Math.floor(this.gridWidth / 2), 0], // Top-center
+                    [0, Math.floor(this.gridHeight / 2)], // Left-center
+                    [this.gridWidth - 1, Math.floor(this.gridHeight / 2)], // Right-center
+                    [Math.floor(this.gridWidth / 2), this.gridHeight - 1] // Bottom-center
+                ];
+                
+                for (const candidate of startCandidates) {
+                    const key = `${candidate[0]},${candidate[1]}`;
+                    if (!occupiedPositions.has(key)) {
+                        startPos = candidate;
+                        break;
+                    }
+                }
+                
+                // Try different end positions (opposite to start when possible)
+                const endCandidates = [
+                    [this.gridWidth - 1, this.gridHeight - 1], // Bottom-right
+                    [0, this.gridHeight - 1], // Bottom-left
+                    [this.gridWidth - 1, 0], // Top-right
+                    [0, 0], // Top-left
+                    [Math.floor(this.gridWidth / 2), this.gridHeight - 1], // Bottom-center
+                    [this.gridWidth - 1, Math.floor(this.gridHeight / 2)], // Right-center
+                    [0, Math.floor(this.gridHeight / 2)], // Left-center
+                    [Math.floor(this.gridWidth / 2), 0] // Top-center
+                ];
+                
+                for (const candidate of endCandidates) {
+                    const key = `${candidate[0]},${candidate[1]}`;
+                    if (!occupiedPositions.has(key)) {
+                        endPos = candidate;
+                        break;
+                    }
+                }
+                
+                // If we still can't find available positions, try any free position
+                if (occupiedPositions.has(`${startPos[0]},${startPos[1]}`)) {
+                    // Find any available position for start
+                    for (let row = 0; row < this.gridHeight; row++) {
+                        for (let col = 0; col < this.gridWidth; col++) {
+                            const key = `${col},${row}`;
+                            if (!occupiedPositions.has(key)) {
+                                startPos = [col, row];
+                                break;
+                            }
+                        }
+                        if (!occupiedPositions.has(`${startPos[0]},${startPos[1]}`)) {
+                            break;
+                        }
+                    }
+                }
+                
+                if (occupiedPositions.has(`${endPos[0]},${endPos[1]}`)) {
+                    // Find any available position for end
+                    for (let row = this.gridHeight - 1; row >= 0; row--) {
+                        for (let col = this.gridWidth - 1; col >= 0; col--) {
+                            const key = `${col},${row}`;
+                            if (!occupiedPositions.has(key)) {
+                                endPos = [col, row];
+                                break;
+                            }
+                        }
+                        if (!occupiedPositions.has(`${endPos[0]},${endPos[1]}`)) {
+                            break;
+                        }
+                    }
+                }
+                
+                return { start: startPos, end: endPos };
             }
             
             updateBallsList() {
@@ -674,6 +809,29 @@
                     `;
                     ballsList.appendChild(ballItem);
                 });
+                
+                // Update the Add Ball button state
+                this.updateAddBallButton();
+            }
+            
+            updateAddBallButton() {
+                const addBallButton = document.querySelector('button[onclick="addBall()"]');
+                if (addBallButton) {
+                    const isAtMax = this.balls.length >= CONSTANTS.GAME_CONFIG.MAX_BALLS;
+                    addBallButton.disabled = isAtMax;
+                    addBallButton.title = isAtMax ? 
+                        `Maximum number of balls (${CONSTANTS.GAME_CONFIG.MAX_BALLS}) reached` : 
+                        'Add a new ball to the level';
+                    
+                    // Update button appearance
+                    if (isAtMax) {
+                        addBallButton.classList.add('btn-secondary');
+                        addBallButton.classList.remove('btn-primary');
+                    } else {
+                        addBallButton.classList.remove('btn-secondary');
+                        addBallButton.classList.add('btn-primary');
+                    }
+                }
             }
             
             editBall(index) {
@@ -697,6 +855,14 @@
                         option.selected = true;
                     }
                     select.appendChild(option);
+                });
+                
+                // Add change event listener to automatically apply color
+                select.addEventListener('change', () => {
+                    ball.color = select.value;
+                    this.updateBallsList();
+                    this.updateGridVisuals();
+                    document.body.removeChild(dialog);
                 });
                 
                 // Create modal-like dialog
@@ -730,16 +896,6 @@
                 const buttonContainer = document.createElement('div');
                 buttonContainer.style.cssText = 'display: flex; gap: 10px; justify-content: center; margin-top: 15px;';
                 
-                const okButton = document.createElement('button');
-                okButton.textContent = 'OK';
-                okButton.style.cssText = 'padding: 8px 16px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer;';
-                okButton.onclick = () => {
-                    ball.color = select.value;
-                    this.updateBallsList();
-                    this.updateGridVisuals();
-                    document.body.removeChild(dialog);
-                };
-                
                 const cancelButton = document.createElement('button');
                 cancelButton.textContent = 'Cancel';
                 cancelButton.style.cssText = 'padding: 8px 16px; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer;';
@@ -755,7 +911,6 @@
                 };
                 
                 // Assemble dialog
-                buttonContainer.appendChild(okButton);
                 buttonContainer.appendChild(cancelButton);
                 content.appendChild(title);
                 content.appendChild(select);
@@ -771,6 +926,7 @@
                 this.balls.splice(index, 1);
                 this.updateBallsList();
                 this.updateGridVisuals();
+                this.updateAddBallButton();
             }
             
 

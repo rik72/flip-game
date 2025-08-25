@@ -34,6 +34,7 @@ const CONSTANTS = {
 		
         // Ball configurations
         BALL_RADIUS: 15,
+        MAX_BALLS: 2, // Maximum number of balls allowed in a level
 	},
 
 	// Rendering size configurations
@@ -158,14 +159,15 @@ const CONSTANTS = {
 		
 		// Ball colors mapping
 		BALL_COLORS: {
-			'white': '#FFFFFF',
-			'red': '#FF0000',
-			'green': '#00FF00',
-			'blue': '#0000FF',
+			'red': '#EE1111',
+			'green': '#11EE11',
+			'blue': '#1111EE',
+			'lightblue': '#BBBBFF',
+			'gray': '#666666',
 			'yellow': '#FFFF00',
 			'purple': '#FF00FF',
-			'orange': '#FFA500',
-			'pink': '#FFC0CB'
+			'orange': '#FF6600',
+			'pink': '#FF8080'
 		}
 	},
 
