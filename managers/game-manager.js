@@ -451,12 +451,10 @@ class GameManager {
                         // Reset level completion status when using navigation buttons
                         if (typeof this.currentLevel === 'number') {
                             this.storageManager.resetLevelCompletion(this.currentLevel);
-                            console.log(`Reset completion status for level ${this.currentLevel}`);
                         }
                         
                         // Mark that this level was loaded via navigation
                         this.levelLoadedViaNavigation = true;
-                        console.log(`Set levelLoadedViaNavigation = true for level ${this.currentLevel}`);
                         
                         this.loadLevel(this.currentLevel).catch(error => {
                             console.error('Failed to load previous level:', error);
@@ -472,12 +470,10 @@ class GameManager {
                         // Reset level completion status when using navigation buttons
                         if (typeof nextLevel === 'number') {
                             this.storageManager.resetLevelCompletion(nextLevel);
-                            console.log(`Reset completion status for level ${nextLevel}`);
                         }
                         
                         // Mark that this level was loaded via navigation
                         this.levelLoadedViaNavigation = true;
-                        console.log(`Set levelLoadedViaNavigation = true for level ${nextLevel}`);
                         
                         this.loadLevel(nextLevel).catch(error => {
                             console.error('Failed to load next level:', error);
@@ -560,7 +556,7 @@ class GameManager {
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
-        console.log(`Touch start at (${x}, ${y}) for level ${this.currentLevel}`);
+
         
         // Use touch target size based on touch ball scale
         const touchTargetSize = this.getLogicalBallRadius() * this.getTouchBallScale() * 2;
@@ -1140,7 +1136,6 @@ class GameManager {
         
         // Only animate if state is actually changing
         if (currentState !== targetState) {
-            
             if (!this.goalAnimations.has(goalKey)) {
                 // Start new animation
                 this.goalAnimations.set(goalKey, {
@@ -1971,7 +1966,6 @@ class GameManager {
      */
     initializeBalls() {
         this.balls = [];
-        console.log(`Initializing balls for level ${this.currentLevel}`);
         
         if (this.levelData.balls && this.levelData.balls.length > 0) {
             this.levelData.balls.forEach((ballData, index) => {
@@ -2042,7 +2036,7 @@ class GameManager {
                     }
                 };
                 
-                console.log(`Ball ${index} initialized at (${ball.x}, ${ball.y}) for level ${this.currentLevel}`);
+
                 
                 // Note: Sticker detection and activation is now handled in initializeTailSystem()
                 
@@ -2134,20 +2128,13 @@ class GameManager {
     checkWinCondition() {
         if (!this.canvas || this.balls.length === 0) return;
         
-        console.log(`Checking win condition for level ${this.currentLevel}`);
-        
         // Check if all balls satisfy their win conditions
         const allBallsAtGoal = this.balls.every((ball, ballIndex) => {
-            console.log(`Ball ${ballIndex} position: (${ball.x}, ${ball.y})`);
             const isAtGoal = this.isBallAtGoal(ball, ballIndex);
-            console.log(`Ball ${ballIndex} at goal: ${isAtGoal}`);
             return isAtGoal;
         });
         
-        console.log(`All balls at goal: ${allBallsAtGoal}`);
-        
         if (allBallsAtGoal) {
-            console.log(`Level ${this.currentLevel} completed!`);
             this.levelCompleted();
         }
     }
@@ -2176,7 +2163,7 @@ class GameManager {
             const isNotCompleted = !this.storageManager.isLevelCompleted(this.currentLevel);
             const wasLoadedViaNavigation = this.levelLoadedViaNavigation;
             
-            console.log(`Win condition check: level=${this.currentLevel}, isTest=${isTestLevel}, isNotCompleted=${isNotCompleted}, wasLoadedViaNavigation=${wasLoadedViaNavigation}`);
+
             
             if (isTestLevel || isNotCompleted || wasLoadedViaNavigation) {
                 this.checkWinCondition();
@@ -3444,6 +3431,44 @@ class GameManager {
     }
 
     renderEndGoals() {
+        // Check if any ball is currently transitioning
+        const anyBallTransitioning = this.transitionInProgress.some(inProgress => inProgress);
+        if (anyBallTransitioning) {
+            // Still render goals but don't update their states during transitions
+            this.balls.forEach((ball, index) => {
+                // Get all end positions for this ball
+                const endPositions = ball.endPositionsAbsolute || [];
+                
+                if (endPositions.length === 0) {
+                    // Fallback to legacy single end position
+                    if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
+                    const endX = ball.endPosition.x;
+                    const endY = ball.endPosition.y;
+                    
+                    // Just render the goal without updating state
+                    const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                    const currentState = this.getGoalState(goalKey);
+                    this.renderGoalWithArcs(endX, endY, ball.color, goalKey, currentState === 'active');
+                    return;
+                }
+                
+                // Render all end positions for this ball
+                endPositions.forEach(endPos => {
+                    // Only render goals for the current face
+                    if (endPos.face !== this.currentFace) return;
+                    
+                    const endX = endPos.x;
+                    const endY = endPos.y;
+                    
+                    // Just render the goal without updating state
+                    const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                    const currentState = this.getGoalState(goalKey);
+                    this.renderGoalWithArcs(endX, endY, ball.color, goalKey, currentState === 'active');
+                });
+            });
+            return;
+        }
+        
         this.balls.forEach((ball, index) => {
             // Get all end positions for this ball
             const endPositions = ball.endPositionsAbsolute || [];
