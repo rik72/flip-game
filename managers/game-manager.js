@@ -74,6 +74,10 @@ class GameManager {
         // Track which goal nodes are currently exploding
         this.explodingGoals = new Set();
         
+        // Track goal state animations
+        this.goalAnimations = new Map(); // Map of goalKey -> {startTime, fromState, toState, progress}
+        this.goalStates = new Map(); // Map of goalKey -> current state ('active' or 'rest')
+        
         this.init();
     }
 
@@ -123,6 +127,35 @@ class GameManager {
             newR.toString(16).padStart(2, '0') + 
             newG.toString(16).padStart(2, '0') + 
             newB.toString(16).padStart(2, '0');
+        
+        return result;
+    }
+
+    // Helper function to interpolate between two hex colors
+    interpolateColor(color1, color2, factor) {
+        // Remove # if present
+        const hex1 = color1.replace('#', '');
+        const hex2 = color2.replace('#', '');
+        
+        // Parse RGB values for both colors
+        const r1 = parseInt(hex1.substr(0, 2), 16);
+        const g1 = parseInt(hex1.substr(2, 2), 16);
+        const b1 = parseInt(hex1.substr(4, 2), 16);
+        
+        const r2 = parseInt(hex2.substr(0, 2), 16);
+        const g2 = parseInt(hex2.substr(2, 2), 16);
+        const b2 = parseInt(hex2.substr(4, 2), 16);
+        
+        // Interpolate each component
+        const r = Math.round(r1 + (r2 - r1) * factor);
+        const g = Math.round(g1 + (g2 - g1) * factor);
+        const b = Math.round(b1 + (b2 - b1) * factor);
+        
+        // Convert back to hex
+        const result = '#' + 
+            r.toString(16).padStart(2, '0') + 
+            g.toString(16).padStart(2, '0') + 
+            b.toString(16).padStart(2, '0');
         
         return result;
     }
@@ -260,6 +293,9 @@ class GameManager {
             
             // Recalculate connected nodes for all balls after face change
             this.recalculateAllConnectedNodes();
+            
+            // Initialize goal states for the new face
+            this.initializeGoalStates();
             
             this.render(); // Re-render with new face content
         }, contentSwitchDelay);
@@ -526,8 +562,8 @@ class GameManager {
         
         console.log(`Touch start at (${x}, ${y}) for level ${this.currentLevel}`);
         
-        // Use grid-scaled touch target (minimum 100% of grid size for accessibility)
-        const touchTargetSize = Math.max(this.gridSize * CONSTANTS.TOUCH_CONFIG.MIN_TOUCH_SIZE_RATIO, CONSTANTS.GAME_CONFIG.BALL_RADIUS * 3);
+        // Use touch target size based on touch ball scale
+        const touchTargetSize = this.getLogicalBallRadius() * this.getTouchBallScale() * 2;
         
         // Check if touch is near any ball - find the closest one within touch range
         let closestBallIndex = -1;
@@ -719,8 +755,8 @@ class GameManager {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        // Use grid-scaled mouse target (minimum 100% of grid size for accessibility)
-        const mouseTargetSize = Math.max(this.gridSize * CONSTANTS.TOUCH_CONFIG.MIN_TOUCH_SIZE_RATIO, CONSTANTS.GAME_CONFIG.BALL_RADIUS * 3);
+        // Use mouse target size based on touch ball scale
+        const mouseTargetSize = this.getLogicalBallRadius() * this.getTouchBallScale() * 2;
         
         // Check if mouse is near any ball - find the closest one within mouse range
         let closestBallIndex = -1;
@@ -1012,8 +1048,11 @@ class GameManager {
             }
         }
 
-        // Continue animation loop if any balls are still animating
-        if (anyAnimating) {
+        // Check if there are any active goal animations
+        const hasActiveGoalAnimations = this.goalAnimations.size > 0;
+        
+        // Continue animation loop if any balls are still animating OR if there are goal animations
+        if (anyAnimating || hasActiveGoalAnimations) {
             this.render(); // Re-render with updated positions
             this.ballAnimationId = requestAnimationFrame(() => this.ballAnimationLoop());
         } else {
@@ -1046,15 +1085,157 @@ class GameManager {
         return this.getLogicalBallRadius() * this.getVisualScale(ball);
     }
 
+    // Get touch ball scale as ratio of grid size
+    getTouchBallScale() {
+        return CONSTANTS.RENDER_SIZE_CONFIG.BALL_TOUCH_SCALE_RATIO;
+    }
+
     // Goal ring radii helpers (keep visuals proportional and reusable)
     getGoalInnerRadius() {
-        const base = this.getLogicalBallRadius();
-        return base + Math.max(CONSTANTS.RENDER_SIZE_CONFIG.GOAL_INNER_MIN_OFFSET, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GOAL_INNER_RATIO);
+        return this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GOAL_INNER_RADIUS_RATIO;
     }
 
     getGoalOuterRadius() {
-        const base = this.getLogicalBallRadius();
-        return base + Math.max(CONSTANTS.RENDER_SIZE_CONFIG.GOAL_OUTER_MIN_OFFSET, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GOAL_OUTER_RATIO);
+        return this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GOAL_OUTER_RADIUS_RATIO;
+    }
+
+    // Check if a goal position is occupied by a specific ball (by ball or tail disc)
+    isGoalOccupied(goalX, goalY, face, ballIndex = -1) {
+        // Check if the specific ball is at this goal position
+        if (ballIndex >= 0 && ballIndex < this.balls.length) {
+            const ball = this.balls[ballIndex];
+            const ballFace = this.getBallCurrentFace(ball);
+            if (ballFace === face) {
+                const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+                const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+                
+                // Use exact grid position match
+                if (ballGridX === goalX && ballGridY === goalY) {
+                    return true;
+                }
+            }
+        }
+        
+        // Check if there's a tail disc from this specific ball at this goal position
+        if (ballIndex >= 0 && this.nodeTails[face] && this.nodeTails[face][`${goalY}_${goalX}`]) {
+            const tailData = this.nodeTails[face][`${goalY}_${goalX}`];
+            if (tailData.ballIndex === ballIndex) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    // Update goal animation state
+    updateGoalAnimation(goalKey, isOccupied) {
+        const currentTime = Date.now();
+        const animationDuration = CONSTANTS.ANIMATION_CONFIG.GOAL_TRANSITION_DURATION;
+        
+        // Determine target state
+        const targetState = isOccupied ? 'active' : 'rest';
+        
+        // Get current state (default to target state if not tracked)
+        const currentState = this.goalStates.get(goalKey) || targetState;
+        
+        // Only animate if state is actually changing
+        if (currentState !== targetState) {
+            
+            if (!this.goalAnimations.has(goalKey)) {
+                // Start new animation
+                this.goalAnimations.set(goalKey, {
+                    startTime: currentTime,
+                    fromState: currentState,
+                    toState: targetState,
+                    progress: 0
+                });
+            } else {
+                const animation = this.goalAnimations.get(goalKey);
+                
+                // If target changed during animation, update it
+                if (animation.toState !== targetState) {
+                    animation.startTime = currentTime;
+                    animation.fromState = animation.toState; // Start from where we were going
+                    animation.toState = targetState;
+                    animation.progress = 0;
+                }
+            }
+        }
+        
+        // Update progress for all animations
+        this.goalAnimations.forEach((animation, key) => {
+            const elapsed = currentTime - animation.startTime;
+            animation.progress = Math.min(elapsed / animationDuration, 1);
+            
+            // Remove completed animations and update state
+            if (animation.progress >= 1) {
+                this.goalStates.set(key, animation.toState);
+                this.goalAnimations.delete(key);
+            }
+        });
+        
+        // Start animation loop if not already running
+        if (this.goalAnimations.size > 0 && !this.ballAnimationId) {
+            this.ballAnimationId = requestAnimationFrame(() => this.ballAnimationLoop());
+        }
+    }
+
+    // Get goal animation progress
+    getGoalAnimationProgress(goalKey) {
+        const animation = this.goalAnimations.get(goalKey);
+        if (!animation) return 1; // No animation = fully transitioned
+        
+        // Apply easing function for smooth animation
+        return CONSTANTS.ANIMATION_CONFIG.EASING.EASE_IN_OUT(animation.progress);
+    }
+
+    // Get current goal state
+    getGoalState(goalKey) {
+        return this.goalStates.get(goalKey) || 'rest';
+    }
+
+    // Update goal states after a ball has moved and tail system is updated
+    updateGoalStatesAfterBallMove(ballIndex) {
+        const ball = this.balls[ballIndex];
+        if (!ball) return;
+        
+        // Get all end positions for this ball
+        const endPositions = ball.endPositionsAbsolute || [];
+        
+        if (endPositions.length === 0) {
+            // Fallback to legacy single end position
+            if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
+            const endX = ball.endPosition.x;
+            const endY = ball.endPosition.y;
+            
+            // Convert to grid coordinates for occupation check
+            const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+            const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+            
+            // Check if goal is occupied and update animation
+            const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace, ballIndex);
+            const goalKey = `${endX}_${endY}_${this.currentFace}`;
+            this.updateGoalAnimation(goalKey, isOccupied);
+            return;
+        }
+        
+        // Update all end positions for this ball
+        endPositions.forEach(endPos => {
+            // Only update goals for the current face
+            if (endPos.face !== this.currentFace) return;
+            
+            const endX = endPos.x;
+            const endY = endPos.y;
+            
+            // Convert to grid coordinates for occupation check
+            const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+            const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+            
+            // Check if goal is occupied and update animation
+            const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace, ballIndex);
+            const goalKey = `${endX}_${endY}_${this.currentFace}`;
+            this.updateGoalAnimation(goalKey, isOccupied);
+        });
     }
 
     // Check if a grid node is already occupied by another ball on the same face
@@ -1242,9 +1423,8 @@ class GameManager {
             if (state.fadeOut) {
                 // Fade out animation
                 state.opacity = 1.0 - progress;
-                // Shrink back towards restScale from the goal inner radius scale
-                const logical = this.getLogicalBallRadius();
-                const targetScaleAtPeak = this.getGoalInnerRadius() / logical;
+                // Shrink back towards restScale from the touch ball scale
+                const targetScaleAtPeak = this.getTouchBallScale();
                 state.scale = targetScaleAtPeak - (targetScaleAtPeak - this.restScale) * progress;
                 
                 if (progress >= 1.0) {
@@ -1267,10 +1447,8 @@ class GameManager {
                         state.scale = this.restScale;
                     }
                 } else {
-                    // Normal clamped animation - scale so that at peak the visual ball radius equals goal outer radius
-                    // This provides the same visual feedback as the old halo but without the confusing darker appearance
-                    const logical = this.getLogicalBallRadius();
-                    const targetScaleAtPeak = this.getGoalOuterRadius() / logical;
+                    // Normal clamped animation - scale to touch ball scale ratio of grid size
+                    const targetScaleAtPeak = this.getTouchBallScale();
                     state.scale = this.restScale + (targetScaleAtPeak - this.restScale) * progress;
                     
                     if (progress >= 1.0) {
@@ -1898,6 +2076,54 @@ class GameManager {
             };
             this.balls.push(defaultBall);
         }
+        
+        // Initialize goal states
+        this.initializeGoalStates();
+    }
+
+    // Initialize goal states for all balls
+    initializeGoalStates() {
+        // Clear existing goal states
+        this.goalStates.clear();
+        this.goalAnimations.clear();
+        
+        this.balls.forEach((ball, ballIndex) => {
+            // Get all end positions for this ball
+            const endPositions = ball.endPositionsAbsolute || [];
+            
+            if (endPositions.length === 0) {
+                // Fallback to legacy single end position
+                if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
+                const endX = ball.endPosition.x;
+                const endY = ball.endPosition.y;
+                const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                
+                // Convert to grid coordinates for occupation check
+                const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+                const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+                const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace);
+                
+                // Set initial state
+                this.goalStates.set(goalKey, isOccupied ? 'active' : 'rest');
+            } else {
+                // Handle multiple end positions
+                endPositions.forEach(endPos => {
+                    if (endPos.face !== this.currentFace) return;
+                    
+                    const endX = endPos.x;
+                    const endY = endPos.y;
+                    const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                    
+                    // Convert to grid coordinates for occupation check
+                    const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+                    const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+                    const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace);
+                    
+                    // Set initial state
+                    this.goalStates.set(goalKey, isOccupied ? 'active' : 'rest');
+                });
+            }
+        });
     }
 
     /**
@@ -2817,9 +3043,8 @@ class GameManager {
                         this.ctx.stroke();
                         
                         // Draw four segments pointing from ring border to center
-                        // Each segment starts at the outer radius and ends at the ball's rest radius
-                        const ballRestRadius = this.getLogicalBallRadius() * this.restScale;
-                        const segmentEndRadius = ballRestRadius;
+                        // Each segment starts at the outer radius and ends at the goal inner radius
+                        const segmentEndRadius = this.getGoalInnerRadius();
                         
                         // Four directions: top, right, bottom, left
                         const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
@@ -2833,7 +3058,7 @@ class GameManager {
                             const startX = centerX + outerRadius * Math.cos(angle);
                             const startY = centerY + outerRadius * Math.sin(angle);
                             
-                            // Calculate end point (at ball rest radius)
+                            // Calculate end point (at goal inner radius)
                             const endX = centerX + segmentEndRadius * Math.cos(angle);
                             const endY = centerY + segmentEndRadius * Math.sin(angle);
                             
@@ -3229,28 +3454,17 @@ class GameManager {
                 const endX = ball.endPosition.x;
                 const endY = ball.endPosition.y;
                 
-                // Use exact ball color if this goal is exploding, otherwise use darker shade
-                const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                // Convert to grid coordinates for occupation check
+                const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+                const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+                
+                // Check if goal is occupied and update animation
+                const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace, index);
                 const goalKey = `${endX}_${endY}_${this.currentFace}`;
-                const colorHex = this.explodingGoals.has(goalKey) ? ballColorHex : this.darkenColor(ballColorHex, 0.5);
+                this.updateGoalAnimation(goalKey, isOccupied);
                 
-                // Get the radii for the square frame and circular hole
-                const innerRadius = this.getGoalInnerRadius();
-                const outerRadius = this.getGoalOuterRadius();
-                
-                // Calculate square dimensions (side length = outer radius * 2)
-                const squareHalfSize = outerRadius;
-                
-                this.ctx.fillStyle = colorHex;
-                this.ctx.beginPath();
-                
-                // Draw the outer square
-                this.ctx.rect(endX - squareHalfSize, endY - squareHalfSize, squareHalfSize * 2, squareHalfSize * 2);
-                
-                // Cut out the circular hole in the middle
-                this.ctx.arc(endX, endY, innerRadius, 0, 2 * Math.PI, true); // true = counterclockwise for hole
-                
-                this.ctx.fill();
+                // Render the goal with 4-arc animation
+                this.renderGoalWithArcs(endX, endY, ball.color, goalKey, isOccupied);
                 return;
             }
             
@@ -3262,29 +3476,123 @@ class GameManager {
                 const endX = endPos.x;
                 const endY = endPos.y;
                 
-                // Use exact ball color if this goal is exploding, otherwise use darker shade
-                const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
+                // Convert to grid coordinates for occupation check
+                const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+                const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+                
+                // Check if goal is occupied and update animation
+                const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace, index);
                 const goalKey = `${endX}_${endY}_${this.currentFace}`;
-                const colorHex = this.explodingGoals.has(goalKey) ? ballColorHex : this.darkenColor(ballColorHex, 0.5);
+                this.updateGoalAnimation(goalKey, isOccupied);
                 
-                // Get the radii for the square frame and circular hole
-                const innerRadius = this.getGoalInnerRadius();
-                const outerRadius = this.getGoalOuterRadius();
-                
-                // Calculate square dimensions (side length = outer radius * 2)
-                const squareHalfSize = outerRadius;
-                
-                this.ctx.fillStyle = colorHex;
-                this.ctx.beginPath();
-                
-                // Draw the outer square
-                this.ctx.rect(endX - squareHalfSize, endY - squareHalfSize, squareHalfSize * 2, squareHalfSize * 2);
-                
-                // Cut out the circular hole in the middle
-                this.ctx.arc(endX, endY, innerRadius, 0, 2 * Math.PI, true); // true = counterclockwise for hole
-                
-                this.ctx.fill();
+                // Render the goal with 4-arc animation
+                this.renderGoalWithArcs(endX, endY, ball.color, goalKey, isOccupied);
             });
+        });
+    }
+
+    // Render a goal with the new 4-arc animation system
+    renderGoalWithArcs(centerX, centerY, ballColor, goalKey, isOccupied) {
+        // Get ball color
+        const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#FFFFFF';
+        const darkenedColorHex = this.darkenColor(ballColorHex, 0.5);
+        
+        // Use exploding color if goal is exploding
+        if (this.explodingGoals.has(goalKey)) {
+            this.ctx.strokeStyle = ballColorHex;
+        } else {
+            // Interpolate color based on animation state
+            const currentState = this.getGoalState(goalKey);
+            const animation = this.goalAnimations.get(goalKey);
+            
+            let colorInterpolation = 0; // 0 = darkened, 1 = full color
+            if (animation && animation.progress < 1) {
+                // During animation, interpolate between states
+                const fromColor = animation.fromState === 'active' ? 1 : 0;
+                const toColor = animation.toState === 'active' ? 1 : 0;
+                colorInterpolation = fromColor + (toColor - fromColor) * this.getGoalAnimationProgress(goalKey);
+            } else {
+                // Use current state
+                colorInterpolation = currentState === 'active' ? 1 : 0;
+            }
+            
+            // Interpolate between darkened and full color
+            this.ctx.strokeStyle = this.interpolateColor(darkenedColorHex, ballColorHex, colorInterpolation);
+        }
+        
+        // Get radii
+        const goalInnerRadius = this.getGoalInnerRadius();
+        const goalOuterRadius = this.getGoalOuterRadius();
+        const arcThickness = goalOuterRadius - goalInnerRadius;
+        
+        // Get animation progress
+        const animationProgress = this.getGoalAnimationProgress(goalKey);
+        
+        // Get current goal state
+        const currentState = this.getGoalState(goalKey);
+        
+        // Calculate arc positions based on current state and animation
+        let arcRadius, arcOffset;
+        
+        // Apply animation interpolation
+        const animation = this.goalAnimations.get(goalKey);
+        if (animation && animation.progress < 1) {
+            // Interpolate between states during animation
+            const fromOffset = animation.fromState === 'active' ? 0 : arcThickness;
+            const toOffset = animation.toState === 'active' ? 0 : arcThickness;
+            
+            arcRadius = goalInnerRadius + arcThickness/2; // Center of the ring thickness
+            arcOffset = fromOffset + (toOffset - fromOffset) * animationProgress;
+        } else {
+            // Use current state (no animation)
+            if (currentState === 'active') {
+                arcRadius = goalInnerRadius + arcThickness/2; // Center of the ring thickness
+                arcOffset = 0;
+            } else {
+                arcRadius = goalInnerRadius + arcThickness/2; // Center of the ring thickness
+                arcOffset = arcThickness;
+            }
+        }
+        
+        // Set up drawing context
+        this.ctx.lineWidth = arcThickness; // Arc thickness
+        this.ctx.lineCap = 'butt';
+        
+        // Draw four separate arc segments covering the full circle
+        // Each segment covers π/2 (90 degrees)
+        const arcSegments = [
+            { start: 0, end: Math.PI/2, direction: Math.PI/4 },                // Top-right segment (0 to π/2)
+            { start: Math.PI/2, end: Math.PI, direction: 3*Math.PI/4 },        // Bottom-right segment (π/2 to π)
+            { start: Math.PI, end: 3*Math.PI/2, direction: 5*Math.PI/4 },      // Bottom-left segment (π to 3π/2)
+            { start: 3*Math.PI/2, end: 2*Math.PI, direction: 7*Math.PI/4 }     // Top-left segment (3π/2 to 2π)
+        ];
+        
+        // Always draw 4 separate arcs, but interpolate their positions
+        arcSegments.forEach((segment, index) => {
+            // Calculate arc center offset based on animation
+            let arcCenterX = centerX;
+            let arcCenterY = centerY;
+            
+            // Interpolate the offset based on animation progress
+            let currentOffset = 0;
+            if (animation && animation.progress < 1) {
+                // During animation, interpolate between states
+                const fromOffset = animation.fromState === 'active' ? 0 : arcThickness;
+                const toOffset = animation.toState === 'active' ? 0 : arcThickness;
+                currentOffset = fromOffset + (toOffset - fromOffset) * animationProgress;
+            } else {
+                // Use current state
+                currentOffset = currentState === 'active' ? 0 : arcOffset;
+            }
+            
+            // Move arc centers outward along diagonal axes
+            arcCenterX += Math.cos(segment.direction) * currentOffset;
+            arcCenterY += Math.sin(segment.direction) * currentOffset;
+            
+            // Draw the arc segment
+            this.ctx.beginPath();
+            this.ctx.arc(arcCenterX, arcCenterY, arcRadius, segment.start, segment.end);
+            this.ctx.stroke();
         });
     }
 
@@ -3782,6 +4090,9 @@ class GameManager {
         // Create movement trail animation at the destination node
         const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
         this.createMovementTrail(ball.x, ball.y, ballColor);
+        
+        // Update goal states after tail system is updated
+        this.updateGoalStatesAfterBallMove(ballIndex);
         
         // Handle touch feedback based on ball state
         if (this.touchAnimationState[ballIndex]) {

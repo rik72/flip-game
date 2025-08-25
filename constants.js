@@ -45,8 +45,9 @@ const CONSTANTS = {
 		
 		// Ball sizing
 		BALL_RADIUS_RATIO: 0.375, // Ball radius as ratio of gridSize (37.5% of grid cell)
-		BALL_REST_SCALE: 0.75, // Resting visual scale for balls during animations
+		BALL_REST_SCALE: 0.6, // Resting visual scale for balls during animations
 		BALL_TAIL_REST_SCALE: 1.2, // Resting visual scale for balls with tails (1.2x larger)
+		BALL_TOUCH_SCALE_RATIO: 0.8, // Touch ball scale as ratio of gridSize (80% of grid cell)
 		
 		// Grid dot sizing (for empty intersections)
 		GRID_DOT_MIN_SIZE: 3, // Minimum grid dot radius in pixels
@@ -61,10 +62,8 @@ const CONSTANTS = {
 		PATH_LINE_RATIO: 0.02, // Path line width as ratio of gridSize
 		
 		// Goal ring sizing
-		GOAL_INNER_MIN_OFFSET: 1, // Minimum inner goal ring offset from ball radius
-		GOAL_INNER_RATIO: 0.01, // Goal inner ring offset as ratio of gridSize
-		GOAL_OUTER_MIN_OFFSET: 1, // Minimum outer goal ring offset from ball radius
-		GOAL_OUTER_RATIO: 0.01, // Goal outer ring offset as ratio of gridSize
+		GOAL_INNER_RADIUS_RATIO: 0.3, // Goal inner radius as ratio of gridSize
+		GOAL_OUTER_RADIUS_RATIO: 0.4, // Goal outer radius as ratio of gridSize
 		
 		// Tail rendering configuration
 		TAIL_BALL_SIZE_RATIO: .6, // Tail ball size as ratio of normal ball size (1.0 = same size)
@@ -73,12 +72,7 @@ const CONSTANTS = {
 		
 	},
 
-	// Touch configurations
-	TOUCH_CONFIG: {
-		// Touch size and distance are now scaled with grid size
-		// These will be calculated as: gridSize * ratio
-		MIN_TOUCH_SIZE_RATIO: 1, // Minimum touch size as ratio of gridSize (120% of grid cell)
-	},
+
 
 	// Animation configurations
 	ANIMATION_CONFIG: {
@@ -94,6 +88,9 @@ const CONSTANTS = {
 		// Level completion explosion animation
 		EXPLOSION_DURATION: 1000, // milliseconds for explosion animation
 		EXPLOSION_DELAY: 100, // milliseconds between explosions
+		
+		// Goal state transition animation
+		GOAL_TRANSITION_DURATION: 500, // milliseconds for goal state transition animation
 		
 		// Movement trail animation
 		TRAIL_ENABLED: true, // flag to enable/disable trail animations
