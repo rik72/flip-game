@@ -26,7 +26,10 @@ class SoundManager {
      * Initialize the sound manager
      */
     init() {
-        this.loadSounds();
+        // Only load sounds if audio is enabled
+        if (CONSTANTS.AUDIO_CONFIG.ENABLED) {
+            this.loadSounds();
+        }
         this.loadSettings();
     }
 
@@ -34,6 +37,11 @@ class SoundManager {
      * Load all sound effects
      */
     loadSounds() {
+        // Early return if audio is disabled
+        if (!CONSTANTS.AUDIO_CONFIG.ENABLED) {
+            return;
+        }
+        
         // Ball movement sounds
         this.sounds.ballPickup = this.createAudio('ball-pickup.mp3', 0.6);
         this.sounds.ballDrop = this.createAudio('ball-drop.mp3', 0.5);
@@ -310,12 +318,14 @@ class SoundManager {
     setVolume(volume) {
         this.volume = Math.max(0, Math.min(1, volume));
         
-        // Update all sound effect volumes
-        Object.values(this.sounds).forEach(sound => {
-            if (sound !== this.backgroundMusic) {
-                sound.volume = this.volume;
-            }
-        });
+        // Only update audio elements if audio is enabled and sounds exist
+        if (CONSTANTS.AUDIO_CONFIG.ENABLED && this.sounds) {
+            Object.values(this.sounds).forEach(sound => {
+                if (sound !== this.backgroundMusic) {
+                    sound.volume = this.volume;
+                }
+            });
+        }
         
         this.saveSettings();
     }
@@ -327,7 +337,8 @@ class SoundManager {
     setMusicVolume(volume) {
         this.musicVolume = Math.max(0, Math.min(1, volume));
         
-        if (this.backgroundMusic) {
+        // Only update background music if audio is enabled and it exists
+        if (CONSTANTS.AUDIO_CONFIG.ENABLED && this.backgroundMusic) {
             this.backgroundMusic.volume = this.musicVolume;
         }
         
@@ -347,9 +358,11 @@ class SoundManager {
                 this.volume = audioSettings.volume !== undefined ? audioSettings.volume : 0.7;
                 this.musicVolume = audioSettings.musicVolume !== undefined ? audioSettings.musicVolume : 0.5;
                 
-                // Apply settings to audio elements
-                this.setVolume(this.volume);
-                this.setMusicVolume(this.musicVolume);
+                // Only apply settings to audio elements if audio is enabled
+                if (CONSTANTS.AUDIO_CONFIG.ENABLED) {
+                    this.setVolume(this.volume);
+                    this.setMusicVolume(this.musicVolume);
+                }
             }
         } catch (error) {
             console.warn('Failed to load audio settings:', error);
@@ -395,8 +408,11 @@ class SoundManager {
         this.volume = 0.7;
         this.musicVolume = 0.5;
         
-        this.setVolume(this.volume);
-        this.setMusicVolume(this.musicVolume);
+        // Only apply settings to audio elements if audio is enabled
+        if (CONSTANTS.AUDIO_CONFIG.ENABLED) {
+            this.setVolume(this.volume);
+            this.setMusicVolume(this.musicVolume);
+        }
         this.saveSettings();
     }
 
@@ -404,6 +420,11 @@ class SoundManager {
      * Preload all audio files
      */
     preloadAll() {
+        // Only preload if audio is enabled and sounds exist
+        if (!CONSTANTS.AUDIO_CONFIG.ENABLED || !this.sounds) {
+            return;
+        }
+        
         Object.values(this.sounds).forEach(sound => {
             if (sound.load) {
                 sound.load();
@@ -419,11 +440,13 @@ class SoundManager {
      * Clean up audio resources
      */
     destroy() {
-        // Stop all audio
-        Object.values(this.sounds).forEach(sound => {
-            sound.pause();
-            sound.src = '';
-        });
+        // Only clean up if audio elements exist
+        if (this.sounds) {
+            Object.values(this.sounds).forEach(sound => {
+                sound.pause();
+                sound.src = '';
+            });
+        }
         
         if (this.backgroundMusic) {
             this.backgroundMusic.pause();

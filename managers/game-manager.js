@@ -42,6 +42,7 @@ class GameManager {
         
         // Level progression state
         this.isLevelProgression = false; // Track if we're proceeding to next level from completion // Track animation timing
+        this.levelLoadedViaNavigation = false; // Track if level was loaded via navigation buttons
         
         this.gridSize = 40; // Grid cell size for snapping
         this.boardStartX = 0;
@@ -123,7 +124,6 @@ class GameManager {
             newG.toString(16).padStart(2, '0') + 
             newB.toString(16).padStart(2, '0');
         
-        console.log(`Darkening color: ${hexColor} -> ${result} (factor: ${factor})`);
         return result;
     }
 
@@ -277,7 +277,8 @@ class GameManager {
 
             // Check win condition after transfer animation is complete, but only if level is not already completed
             // For test levels, always check win condition
-            if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
+            // Also check if level was loaded via navigation (allows replaying completed levels)
+            if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel) || this.levelLoadedViaNavigation) {
                 this.checkWinCondition();
             }
         }, CONSTANTS.ANIMATION_CONFIG.FLIP_DURATION);
@@ -314,9 +315,6 @@ class GameManager {
             if (gameContainer) {
                 gameContainer.style.cursor = 'pointer';
             }
-            console.log('Desktop detected, cursor set to pointer');
-        } else {
-            console.log('Mobile detected, cursor hidden');
         }
         
         // Initialize flip wrapper reference - retry if not available
@@ -414,6 +412,16 @@ class GameManager {
                             }
                         }
                         
+                        // Reset level completion status when using navigation buttons
+                        if (typeof this.currentLevel === 'number') {
+                            this.storageManager.resetLevelCompletion(this.currentLevel);
+                            console.log(`Reset completion status for level ${this.currentLevel}`);
+                        }
+                        
+                        // Mark that this level was loaded via navigation
+                        this.levelLoadedViaNavigation = true;
+                        console.log(`Set levelLoadedViaNavigation = true for level ${this.currentLevel}`);
+                        
                         this.loadLevel(this.currentLevel).catch(error => {
                             console.error('Failed to load previous level:', error);
                         });
@@ -423,7 +431,19 @@ class GameManager {
                 // Next level button
                 nextBtn.addEventListener('click', () => {
                     if (this.currentLevel < CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
-                        this.loadLevel(this.currentLevel + 1).catch(error => {
+                        const nextLevel = this.currentLevel + 1;
+                        
+                        // Reset level completion status when using navigation buttons
+                        if (typeof nextLevel === 'number') {
+                            this.storageManager.resetLevelCompletion(nextLevel);
+                            console.log(`Reset completion status for level ${nextLevel}`);
+                        }
+                        
+                        // Mark that this level was loaded via navigation
+                        this.levelLoadedViaNavigation = true;
+                        console.log(`Set levelLoadedViaNavigation = true for level ${nextLevel}`);
+                        
+                        this.loadLevel(nextLevel).catch(error => {
                             console.error('Failed to load next level:', error);
                         });
                     }
@@ -503,6 +523,8 @@ class GameManager {
         // Calculate touch position using CSS coordinates (not scaled by device pixel ratio)
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
+        
+        console.log(`Touch start at (${x}, ${y}) for level ${this.currentLevel}`);
         
         // Use grid-scaled touch target (minimum 100% of grid size for accessibility)
         const touchTargetSize = Math.max(this.gridSize * CONSTANTS.TOUCH_CONFIG.MIN_TOUCH_SIZE_RATIO, CONSTANTS.GAME_CONFIG.BALL_RADIUS * 3);
@@ -1545,7 +1567,8 @@ class GameManager {
             // Check win condition since transfer was blocked, but only if level is not already completed
             setTimeout(() => {
                 // For test levels, always check win condition
-                if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
+                // Also check if level was loaded via navigation (allows replaying completed levels)
+                if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel) || this.levelLoadedViaNavigation) {
                     this.checkWinCondition();
                 }
             }, 50);
@@ -1679,6 +1702,23 @@ class GameManager {
             this.storageManager.resetLevelCompletion(levelNumber);
         }
         
+        // Track if this level was loaded via navigation (for win condition checking)
+        this.levelLoadedViaNavigation = false;
+        
+        // Remove any existing level completion overlay when loading a new level
+        const overlay = document.querySelector('.level-completion-overlay');
+        if (overlay && overlay.parentElement) {
+            overlay.parentElement.removeChild(overlay);
+        }
+        
+        // Remove any remaining explosion discs
+        const discs = document.querySelectorAll('.explosion-disc');
+        discs.forEach(disc => {
+            if (disc.parentElement) {
+                disc.parentElement.removeChild(disc);
+            }
+        });
+        
         try {
             let levelData;
             
@@ -1753,6 +1793,7 @@ class GameManager {
      */
     initializeBalls() {
         this.balls = [];
+        console.log(`Initializing balls for level ${this.currentLevel}`);
         
         if (this.levelData.balls && this.levelData.balls.length > 0) {
             this.levelData.balls.forEach((ballData, index) => {
@@ -1823,6 +1864,8 @@ class GameManager {
                     }
                 };
                 
+                console.log(`Ball ${index} initialized at (${ball.x}, ${ball.y}) for level ${this.currentLevel}`);
+                
                 // Note: Sticker detection and activation is now handled in initializeTailSystem()
                 
                 this.balls.push(ball);
@@ -1865,12 +1908,20 @@ class GameManager {
     checkWinCondition() {
         if (!this.canvas || this.balls.length === 0) return;
         
+        console.log(`Checking win condition for level ${this.currentLevel}`);
+        
         // Check if all balls satisfy their win conditions
         const allBallsAtGoal = this.balls.every((ball, ballIndex) => {
-            return this.isBallAtGoal(ball, ballIndex);
+            console.log(`Ball ${ballIndex} position: (${ball.x}, ${ball.y})`);
+            const isAtGoal = this.isBallAtGoal(ball, ballIndex);
+            console.log(`Ball ${ballIndex} at goal: ${isAtGoal}`);
+            return isAtGoal;
         });
         
+        console.log(`All balls at goal: ${allBallsAtGoal}`);
+        
         if (allBallsAtGoal) {
+            console.log(`Level ${this.currentLevel} completed!`);
             this.levelCompleted();
         }
     }
@@ -1894,7 +1945,14 @@ class GameManager {
         } else {
             // All touch animations are complete, now check win condition
             // For test levels, always check win condition
-            if (this.currentLevel === 'test' || !this.storageManager.isLevelCompleted(this.currentLevel)) {
+            // Also check if level was loaded via navigation (allows replaying completed levels)
+            const isTestLevel = this.currentLevel === 'test';
+            const isNotCompleted = !this.storageManager.isLevelCompleted(this.currentLevel);
+            const wasLoadedViaNavigation = this.levelLoadedViaNavigation;
+            
+            console.log(`Win condition check: level=${this.currentLevel}, isTest=${isTestLevel}, isNotCompleted=${isNotCompleted}, wasLoadedViaNavigation=${wasLoadedViaNavigation}`);
+            
+            if (isTestLevel || isNotCompleted || wasLoadedViaNavigation) {
                 this.checkWinCondition();
             }
         }
@@ -2525,18 +2583,7 @@ class GameManager {
         const boardStartX = (this.displayWidth - boardWidth) / 2;
         const boardStartY = (this.displayHeight - boardHeight) / 2;
         
-        // Debug logging for desktop
-        if (isDesktop) {
-            console.log('Desktop grid positioning:', {
-                displayHeight: this.displayHeight,
-                displayWidth: this.displayWidth,
-                boardWidth,
-                boardHeight,
-                boardStartX,
-                boardStartY,
-                gridSize
-            });
-        }
+
         
         // Store grid info for other methods to use
         this.gridSize = gridSize;
@@ -2751,18 +2798,15 @@ class GameManager {
                             
                             if (isBallOnSticker) {
                                 // Ball is currently on the sticker - use ball color
-                                stickerColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
-                                console.log(`Sticker at ${nodeKey}: ball ${ballIndex} is on it, using ball color ${stickerColor}`);
+                                                                 stickerColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
                             } else {
                                 // Ball has left the sticker - use darker shade
-                                const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
-                                stickerColor = this.darkenColor(ballColorHex, 0.5);
-                                console.log(`Sticker at ${nodeKey}: ball ${ballIndex} is not on it, using dark color ${stickerColor} (from ${ballColorHex})`);
+                                                                 const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
+                                 stickerColor = this.darkenColor(ballColorHex, 0.5);
                             }
                         } else {
                             // Not activated - use default sticker color
-                            stickerColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
-                            console.log(`Sticker at ${nodeKey}: not activated, using default color ${stickerColor}`);
+                                                         stickerColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
                         }
                         
                         // Draw hollow ring (stroke only, no fill)
