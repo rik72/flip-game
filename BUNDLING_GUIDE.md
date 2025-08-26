@@ -128,3 +128,31 @@ To add a new JavaScript file to the bundle:
 - The bundled version is served at http://localhost:8080
 - Changes to source files require the concatenation script to run
 - Pre-hooks handle this automatically for build commands 
+
+## 🔨 Build Information System
+
+The bundling system now automatically includes build information that appears in the bottom-left corner of both the game and editor:
+
+### 📋 **Build Info Display**
+- **Position**: Bottom-left corner (very small, subtle text)
+- **Content**: Version | Build Type | Timestamp and Build ID
+- **Example**: `v1.0.0 | dev | 2025-08-26 10:28`<br/>`4e6bfe1-mesel5pn`
+
+### 🔧 **How it Works**
+1. **Generation**: `scripts/generate-build-info.js` creates build metadata
+2. **Injection**: Webpack automatically injects the info into HTML templates
+3. **Styling**: Minimal, non-intrusive styling with monospace font
+4. **Git Integration**: Includes commit hash and branch information
+
+### 📦 **Build ID Components**
+- **Version**: From `package.json`
+- **Build Type**: `dev` or `prod` based on webpack mode
+- **Timestamp**: Human-readable build time
+- **Git Hash**: Short commit hash (if available)
+- **Unique ID**: Timestamp-based unique identifier
+
+### 🎯 **Generated Files** (auto-excluded from git)
+- `src/build-info.json` - Raw build metadata
+- `src/build-info.js` - ES6 module export
+
+This build info helps identify deployed versions and troubleshoot issues by providing exact build context. 

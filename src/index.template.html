@@ -19,11 +19,34 @@
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    
+    <style>
+        .build-info {
+            position: fixed;
+            bottom: 4px;
+            left: 4px;
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: 'Courier New', monospace;
+            z-index: 1000;
+            pointer-events: none;
+            user-select: none;
+            line-height: 1.1;
+        }
+        .build-info:hover {
+            color: rgba(255, 255, 255, 0.6);
+        }
+    </style>
 </head>
 <body>
     <!-- Game Container -->
     <div id="gameContainer" class="game-container">
         <!-- Game will be rendered here -->
+    </div>
+
+    <!-- Build Info -->
+    <div class="build-info" id="buildInfo">
+        <div><%= BUILD_PLACEHOLDER %></div>
     </div>
 
     <!-- Bootstrap JS -->

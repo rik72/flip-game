@@ -2,9 +2,16 @@ const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const { generateBuildInfo } = require('./scripts/generate-build-info');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
+  
+  // Generate build info at build time
+  const buildInfo = generateBuildInfo();
+  const buildInfoHtml = isProduction 
+    ? `v${buildInfo.version}-${buildInfo.gitCommit}`
+    : `v${buildInfo.version} | ${buildInfo.buildType} | ${buildInfo.shortTimestamp}<br/>${buildInfo.buildId}`;
   
   return {
     mode: isProduction ? 'production' : 'development',
@@ -87,7 +94,10 @@ module.exports = (env, argv) => {
         chunks: ['bundle'],
         inject: 'body', // Inject at end of body
         scriptLoading: 'blocking', // Use blocking instead of defer
-        minify: isProduction
+        minify: isProduction,
+        templateParameters: {
+          BUILD_PLACEHOLDER: buildInfoHtml
+        }
       }),
       
       // Generate editor HTML file
@@ -97,7 +107,10 @@ module.exports = (env, argv) => {
         chunks: ['editor'],
         inject: 'body', // Inject at end of body
         scriptLoading: 'blocking', // Use blocking instead of defer
-        minify: isProduction
+        minify: isProduction,
+        templateParameters: {
+          BUILD_PLACEHOLDER: buildInfoHtml
+        }
       })
     ],
     

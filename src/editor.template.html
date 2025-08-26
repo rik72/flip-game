@@ -35,6 +35,21 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .build-info {
+            position: fixed;
+            bottom: 4px;
+            left: 4px;
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: 'Courier New', monospace;
+            z-index: 1000;
+            pointer-events: none;
+            user-select: none;
+            line-height: 1.1;
+        }
+        .build-info:hover {
+            color: rgba(255, 255, 255, 0.6);
+        }
     </style>
 
     <div class="editor-container">
@@ -174,6 +189,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Build Info -->
+    <div class="build-info" id="buildInfo">
+        <div><%= BUILD_PLACEHOLDER %></div>
     </div>
 
     <!-- Bootstrap JS -->
