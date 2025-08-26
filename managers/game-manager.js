@@ -685,6 +685,12 @@ class GameManager {
             // Only consider balls on the current face
             if (this.getBallCurrentFace(ball) !== this.currentFace) continue;
             
+            // Skip balls that are currently backtracking
+            if (this.isBacktracking[i]) {
+                console.log(`🔄 Ball ${i} - SKIPPING BALL SELECTION: Currently backtracking`);
+                continue;
+            }
+            
             const distanceToBall = this.manhattanDistance(x, y, ball.x, ball.y);
 
             if (distanceToBall <= touchTargetSize && distanceToBall < closestDistance) {
@@ -4317,6 +4323,17 @@ class GameManager {
         // Check if ball entered a sticker node and give it tail property
         const currentNodeType = this.getNodeTypeAt(currentGridX, currentGridY);
         if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            console.log(`🎯 Ball ${ballIndex} - ENTERED STICKER NODE at (${currentGridX}, ${currentGridY}) - Gaining tail property!`);
+            
+            // If the ball was backtracking, clear the backtracking flag (backtracking to sticker is complete)
+            if (this.isBacktracking[ballIndex]) {
+                console.log(`🔄 Ball ${ballIndex} - CLEARING BACKTRACKING FLAG: Reached sticker node, backtracking complete`);
+                this.isBacktracking[ballIndex] = false;
+                // Clean up any remaining queue
+                if (this.backtrackingQueue[ballIndex]) {
+                    delete this.backtrackingQueue[ballIndex];
+                }
+            }
             
             ball.hasTail = true;
             // Initialize visited nodes if not already done
