@@ -57,6 +57,10 @@ dist/
 build/
 flipgame-deploy/
 
+# Auto-generated bundling files
+src/game-concatenated.js
+src/editor-concatenated.js
+
 # secrets
 appunti-deploy.txt
 
