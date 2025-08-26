@@ -687,7 +687,6 @@ class GameManager {
             
             // Skip balls that are currently backtracking
             if (this.isBacktracking[i]) {
-                console.log(`🔄 Ball ${i} - SKIPPING BALL SELECTION: Currently backtracking`);
                 continue;
             }
             
@@ -926,7 +925,6 @@ class GameManager {
             
             // Skip balls that are currently backtracking
             if (this.isBacktracking[i]) {
-                console.log(`🔄 Ball ${i} - SKIPPING BALL SELECTION: Currently backtracking`);
                 continue;
             }
             
@@ -966,7 +964,6 @@ class GameManager {
             
             // Reset backtracking flag when starting to drag a ball
             this.isBacktracking[closestBallIndex] = false;
-            console.log(`🔄 Ball ${closestBallIndex} - RESETTING BACKTRACKING FLAG (starting mouse drag)`);
             
             // Add visual feedback for mouse interaction
             this.showTouchFeedback(selectedBall);
@@ -2666,15 +2663,33 @@ class GameManager {
         const canvasContainer = this.canvas?.parentElement;
         if (!canvasContainer) return;
         
-        // Create invisible overlay for touch events
+        // Create overlay for touch events
         const overlay = document.createElement('div');
         overlay.className = 'level-completion-overlay';
         overlay.style.background = 'transparent'; // Make it invisible
         
-        // Add touch event to proceed to next level
-        overlay.addEventListener('click', () => {
+        // Add click event to proceed to next level
+        overlay.addEventListener('click', (e) => {
             this.proceedToNextLevel();
         });
+        
+        // Add touch event for mobile support
+        overlay.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.proceedToNextLevel();
+        }, { passive: false });
+        
+        // Prevent any other touch events from bubbling through
+        overlay.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+        
+        overlay.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
         
         // Add to container
         canvasContainer.appendChild(overlay);
@@ -2686,6 +2701,17 @@ class GameManager {
     }
 
     proceedToNextLevel() {
+        // Clean up overlay and animations
+        this.cleanupLevelCompletionOverlay();
+        
+        // Ensure game state is properly reset
+        this.gameState.isPlaying = true;
+        
+        // Proceed to next level
+        this.nextLevel();
+    }
+    
+    cleanupLevelCompletionOverlay() {
         // Remove overlay
         const overlay = document.querySelector('.level-completion-overlay');
         if (overlay && overlay.parentElement) {
@@ -2699,9 +2725,6 @@ class GameManager {
                 disc.parentElement.removeChild(disc);
             }
         });
-        
-        // Proceed to next level
-        this.nextLevel();
     }
 
     nextLevel() {
@@ -2727,6 +2750,9 @@ class GameManager {
     }
 
     resetLevel() {
+        // Clean up any existing level completion overlay
+        this.cleanupLevelCompletionOverlay();
+        
         this.loadLevel(this.currentLevel).catch(error => {
             console.error('Failed to reset level:', error);
         });
@@ -4331,11 +4357,9 @@ class GameManager {
         // Check if ball entered a sticker node and give it tail property
         const currentNodeType = this.getNodeTypeAt(currentGridX, currentGridY);
         if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
-            console.log(`🎯 Ball ${ballIndex} - ENTERED STICKER NODE at (${currentGridX}, ${currentGridY}) - Gaining tail property!`);
             
             // If the ball was backtracking, clear the backtracking flag (backtracking to sticker is complete)
             if (this.isBacktracking[ballIndex]) {
-                console.log(`🔄 Ball ${ballIndex} - CLEARING BACKTRACKING FLAG: Reached sticker node, backtracking complete`);
                 this.isBacktracking[ballIndex] = false;
                 // Clean up any remaining queue
                 if (this.backtrackingQueue[ballIndex]) {

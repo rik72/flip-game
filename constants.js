@@ -93,7 +93,7 @@ const CONSTANTS = {
 		
 		// Level completion explosion animation
 		EXPLOSION_DURATION: 1000, // milliseconds for explosion animation
-		EXPLOSION_DELAY: 100, // milliseconds between explosions
+		EXPLOSION_DELAY: 30, // milliseconds between explosions
 		
 		// Goal state transition animation
 		GOAL_TRANSITION_DURATION: 500, // milliseconds for goal state transition animation
@@ -101,10 +101,10 @@ const CONSTANTS = {
 		// Movement trail animation
 		TRAIL_ENABLED: true, // flag to enable/disable trail animations
         TRAIL_MIN_RADIUS_FACTOR: .5, // start trail radius as ratio of ball radius
-        TRAIL_MAX_RADIUS_FACTOR: 1.8, // max trail radius as ratio of ball radius
+        TRAIL_MAX_RADIUS_FACTOR: 2, // max trail radius as ratio of ball radius
 		TRAIL_RING_THICKNESS_FACTOR: 0.5, // ring thickness as ratio of ball radius
-		TRAIL_DURATION: 500, // milliseconds for movement trail animation
-		TRAIL_OPACITY: 0.25, // opacity for movement trail (lower than explosion)
+		TRAIL_DURATION: 200, // milliseconds for movement trail animation
+		TRAIL_OPACITY: 0.15, // opacity for movement trail (lower than explosion)
 		
 		// Easing functions
 		EASING: {

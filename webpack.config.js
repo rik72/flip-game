@@ -111,7 +111,7 @@ module.exports = (env, argv) => {
         template: './src/editor.template.html',
         filename: 'editor.html',
         chunks: ['editor'],
-        inject: 'body', // Inject at end of body
+        inject: 'head', // Inject in head to ensure functions are available before onclick handlers
         scriptLoading: 'blocking', // Use blocking instead of defer
         minify: isProduction,
         templateParameters: {

@@ -6,7 +6,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
-    
+    <meta name="description" content="Flipgame Level Editor">
     <title>Flipgame Level Editor</title>
     
     <!-- Bootstrap CSS -->
@@ -1448,37 +1448,51 @@
         let editor;
         
         function addBall() {
-            editor.addBall();
+            if (editor) {
+                editor.addBall();
+            }
         }
         
         function saveLevel() {
-            editor.saveLevel();
+            if (editor) {
+                editor.saveLevel();
+            }
         }
         
         function loadLevel() {
-            editor.loadLevel();
+            if (editor) {
+                editor.loadLevel();
+            }
         }
         
         function testLevel() {
-            editor.testLevel();
+            if (editor) {
+                editor.testLevel();
+            }
         }
         
-
-        
         function clearBoard() {
-            editor.clearBoard();
+            if (editor) {
+                editor.clearBoard();
+            }
         }
         
         function shrinkHorizontally() {
-            editor.shrinkHorizontally();
+            if (editor) {
+                editor.shrinkHorizontally();
+            }
         }
         
         function shrinkVertically() {
-            editor.shrinkVertically();
+            if (editor) {
+                editor.shrinkVertically();
+            }
         }
         
         function selectPositioning(ballIndex, mode) {
-            editor.selectPositioning(ballIndex, mode);
+            if (editor) {
+                editor.selectPositioning(ballIndex, mode);
+            }
         }
         
         // Initialize editor when page loads

@@ -1263,43 +1263,63 @@ class LevelEditor {
 
 // Global functions for button clicks
 let editor;
+// Make editor variable globally accessible
+window.editor = editor;
 
-function addBall() {
-    editor.addBall();
-}
+// Attach functions to window object to make them globally accessible
+window.addBall = function() {
+    if (editor) {
+        editor.addBall();
+    }
+};
 
-function saveLevel() {
-    editor.saveLevel();
-}
+window.saveLevel = function() {
+    if (editor) {
+        editor.saveLevel();
+    }
+};
 
-function loadLevel() {
-    editor.loadLevel();
-}
+window.loadLevel = function() {
+    if (editor) {
+        editor.loadLevel();
+    }
+};
 
-function testLevel() {
-    editor.testLevel();
-}
+window.testLevel = function() {
+    if (editor) {
+        editor.testLevel();
+    }
+};
 
+window.clearBoard = function() {
+    if (editor) {
+        editor.clearBoard();
+    }
+};
 
-function clearBoard() {
-    editor.clearBoard();
-}
+window.shrinkHorizontally = function() {
+    if (editor) {
+        editor.shrinkHorizontally();
+    }
+};
 
-function shrinkHorizontally() {
-    editor.shrinkHorizontally();
-}
+window.shrinkVertically = function() {
+    if (editor) {
+        editor.shrinkVertically();
+    }
+};
 
-function shrinkVertically() {
-    editor.shrinkVertically();
-}
-
-function selectPositioning(ballIndex, mode) {
-    editor.selectPositioning(ballIndex, mode);
-}
+window.selectPositioning = function(ballIndex, mode) {
+    if (editor) {
+        editor.selectPositioning(ballIndex, mode);
+    }
+};
 
 // Initialize editor when page loads
 document.addEventListener('DOMContentLoaded', () => {
     editor = new LevelEditor();
+    // Make editor globally accessible
+    window.editor = editor;
 });
 
 // Hide loading overlay when window is fully loaded

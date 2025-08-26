@@ -65,6 +65,8 @@ function concatenateFiles(fileList, outputPath, description) {
         console.log(`  ✅ ${filePath} (${(fileSize / 1024).toFixed(1)}KB)`);
     });
     
+
+    
     // Write the concatenated file
     const outputFullPath = path.resolve(__dirname, '..', outputPath);
     fs.writeFileSync(outputFullPath, concatenatedContent, 'utf8');
