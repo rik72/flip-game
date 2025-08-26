@@ -924,6 +924,12 @@ class GameManager {
             // Only consider balls on the current face
             if (this.getBallCurrentFace(ball) !== this.currentFace) continue;
             
+            // Skip balls that are currently backtracking
+            if (this.isBacktracking[i]) {
+                console.log(`🔄 Ball ${i} - SKIPPING BALL SELECTION: Currently backtracking`);
+                continue;
+            }
+            
             const distanceToBall = this.manhattanDistance(x, y, ball.x, ball.y);
 
             if (distanceToBall <= mouseTargetSize && distanceToBall < closestDistance) {
