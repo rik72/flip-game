@@ -83,8 +83,8 @@ const CONSTANTS = {
 		FLIP_HALFWAY_THRESHOLD: 0.5, // When to switch face content (0.0-1.0) - at halfway point
 		
 		// Ball movement animation
-		BALL_DRAG_DURATION: 40, // milliseconds for smooth ball movement
-		BALL_BACKTRACK_DURATION: 1, // milliseconds for faster backtracking movement
+		BALL_DRAG_DURATION: 20, // milliseconds for smooth ball movement
+		BALL_BACKTRACK_DURATION: 1, // milliseconds for faster backtracking movement (uses instant easing)
 		
 		// Level completion explosion animation
 		EXPLOSION_DURATION: 1000, // milliseconds for explosion animation
@@ -107,7 +107,8 @@ const CONSTANTS = {
 			EASE_OUT: (t) => 1 - Math.pow(1 - t, 3), // cubic ease-out
 			EASE_IN: (t) => t * t * t, // cubic ease-in
 			EASE_IN_OUT: (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, // cubic ease-in-out
-			EASE_OUT_QUICK: (t) => 1 - Math.pow(1 - t, 2) // quadratic ease-out for dragging
+			EASE_OUT_QUICK: (t) => 1 - Math.pow(1 - t, 2), // quadratic ease-out for dragging
+			INSTANT: (t) => 1 // Always return 1 for instant completion
 		}
 	},
 

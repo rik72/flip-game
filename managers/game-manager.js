@@ -1151,7 +1151,13 @@ class GameManager {
         animation.targetY = targetY;
         animation.startTime = performance.now();
         animation.duration = customDuration || CONSTANTS.ANIMATION_CONFIG.BALL_DRAG_DURATION;
-        animation.easing = 'EASE_OUT_QUICK';
+        
+        // Use instant easing for backtracking (very short duration), otherwise use quick easing
+        if (customDuration === CONSTANTS.ANIMATION_CONFIG.BALL_BACKTRACK_DURATION) {
+            animation.easing = 'INSTANT';
+        } else {
+            animation.easing = 'EASE_OUT_QUICK';
+        }
         
         // Start the animation loop if not already running
         if (!this.ballAnimationId) {
@@ -4221,7 +4227,7 @@ class GameManager {
                     // Use setTimeout to ensure the current transition is fully complete
                     setTimeout(() => {
                         this.executeNextBacktrackingStep(ballIndex);
-                    }, 50); // Small delay to ensure smooth transition
+                    }, 10); // Reduced delay for faster backtracking
                 } else {
                     // No more steps in queue, ensure backtracking flag is cleared
                     this.isBacktracking[ballIndex] = false;
