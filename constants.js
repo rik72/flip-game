@@ -49,13 +49,19 @@ const CONSTANTS = {
 		BALL_TAIL_REST_SCALE: 1.2, // Resting visual scale for balls with tails (1.2x larger)
 		BALL_TOUCH_SCALE_RATIO: 0.8, // Touch ball scale as ratio of gridSize (80% of grid cell)
 		
+		// Ball gradient effect configuration
+		BALL_GRADIENT_ENABLED: true, // Enable subtle white gradient on balls
+		BALL_GRADIENT_OPACITY: 0.15, // Very low opacity for subtle effect (0.0-1.0)
+		BALL_GRADIENT_RADIUS_RATIO: 1, // Gradient radius as ratio of ball radius (0.6 = 60% of ball size)
+		BALL_GRADIENT_INNER_RADIUS_RATIO: 0, // Gradient inner radius as ratio of ball radius (0.6 = 60% of ball size)
+		
 		// Grid dot sizing (for empty intersections)
 		GRID_DOT_MIN_SIZE: 3, // Minimum grid dot radius in pixels
 		GRID_DOT_RATIO: 0.06, // Grid dot radius as ratio of gridSize
 		
 		// Path node sizing (for path intersections)
 		PATH_NODE_MIN_SIZE: 3, // Minimum path node radius in pixels
-		PATH_NODE_RATIO: 0.06, // Path node radius as ratio of gridSize
+		PATH_NODE_RATIO: 0.08, // Path node radius as ratio of gridSize
 		
 		// Path line sizing
 		PATH_LINE_MIN_WIDTH: 1, // Minimum path line width in pixels
@@ -66,9 +72,8 @@ const CONSTANTS = {
 		GOAL_OUTER_RADIUS_RATIO: 0.4, // Goal outer radius as ratio of gridSize
 		
 		// Tail rendering configuration
-		TAIL_BALL_SIZE_RATIO: .6, // Tail ball size as ratio of normal ball size (1.0 = same size)
-		TAIL_LINE_WIDTH_MULTIPLIER: 4.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
-		
+		TAIL_BALL_SIZE_RATIO: .7, // Tail ball size as ratio of normal ball size (1.0 = same size)
+		TAIL_LINE_WIDTH_MULTIPLIER: 5.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
 		
 	},
 
@@ -167,7 +172,12 @@ const CONSTANTS = {
 			'purple': '#FF00FF',
 			'orange': '#FF6600',
 			'pink': '#FF8080'
-		}
+		},
+		
+		// Visual darkening factors for different elements
+		STICKER_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for sticker nodes (0.5 = 50% darker)
+		GOAL_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for inactive goals (0.5 = 50% darker)
+		TAIL_DARKENING_FACTOR: 0.4 // Factor to darken ball colors for tail effects (0.5 = 50% darker)
 	},
 
 	// Audio configurations

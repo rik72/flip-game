@@ -3172,67 +3172,48 @@ class GameManager {
                         const isActivated = this.activatedStickers[this.currentFace] && 
                                           this.activatedStickers[this.currentFace][nodeKey];
                         
-                        // Check if a ball is currently positioned on this sticker
+                        // Always use darker shade of ball color for sticker nodes
                         let stickerColor;
                         if (isActivated) {
-                            // Check if the ball that activated this sticker is currently on it
-                            const ballIndex = isActivated.ballIndex;
-                            const ball = this.balls[ballIndex];
-                            let isBallOnSticker = false;
-                            
-                            if (ball && ball.currentFace === this.currentFace) {
-                                // Convert ball position to grid coordinates
-                                const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
-                                const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
-                                
-                                // Check if ball is on this sticker
-                                isBallOnSticker = (ballGridX === col && ballGridY === row);
-                            }
-                            
-                            if (isBallOnSticker) {
-                                // Ball is currently on the sticker - use ball color
-                                                                 stickerColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
-                            } else {
-                                // Ball has left the sticker - use darker shade
-                                                                 const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
-                                 stickerColor = this.darkenColor(ballColorHex, 0.5);
-                            }
+                            // Use darker shade of the ball color that activated this sticker
+                            const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
+                            stickerColor = this.darkenColor(ballColorHex, CONSTANTS.LEVEL_CONFIG.STICKER_DARKENING_FACTOR);
                         } else {
                             // Not activated - use default sticker color
-                                                         stickerColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
+                            stickerColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
                         }
                         
-                        // Draw hollow ring (stroke only, no fill)
+                        // Draw four arc shapes exactly like goal rendering to form a four-spike star
+                        const goalInnerRadius = this.getGoalInnerRadius();
+                        const goalOuterRadius = this.getGoalOuterRadius();
+                        const arcThickness = goalOuterRadius - goalInnerRadius;
+                        
+                        // Set up drawing context with same thickness as goals
                         this.ctx.strokeStyle = stickerColor;
-                        this.ctx.lineWidth = 2;
-                        this.ctx.beginPath();
-                        this.ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
-                        this.ctx.stroke();
+                        this.ctx.lineWidth = arcThickness;
+                        this.ctx.lineCap = 'butt';
                         
-                        // Draw four segments pointing from ring border to center
-                        // Each segment starts at the outer radius and ends at the goal inner radius
-                        const segmentEndRadius = this.getGoalInnerRadius();
+                        // Use same arc segments as goal rendering - four separate arc segments covering the full circle
+                        // Each segment covers π/2 (90 degrees)
+                        const arcSegments = [
+                            { start: 0, end: Math.PI/2, direction: Math.PI/4 },                // Top-right segment (0 to π/2)
+                            { start: Math.PI/2, end: Math.PI, direction: 3*Math.PI/4 },        // Bottom-right segment (π/2 to π)
+                            { start: Math.PI, end: 3*Math.PI/2, direction: 5*Math.PI/4 },      // Bottom-left segment (π to 3π/2)
+                            { start: 3*Math.PI/2, end: 2*Math.PI, direction: 7*Math.PI/4 }     // Top-left segment (3π/2 to 2π)
+                        ];
                         
-                        // Four directions: top, right, bottom, left
-                        const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+                        const arcRadius = goalInnerRadius + arcThickness/2; // Center of the ring thickness
+                        const arcOffset = -5 * arcThickness; // Offset to create the star effect (spikes pointing outward)
                         
-                        // Use same line width as path connections for visual consistency
-                        this.ctx.lineWidth = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_MIN_WIDTH, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_RATIO);
-                        this.ctx.strokeStyle = stickerColor;
-                        
-                        angles.forEach(angle => {
-                            // Calculate start point (on outer ring)
-                            const startX = centerX + outerRadius * Math.cos(angle);
-                            const startY = centerY + outerRadius * Math.sin(angle);
+                        // Draw four separate arcs, each offset outward to create star spikes
+                        arcSegments.forEach((segment, index) => {
+                            // Calculate arc center offset to create outward spikes
+                            const arcCenterX = centerX + Math.cos(segment.direction) * arcOffset;
+                            const arcCenterY = centerY + Math.sin(segment.direction) * arcOffset;
                             
-                            // Calculate end point (at goal inner radius)
-                            const endX = centerX + segmentEndRadius * Math.cos(angle);
-                            const endY = centerY + segmentEndRadius * Math.sin(angle);
-                            
-                            // Draw segment
+                            // Draw the arc segment
                             this.ctx.beginPath();
-                            this.ctx.moveTo(startX, startY);
-                            this.ctx.lineTo(endX, endY);
+                            this.ctx.arc(arcCenterX, arcCenterY, arcRadius, segment.start, segment.end);
                             this.ctx.stroke();
                         });
                     }
@@ -3553,12 +3534,33 @@ class GameManager {
                 this.ctx.globalAlpha = finalAlpha;
             }
             
+            // Draw the main ball
             this.ctx.fillStyle = colorHex;
             this.ctx.beginPath();
             this.ctx.arc(ball.x, ball.y, finalBallRadius, 0, 2 * Math.PI);
             this.ctx.fill();
             
-
+            // Add subtle white gradient if enabled
+            if (CONSTANTS.RENDER_SIZE_CONFIG.BALL_GRADIENT_ENABLED) {
+                const gradientRadius = finalBallRadius * CONSTANTS.RENDER_SIZE_CONFIG.BALL_GRADIENT_RADIUS_RATIO;
+                const gradientInnerRadius = finalBallRadius * CONSTANTS.RENDER_SIZE_CONFIG.BALL_GRADIENT_INNER_RADIUS_RATIO;
+                const gradientOpacity = CONSTANTS.RENDER_SIZE_CONFIG.BALL_GRADIENT_OPACITY;
+                
+                // Create radial gradient for subtle highlight effect
+                const gradient = this.ctx.createRadialGradient(
+                    // ball.x - gradientRadius * 0.3, ball.y - gradientRadius * 0.3, 0, // Start point (slightly offset for natural look)
+                    ball.x, ball.y, gradientRadius, // Start point (slightly offset for natural look)
+                    ball.x, ball.y, gradientInnerRadius // End point
+                );
+                
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${gradientOpacity})`); // White at center
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)'); // Transparent at edge
+                
+                this.ctx.fillStyle = gradient;
+                this.ctx.beginPath();
+                this.ctx.arc(ball.x, ball.y, gradientRadius, 0, 2 * Math.PI);
+                this.ctx.fill();
+            }
             
             this.ctx.restore();
             
@@ -3700,7 +3702,7 @@ class GameManager {
     renderGoalWithArcs(centerX, centerY, ballColor, goalKey, isOccupied) {
         // Get ball color
         const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#FFFFFF';
-        const darkenedColorHex = this.darkenColor(ballColorHex, 0.5);
+        const darkenedColorHex = this.darkenColor(ballColorHex, CONSTANTS.LEVEL_CONFIG.GOAL_DARKENING_FACTOR);
         
         // Use exploding color if goal is exploding
         if (this.explodingGoals.has(goalKey)) {
@@ -4538,7 +4540,7 @@ class GameManager {
             
             // Get ball color and darken it for tail
             const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
-            const ballColor = this.darkenColor(ballColorHex, 0.5);
+            const ballColor = this.darkenColor(ballColorHex, CONSTANTS.LEVEL_CONFIG.TAIL_DARKENING_FACTOR);
             
             // Calculate tail ball size
             const normalBallRadius = this.getVisualBallRadius({});
@@ -4567,7 +4569,7 @@ class GameManager {
             
             // Get ball color and darken it for tail
             const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
-            const ballColor = this.darkenColor(ballColorHex, 0.5);
+            const ballColor = this.darkenColor(ballColorHex, CONSTANTS.LEVEL_CONFIG.TAIL_DARKENING_FACTOR);
             
             // Calculate tail line width
             const normalLineWidth = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_MIN_WIDTH, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_RATIO);

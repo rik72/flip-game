@@ -24,6 +24,12 @@ module.exports = (env, argv) => {
       editor: './src/editor-entry.js'
     },
     
+    // Watch source files for changes and trigger concatenation
+    watchOptions: {
+      ignored: /node_modules/,
+      poll: 1000,
+    },
+    
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].js',
@@ -121,7 +127,23 @@ module.exports = (env, argv) => {
       port: 8080,
       open: true,
       hot: true,
-      liveReload: true
+      liveReload: true,
+      watchFiles: {
+        paths: [
+          'constants.js',
+          'utils.js',
+          'html-builder.js',
+          'display-manager.js',
+          'managers/**/*.js',
+          'app.js',
+          'app-bridge.js',
+          'src/editor.js'
+        ],
+        options: {
+          usePolling: false,
+          interval: 100
+        }
+      }
     },
     
     stats: {

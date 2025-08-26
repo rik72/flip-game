@@ -228,7 +228,7 @@ class SoundManager {
 
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + duration);
-
+            
         } catch (error) {
             console.warn(`Failed to play generated sound ${soundName}:`, error);
         }
