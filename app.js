@@ -84,6 +84,15 @@ class App {
         // Pass sound manager reference to game manager
         this.gameManager.soundManager = this.soundManager;
         
+        // Expose debug methods globally for console access
+        window.debugLogBallsWithTails = () => {
+            if (this.gameManager) {
+                this.gameManager.debugLogBallsWithTails();
+            } else {
+                console.log('❌ Game manager not initialized yet');
+            }
+        };
+        
         // Store test level data if available
         if (this.testLevelData) {
             this.gameManager.testLevelData = this.testLevelData;

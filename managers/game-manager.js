@@ -59,6 +59,8 @@ class GameManager {
         this.isBallClamped = []; // Track if each ball is currently clamped
         this.touchPosition = null; // Current touch position
         this.transitionInProgress = []; // Track if each ball is in transition
+        this.isBacktracking = []; // Track if each ball is currently backtracking
+        this.backtrackingQueue = []; // Queue for multi-step backtracking sequences
         
         // Movement trail animation system
         this.trailAnimationId = null; // For trail animation loop
@@ -97,6 +99,83 @@ class GameManager {
         
         // Return the ball's current face (tracked during gameplay)
         return ball.currentFace || 'front';
+    }
+
+    /**
+     * Transform pointer coordinates to grid coordinates, snapping to nearest valid game node
+     * @param {number} pointerX - Pointer X coordinate in canvas space (mouse or touch)
+     * @param {number} pointerY - Pointer Y coordinate in canvas space (mouse or touch)
+     * @returns {Object} Grid coordinates {x, y} of nearest valid node or null if outside board
+     */
+    pointerToGridCoordinates(pointerX, pointerY) {
+        // Add tolerance margin around board bounds (half a grid cell)
+        const tolerance = this.gridSize / 2;
+        const extendedBoardStartX = this.boardStartX - tolerance;
+        const extendedBoardEndX = this.boardStartX + this.boardWidth + tolerance;
+        const extendedBoardStartY = this.boardStartY - tolerance;
+        const extendedBoardEndY = this.boardStartY + this.boardHeight + tolerance;
+        
+        // Check if pointer is within the extended board bounds
+        if (pointerX < extendedBoardStartX || pointerX > extendedBoardEndX ||
+            pointerY < extendedBoardStartY || pointerY > extendedBoardEndY) {
+            return null;
+        }
+        
+        // First, get the grid cell the pointer is in
+        const gridX = Math.round((pointerX - this.boardStartX) / this.gridSize);
+        const gridY = Math.round((pointerY - this.boardStartY) / this.gridSize);
+        
+        // Check if the current grid position is a valid node (not empty)
+        const currentNodeType = this.getNodeType(gridX, gridY);
+        if (currentNodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) {
+            return { x: gridX, y: gridY };
+        }
+        
+        // If current position is empty, find the nearest valid node within a reasonable radius
+        const searchRadius = 2; // Search up to 2 cells away
+        let nearestNode = null;
+        let nearestDistance = Infinity;
+        
+        for (let dy = -searchRadius; dy <= searchRadius; dy++) {
+            for (let dx = -searchRadius; dx <= searchRadius; dx++) {
+                const checkX = gridX + dx;
+                const checkY = gridY + dy;
+                
+                // Check if this position is a valid node
+                const nodeType = this.getNodeType(checkX, checkY);
+                if (nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) {
+                    // Calculate distance from pointer to this node
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearestNode = { x: checkX, y: checkY };
+                    }
+                }
+            }
+        }
+        
+        return nearestNode;
+    }
+
+    // Utility method to log the current state of all balls with tails
+    // do not remove these logs even during cleanup
+    logBallsWithTails() {
+        console.log('\n🎯 === BALLS WITH TAILS STATUS ===');
+        this.balls.forEach((ball, index) => {
+            if (ball.hasTail) {
+                console.log(`🎯 Ball ${index} (${ball.color}):`);
+                console.log(`   - Has tail: ${ball.hasTail}`);
+                console.log(`   - Visited nodes: ${JSON.stringify(ball.visitedNodes)}`);
+                console.log(`   - Current position: (${Math.round((ball.x - this.boardStartX) / this.gridSize)}, ${Math.round((ball.y - this.boardStartY) / this.gridSize)})`);
+                console.log(`   - Current face: ${this.getBallCurrentFace(ball)}`);
+            }
+        });
+        console.log('🎯 === END BALLS WITH TAILS STATUS ===\n');
+    }
+
+    // Debug method to manually log balls with tails (can be called from console)
+    debugLogBallsWithTails() {
+        this.logBallsWithTails();
     }
 
     // Determine which face a goal is on based on the ball's end coordinates
@@ -558,6 +637,41 @@ class GameManager {
         
 
         
+        // Transform pointer coordinates to grid coordinates and log the touch event
+        const gridCoords = this.pointerToGridCoordinates(x, y);
+        if (gridCoords) {
+            // do not remove this log even during cleanup
+            console.log(`👆 Touch at grid coordinates: (${gridCoords.x}, ${gridCoords.y}) on face: ${this.currentFace}`);
+        } else {
+            // do not remove this log even during cleanup
+            console.log(`👆 Touch outside board at canvas coordinates: (${x}, ${y})`);
+        }
+        
+        // Check for touches on balls with tails - on any visited node
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            
+            // Only consider balls with tails on the current face
+            if (!ball.hasTail || this.getBallCurrentFace(ball) !== this.currentFace) continue;
+            
+            // Check if ball has visited nodes
+            if (ball.visitedNodes && ball.visitedNodes.length > 0) {
+                // Check if touch is on any visited node (only if gridCoords is not null)
+                if (gridCoords) {
+                    const touchedVisitedNode = ball.visitedNodes.find(node => 
+                        node.x === gridCoords.x && 
+                        node.y === gridCoords.y && 
+                        node.face === this.currentFace
+                    );
+                    
+                    if (touchedVisitedNode) {
+                        // Trigger multi-step backtracking for this ball
+                        this.triggerMultiStepBacktracking(i, touchedVisitedNode);
+                    }
+                }
+            }
+        }
+        
         // Use touch target size based on touch ball scale
         const touchTargetSize = this.getLogicalBallRadius() * this.getTouchBallScale() * 2;
         
@@ -604,6 +718,9 @@ class GameManager {
             if (this.soundManager) {
                 this.soundManager.playSound('ballPickup');
             }
+            
+            // Reset backtracking flag when starting to drag a ball
+            this.isBacktracking[closestBallIndex] = false;
             
             // Add visual feedback for touch
             this.showTouchFeedback(selectedBall);
@@ -751,6 +868,43 @@ class GameManager {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
+
+        
+        // Transform pointer coordinates to grid coordinates and log the click event
+        const gridCoords = this.pointerToGridCoordinates(x, y);
+        if (gridCoords) {
+            // do not remove this log even during cleanup
+            console.log(`🖱️ Mouse click at grid coordinates: (${gridCoords.x}, ${gridCoords.y}) on face: ${this.currentFace}`);
+        } else {
+            // do not remove this log even during cleanup
+            console.log(`🖱️ Mouse click outside board at canvas coordinates: (${x}, ${y})`);
+        }
+        
+        // Check for clicks on balls with tails - on any visited node
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            
+            // Only consider balls with tails on the current face
+            if (!ball.hasTail || this.getBallCurrentFace(ball) !== this.currentFace) continue;
+            
+            // Check if ball has visited nodes
+            if (ball.visitedNodes && ball.visitedNodes.length > 0) {
+                // Check if click is on any visited node (only if gridCoords is not null)
+                if (gridCoords) {
+                    const clickedVisitedNode = ball.visitedNodes.find(node => 
+                        node.x === gridCoords.x && 
+                        node.y === gridCoords.y && 
+                        node.face === this.currentFace
+                    );
+                    
+                    if (clickedVisitedNode) {
+                        // Trigger multi-step backtracking for this ball
+                        this.triggerMultiStepBacktracking(i, clickedVisitedNode);
+                    }
+                }
+            }
+        }
+        
         // Use mouse target size based on touch ball scale
         const mouseTargetSize = this.getLogicalBallRadius() * this.getTouchBallScale() * 2;
         
@@ -797,6 +951,10 @@ class GameManager {
             if (this.soundManager) {
                 this.soundManager.playSound('ballPickup');
             }
+            
+            // Reset backtracking flag when starting to drag a ball
+            this.isBacktracking[closestBallIndex] = false;
+            console.log(`🔄 Ball ${closestBallIndex} - RESETTING BACKTRACKING FLAG (starting mouse drag)`);
             
             // Add visual feedback for mouse interaction
             this.showTouchFeedback(selectedBall);
@@ -972,7 +1130,7 @@ class GameManager {
     }
 
     // Start ball animation to target position
-    animateBallToPosition(ballIndex, targetX, targetY) {
+    animateBallToPosition(ballIndex, targetX, targetY, customDuration = null) {
         if (ballIndex < 0 || ballIndex >= this.balls.length) return;
         
         const ball = this.balls[ballIndex];
@@ -992,7 +1150,7 @@ class GameManager {
         animation.targetX = targetX;
         animation.targetY = targetY;
         animation.startTime = performance.now();
-        animation.duration = CONSTANTS.ANIMATION_CONFIG.BALL_DRAG_DURATION;
+        animation.duration = customDuration || CONSTANTS.ANIMATION_CONFIG.BALL_DRAG_DURATION;
         animation.easing = 'EASE_OUT_QUICK';
         
         // Start the animation loop if not already running
@@ -1516,6 +1674,7 @@ class GameManager {
         if (ball.x !== clampedX || ball.y !== clampedY) {
             // Handle visited nodes tracking for balls with tail (both during dragging and final placement)
             if (ball.hasTail && ball.visitedNodes) {
+                
                 // Get the previous position before moving
                 const previousGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
                 const previousGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
@@ -1538,7 +1697,7 @@ class GameManager {
                 
                 if (isReturningToLastVisited) {
                     // Remove the last visited node from visited nodes (ball is backtracking to the most recent location)
-                    ball.visitedNodes.pop(); // Remove the last visited node
+                    const removedNode = ball.visitedNodes.pop(); // Remove the last visited node
                     
                     // Remove tail from the connection between previous and current node
                     this.removeConnectionTail(previousGridX, previousGridY, newGridX, newGridY, this.selectedBallIndex);
@@ -1548,13 +1707,15 @@ class GameManager {
                         ball.hasTail = false;
                     }
                 } else {
+                    
                     // Add the previous node to visited nodes (ball is moving forward)
-                    ball.visitedNodes.push({
+                    const newNodeToAdd = {
                         x: previousGridX,
                         y: previousGridY,
                         face: previousFace
-                    });
-                    
+                    };
+                    ball.visitedNodes.push(newNodeToAdd);
+                                        
                     // Create tail on the node the ball just left
                     this.createNodeTail(previousGridX, previousGridY, this.selectedBallIndex, ball.color);
                     
@@ -1565,6 +1726,7 @@ class GameManager {
                 // Check if ball entered a sticker node and give it tail property
                 const currentNodeType = this.getNodeTypeAt(newGridX, newGridY);
                 if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+                    
                     // Check if this sticker is already activated by this ball
                     const currentFace = this.getBallCurrentFace(ball);
                     const nodeKey = `${newGridY}_${newGridX}`;
@@ -4010,7 +4172,7 @@ class GameManager {
     }
 
     // Start transition animation for a ball
-    startBallTransition(ballIndex, targetNode) {
+    startBallTransition(ballIndex, targetNode, customDuration = null) {
         if (this.transitionInProgress[ballIndex]) return;
         
         const ball = this.balls[ballIndex];
@@ -4023,7 +4185,7 @@ class GameManager {
         this.transitionInProgress[ballIndex] = true;
         
         // Start animation
-        this.animateBallToPosition(ballIndex, targetX, targetY);
+        this.animateBallToPosition(ballIndex, targetX, targetY, customDuration);
     }
 
     // Complete ball transition
@@ -4045,51 +4207,99 @@ class GameManager {
         
         // Handle visited nodes tracking for balls with tail
         if (ball.hasTail && ball.visitedNodes) {
-            // Check if the ball is returning to a previously visited node
-            const isReturningToVisited = ball.visitedNodes.some(node => 
-                node.x === currentGridX && node.y === currentGridY && node.face === currentFace
-            );
             
-            if (isReturningToVisited) {
-                // Remove the current node from visited nodes (ball is backtracking)
-                ball.visitedNodes = ball.visitedNodes.filter(node => 
-                    !(node.x === currentGridX && node.y === currentGridY && node.face === currentFace)
-                );
+            // Check if this ball is currently backtracking
+            if (this.isBacktracking[ballIndex]) {
                 
-                // Remove tail from the current node since it's no longer visited
-                this.removeNodeTail(currentGridX, currentGridY, ballIndex);
+                // Clear the backtracking flag
+                this.isBacktracking[ballIndex] = false;
                 
-                // Remove tail from the connection between previous and current node
-                this.removeConnectionTail(previousGridX, previousGridY, currentGridX, currentGridY, ballIndex);
+                // Don't create any new connections or add nodes to visited list during backtracking
                 
-                // Check if ball has no more visited nodes and should lose tail property
-                if (ball.visitedNodes.length === 0) {
-                    ball.hasTail = false;
+                // Continue multi-step backtracking sequence if there are more steps
+                if (this.backtrackingQueue[ballIndex]) {
+                    // Use setTimeout to ensure the current transition is fully complete
+                    setTimeout(() => {
+                        this.executeNextBacktrackingStep(ballIndex);
+                    }, 50); // Small delay to ensure smooth transition
+                } else {
+                    // No more steps in queue, ensure backtracking flag is cleared
+                    this.isBacktracking[ballIndex] = false;
                 }
             } else {
-                // Add the previous node to visited nodes (ball is moving forward)
-                const previousFace = this.getBallCurrentFace(ball);
-                ball.visitedNodes.push({
-                    x: previousGridX,
-                    y: previousGridY,
-                    face: previousFace
-                });
+                // Check if the ball is returning to a previously visited node
+                const isReturningToVisited = ball.visitedNodes.some(node => 
+                    node.x === currentGridX && node.y === currentGridY && node.face === currentFace
+                );
                 
-                // Create tail on the node the ball just left
-                this.createNodeTail(previousGridX, previousGridY, ballIndex, ball.color);
-                
-                // Create tail on the connection between previous and current node
-                this.createConnectionTail(previousGridX, previousGridY, currentGridX, currentGridY, ballIndex, ball.color);
+                if (isReturningToVisited) {
+
+                    // Remove the current node from visited nodes (ball is backtracking)
+                    ball.visitedNodes = ball.visitedNodes.filter(node => 
+                        !(node.x === currentGridX && node.y === currentGridY && node.face === currentFace)
+                    );
+                    
+                    // Remove tail from the current node since it's no longer visited
+                    this.removeNodeTail(currentGridX, currentGridY, ballIndex);
+                    
+                    // Remove tail from the connection between previous and current node
+                    this.removeConnectionTail(previousGridX, previousGridY, currentGridX, currentGridY, ballIndex);
+                    
+                    // Check if ball has no more visited nodes and should lose tail property
+                    if (ball.visitedNodes.length === 0) {
+                        ball.hasTail = false;
+                    }
+                } else {
+                    // Check if the previous node is a sticker node (special case)
+                    const previousNodeType = this.getNodeTypeAt(previousGridX, previousGridY);
+                    const isMovingFromSticker = previousNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER;
+                    
+                    if (isMovingFromSticker) {
+                        
+                        // Always add sticker node to visited nodes when moving away from it
+                        const previousFace = this.getBallCurrentFace(ball);
+                        const newNodeToAdd = {
+                            x: previousGridX,
+                            y: previousGridY,
+                            face: previousFace
+                        };
+                        ball.visitedNodes.push(newNodeToAdd);
+                        
+                        // Create tail on the sticker node
+                        this.createNodeTail(previousGridX, previousGridY, ballIndex, ball.color);
+                        
+                        // Create tail on the connection from sticker to current node
+                        this.createConnectionTail(previousGridX, previousGridY, currentGridX, currentGridY, ballIndex, ball.color);
+                    } else {
+                        
+                        // Add the previous node to visited nodes (ball is moving forward)
+                        const previousFace = this.getBallCurrentFace(ball);
+                        const newNodeToAdd = {
+                            x: previousGridX,
+                            y: previousGridY,
+                            face: previousFace
+                        };
+                        ball.visitedNodes.push(newNodeToAdd);
+                        
+                        // Create tail on the node the ball just left
+                        this.createNodeTail(previousGridX, previousGridY, ballIndex, ball.color);
+                        
+                        // Create tail on the connection between previous and current node
+                        this.createConnectionTail(previousGridX, previousGridY, currentGridX, currentGridY, ballIndex, ball.color);
+                    }
+                }
             }
         } else if (ball.hasTail) {
+            
             // Ball has tail but no visited nodes list (legacy case)
             // Add the previous node to visited nodes
             const previousFace = this.getBallCurrentFace(ball);
-            ball.visitedNodes = [{
+            const initialNode = {
                 x: previousGridX,
                 y: previousGridY,
                 face: previousFace
-            }];
+            };
+            ball.visitedNodes = [initialNode];
             
             // Create tail on the node the ball just left
             this.createNodeTail(previousGridX, previousGridY, ballIndex, ball.color);
@@ -4101,6 +4311,7 @@ class GameManager {
         // Check if ball entered a sticker node and give it tail property
         const currentNodeType = this.getNodeTypeAt(currentGridX, currentGridY);
         if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            
             ball.hasTail = true;
             // Initialize visited nodes if not already done
             if (!ball.visitedNodes) {
@@ -4438,6 +4649,119 @@ class GameManager {
         const [smallerX, smallerY, largerX, largerY] = 
             (x1 < x2 || (x1 === x2 && y1 < y2)) ? [x1, y1, x2, y2] : [x2, y2, x1, y1];
         return `${smallerY}_${smallerX}_${largerY}_${largerX}`;
+    }
+
+    /**
+     * Trigger multi-step backtracking for a ball to a specific visited node
+     * @param {number} ballIndex - Index of the ball to backtrack
+     * @param {Object} targetNode - The target visited node to backtrack to
+     */
+    triggerMultiStepBacktracking(ballIndex, targetNode) {
+        const ball = this.balls[ballIndex];
+        if (!ball || !ball.hasTail || !ball.visitedNodes || ball.visitedNodes.length === 0) {
+            return;
+        }
+
+        // Check if ball is already backtracking
+        if (this.isBacktracking[ballIndex]) {
+            return;
+        }
+
+        // Find the target node in the visited nodes list
+        const targetNodeIndex = ball.visitedNodes.findIndex(node => 
+            node.x === targetNode.x && node.y === targetNode.y && node.face === targetNode.face
+        );
+
+        if (targetNodeIndex === -1) {
+            return;
+        }
+
+        // Create backtracking sequence from last visited node to target node (inclusive)
+        const backtrackingSequence = [];
+        for (let i = ball.visitedNodes.length - 1; i >= targetNodeIndex; i--) {
+            backtrackingSequence.push(ball.visitedNodes[i]);
+        }
+
+        // Store the sequence in the queue
+        this.backtrackingQueue[ballIndex] = {
+            sequence: backtrackingSequence,
+            currentIndex: 0
+        };
+
+        // Start the first backtracking step
+        this.executeNextBacktrackingStep(ballIndex);
+    }
+
+    /**
+     * Execute the next step in a multi-step backtracking sequence
+     * @param {number} ballIndex - Index of the ball to backtrack
+     */
+    executeNextBacktrackingStep(ballIndex) {
+        const queueItem = this.backtrackingQueue[ballIndex];
+        if (!queueItem || queueItem.currentIndex >= queueItem.sequence.length) {
+            // Backtracking sequence complete
+            delete this.backtrackingQueue[ballIndex];
+            // Clear the backtracking flag when sequence is complete
+            this.isBacktracking[ballIndex] = false;
+            return;
+        }
+
+        const targetNode = queueItem.sequence[queueItem.currentIndex];
+
+        // Trigger single-step backtracking
+        this.triggerBallBacktracking(ballIndex, targetNode);
+
+        // Increment the current index for the next step
+        queueItem.currentIndex++;
+    }
+
+    /**
+     * Trigger backtracking for a ball to its last visited node
+     * @param {number} ballIndex - Index of the ball to backtrack
+     * @param {Object} lastVisitedNode - The last visited node to backtrack to
+     */
+    triggerBallBacktracking(ballIndex, lastVisitedNode) {
+        const ball = this.balls[ballIndex];
+        if (!ball || !ball.hasTail || !ball.visitedNodes || ball.visitedNodes.length === 0) {
+            return;
+        }
+
+        // Cancel any ongoing transitions for this ball
+        this.transitionInProgress[ballIndex] = false;
+        
+        // Cancel any ongoing animations for this ball
+        if (ball.animation && ball.animation.isAnimating) {
+            ball.animation.isAnimating = false;
+        }
+
+        // Mark this ball as backtracking
+        this.isBacktracking[ballIndex] = true;
+
+        // Get current ball position
+        const currentGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const currentGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        const currentFace = this.getBallCurrentFace(ball);
+
+        // Remove the tail connection immediately
+        this.removeConnectionTail(currentGridX, currentGridY, lastVisitedNode.x, lastVisitedNode.y, ballIndex);
+
+        // Remove the tail disc at the last visited node (before ball arrives)
+        this.removeNodeTail(lastVisitedNode.x, lastVisitedNode.y, ballIndex);
+
+        // Remove the last visited node from the list
+        ball.visitedNodes.pop();
+
+        // Check if ball has no more visited nodes and should lose tail property
+        if (ball.visitedNodes.length === 0) {
+            ball.hasTail = false;
+        }
+
+        // Calculate target position in canvas coordinates
+        const targetX = this.boardStartX + lastVisitedNode.x * this.gridSize;
+        const targetY = this.boardStartY + lastVisitedNode.y * this.gridSize;
+
+        // Start ball movement animation to the last visited node with faster backtracking duration
+        this.startBallTransition(ballIndex, { x: lastVisitedNode.x, y: lastVisitedNode.y }, CONSTANTS.ANIMATION_CONFIG.BALL_BACKTRACK_DURATION);
     }
 
     /**

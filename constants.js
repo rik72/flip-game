@@ -84,6 +84,7 @@ const CONSTANTS = {
 		
 		// Ball movement animation
 		BALL_DRAG_DURATION: 40, // milliseconds for smooth ball movement
+		BALL_BACKTRACK_DURATION: 1, // milliseconds for faster backtracking movement
 		
 		// Level completion explosion animation
 		EXPLOSION_DURATION: 1000, // milliseconds for explosion animation
