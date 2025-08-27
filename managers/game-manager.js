@@ -636,6 +636,29 @@ class GameManager {
             this.calculateBoardPosition();
             this.updateToggleButton();
         }
+        
+        // Reapply gradient to flip wrapper after resize
+        if (this.gradientColors) {
+            this.applyGradientToFlipWrapper();
+        }
+    }
+
+    applyGradientToFlipWrapper() {
+        if (this.flipWrapper && CONSTANTS.BACKGROUND_CONFIG.GRADIENT_ENABLED) {
+            // Create CSS gradient string
+            const gradientString = `linear-gradient(to bottom, ${this.gradientColors.topColor}, ${this.gradientColors.bottomColor})`;
+            this.flipWrapper.style.background = gradientString;
+            console.log('Applied gradient to flip wrapper:', gradientString);
+            
+            // Also apply to canvas container as fallback
+            const canvasContainer = document.querySelector('.game-canvas-container');
+            if (canvasContainer) {
+                canvasContainer.style.background = gradientString;
+                console.log('Applied gradient to canvas container as fallback');
+            }
+        } else {
+            console.log('Flip wrapper not found or gradient disabled');
+        }
     }
 
     setupNavigationButtons() {
@@ -2312,6 +2335,10 @@ class GameManager {
             
             // Generate gradient colors based on level data
             this.gradientColors = CONSTANTS.generateGradientColors(this.levelData);
+            console.log('Generated gradient colors:', this.gradientColors);
+            
+            // Apply gradient background to flip wrapper
+            this.applyGradientToFlipWrapper();
             
             // Convert board faces from space-separated strings to arrays of arrays
             this.convertBoardToArrays();
@@ -3015,6 +3042,11 @@ class GameManager {
         
         // The CSS animation is now handled directly in the stylesheet
         // No need to set custom properties
+        
+        // Apply gradient background if colors are available
+        if (this.gradientColors) {
+            this.applyGradientToFlipWrapper();
+        }
     }
 
     // Ensure flip wrapper is initialized
