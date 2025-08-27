@@ -99,7 +99,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 60px;
+    height: 90px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -318,12 +318,13 @@ body {
 /* Level Navigation */
 .level-navigation {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     gap: 10px;
 }
 
 .level-nav-btn {
+    margin-top: 10px;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -331,7 +332,7 @@ body {
     align-items: center;
     justify-content: center;
     background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 0px solid transparent;
     color: #ffffff;
     transition: all 0.3s ease;
     cursor: pointer;
@@ -354,6 +355,16 @@ body {
     transform: none;
 }
 
+/* Level Display Container */
+.level-display-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0px;
+    position: relative;
+    align-self: flex-start;
+}
+
 /* Level Number */
 .level-number {
     font-size: 32px;
@@ -364,7 +375,43 @@ body {
     align-items: center;
     justify-content: center;
     min-width: 80px;
-    height: 100%;
+    height: 60px;
+    margin: 0;
+    padding: 0;
+}
+
+/* Restart Level Button */
+.restart-level-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    font-size: 24px;
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    cursor: pointer;
+    margin-top: 2px;
+}
+
+.restart-level-btn:hover {
+    color: #cccccc;
+    transform: scale(1.1);
+}
+
+.restart-level-btn:active {
+    color: #ffffff;
+    transform: scale(0.95);
+}
+
+.restart-level-btn:focus {
+    outline: none;
 }
 
 /* Prize Scene */
@@ -587,7 +634,7 @@ body {
 /* Mobile Optimizations */
 @media (max-width: 768px) {
     .game-header {
-        height: 50px;
+        height: 90px;
         padding: 0 15px;
     }
     
@@ -632,12 +679,21 @@ body {
         min-width: 40px;
         min-height: 40px;
     }
+    
+    /* Restart level button mobile optimization */
+    .restart-level-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        min-width: 40px;
+        min-height: 40px;
+    }
 }
 
 /* Landscape Mode */
 @media (orientation: landscape) {
     .game-header {
-        height: 40px;
+        height: 90px;
     }
     
     .game-footer {
@@ -650,6 +706,15 @@ body {
     
     /* Face toggle button landscape optimization */
     .face-toggle-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    /* Restart level button landscape optimization */
+    .restart-level-btn {
         width: 36px;
         height: 36px;
         font-size: 18px;

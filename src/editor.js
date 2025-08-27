@@ -391,7 +391,7 @@ class LevelEditor {
             if (row === startRow && col === startCol && face === startFace) {
                 const indicator = document.createElement('div');
                 indicator.className = 'node-indicator start';
-                indicator.innerHTML = '<i class="bi bi-arrow-down-square-fill"></i>';
+                indicator.innerHTML = '<i class="bi bi-arrow-down"></i>';
                 indicator.style.backgroundColor = ballColor;
                 indicator.style.color = this.getContrastColor(ballColor);
                 cell.appendChild(indicator);
@@ -408,7 +408,7 @@ class LevelEditor {
                 if (row === endRow && col === endCol && face === endFace) {
                     const indicator = document.createElement('div');
                     indicator.className = 'node-indicator end';
-                    indicator.innerHTML = '<i class="bi bi-arrow-up-square-fill"></i>';
+                    indicator.innerHTML = '<i class="bi bi-arrow-up"></i>';
                     indicator.style.backgroundColor = ballColor;
                     indicator.style.color = this.getContrastColor(ballColor);
                     cell.appendChild(indicator);
@@ -611,10 +611,10 @@ class LevelEditor {
                 <div class="ball-color" style="background-color: ${CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#fff'}" onclick="editor.editBall(${index})" title="Click to change color"></div>
                 <div class="ball-position-buttons">
                     <button class="position-btn start" onclick="editor.selectPositioning(${index}, 'start')" title="Set start position">
-                        <i class="bi bi-arrow-down-square-fill"></i>
+                        <i class="bi bi-arrow-down"></i>
                     </button>
                     <button class="position-btn end" onclick="editor.selectPositioning(${index}, 'end')" title="Toggle end position">
-                        <i class="bi bi-arrow-up-square-fill"></i>
+                        <i class="bi bi-arrow-up"></i>
                     </button>
                 </div>
                 <div class="ball-info" style="font-size: 14px; font-weight: bold; color: ${CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#fff'}">

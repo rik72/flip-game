@@ -63,7 +63,12 @@ class HtmlBuilder {
                         <button id="prevLevelBtn" class="level-nav-btn" style="visibility: hidden;">
                             <i class="bi bi-chevron-left"></i>
                         </button>
-                        <div id="levelNumberDisplay" class="level-number">#1</div>
+                        <div class="level-display-container">
+                            <div id="levelNumberDisplay" class="level-number">#1</div>
+                            <button id="restartLevelBtn" class="restart-level-btn" onclick="app.restartCurrentLevel()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
                         <button id="nextLevelBtn" class="level-nav-btn" style="visibility: hidden;">
                             <i class="bi bi-chevron-right"></i>
                         </button>

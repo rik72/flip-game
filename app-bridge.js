@@ -79,6 +79,12 @@ window.FlipgameApp = {
             appInstance.restartGame();
         }
     },
+    
+    restartCurrentLevel: function() {
+        if (appInstance) {
+            appInstance.restartCurrentLevel();
+        }
+    },
 
     // Utility functions
     getGameState: function() {

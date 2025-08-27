@@ -689,6 +689,16 @@ class App {
         Utils.hideModal('gameOverModal');
     }
 
+    restartCurrentLevel() {
+        // Play button click sound
+        this.soundManager.playSound('buttonClick');
+        
+        // Reload the current level
+        this.loadLevel(this.currentLevel).catch(error => {
+            console.error('Failed to restart current level:', error);
+        });
+    }
+
     saveProgress() {
         this.storageManager.saveGameProgress(this.currentLevel);
     }
