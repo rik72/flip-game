@@ -73,6 +73,14 @@ class GameManager {
         // Sticker activation tracking
         this.activatedStickers = {}; // Track activated stickers: {face: {row_col: {ballIndex, color}}}
         
+        // Trap state tracking
+        this.closedTraps = {}; // Track closed traps: {face: {row_col: true}}
+        this.trapAnimations = {}; // Track trap animations: {face: {row_col: {isAnimating, startTime}}}
+        
+        // Switch state tracking
+        this.closedSwitches = {}; // Track closed switches: {face: {row_col: true}}
+        this.switchAnimations = {}; // Track switch animations: {face: {row_col: {isAnimating, startTime}}}
+        
         // Track which goal nodes are currently exploding
         this.explodingGoals = new Set();
         
@@ -819,6 +827,10 @@ class GameManager {
                 } else {
                     // Destination is free, proceed with well transfer
                     this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                    
+                    // Check if ball entered a switch when dropped
+                    this.checkSwitchActivation(this.selectedBallIndex);
+                    
                     // Start well animation after a small delay to let the snap complete
                     setTimeout(() => {
                         this.startWellAnimation(ball, snappedGridX, snappedGridY);
@@ -829,6 +841,9 @@ class GameManager {
                 // Set isDragging to false BEFORE the final snap so it uses the fast EASE duration
                 this.isDragging = false;
                 this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                
+                // Check if ball entered a switch when dropped
+                this.checkSwitchActivation(this.selectedBallIndex);
                 
                 // Check win condition when drag is released, but wait for touch feedback animations to complete
                 this.checkWinConditionAfterTouchAnimations();
@@ -1054,6 +1069,10 @@ class GameManager {
                 } else {
                     // Destination is free, proceed with well transfer
                     this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                    
+                    // Check if ball entered a switch when dropped
+                    this.checkSwitchActivation(this.selectedBallIndex);
+                    
                     // Start well animation after a small delay to let the snap complete
                     setTimeout(() => {
                         this.startWellAnimation(ball, snappedGridX, snappedGridY);
@@ -1064,6 +1083,9 @@ class GameManager {
                 // Set isDragging to false BEFORE the final snap so it uses the fast EASE duration
                 this.isDragging = false;
                 this.moveBallToPosition(finalSnapX, finalSnapY, true);
+                
+                // Check if ball entered a switch when dropped
+                this.checkSwitchActivation(this.selectedBallIndex);
                 
                 // Check win condition when drag is released, but wait for touch feedback animations to complete
                 this.checkWinConditionAfterTouchAnimations();
@@ -1207,6 +1229,12 @@ class GameManager {
                         this.soundManager.playSound('ballSnap');
                     }
                     
+                            // Check if ball entered a trap
+        this.checkTrapActivation(i);
+        
+        // Check if ball left any switches
+        this.checkSwitchDeactivation(i);
+                    
                     // Handle enhanced ball movement system completion
                     if (this.transitionInProgress[i]) {
                         this.completeBallTransition(i);
@@ -1220,13 +1248,21 @@ class GameManager {
         // Check if there are any active goal animations
         const hasActiveGoalAnimations = this.goalAnimations.size > 0;
         
-        // Continue animation loop if any balls are still animating OR if there are goal animations
-        if (anyAnimating || hasActiveGoalAnimations) {
+        // Check if there are any active trap animations
+        const hasActiveTrapAnimations = this.checkTrapAnimations();
+        
+        // Check if there are any active switch animations
+        const hasActiveSwitchAnimations = this.checkSwitchAnimations();
+        
+        // Continue animation loop if any balls are still animating OR if there are goal animations OR trap animations OR switch animations
+        if (anyAnimating || hasActiveGoalAnimations || hasActiveTrapAnimations || hasActiveSwitchAnimations) {
             this.render(); // Re-render with updated positions
             this.ballAnimationId = requestAnimationFrame(() => this.ballAnimationLoop());
         } else {
             this.ballAnimationId = null;
         }
+        
+
     }
 
     // Radius helpers to keep balls and graphics proportional to the board
@@ -1508,12 +1544,19 @@ class GameManager {
         const deltaX = Math.abs(toGridX - fromGridX);
         const deltaY = Math.abs(toGridY - fromGridY);
         
+
+        
         if ((deltaX === 1 && deltaY === 0) || (deltaX === 0 && deltaY === 1)) {
             // Check if both nodes allow this ball to move on them
-            return this.canBallMoveToNode(ballIndex, fromGridX, fromGridY) && 
-                   this.canBallMoveToNode(ballIndex, toGridX, toGridY);
+            const fromNodeAllows = this.canBallMoveToNode(ballIndex, fromGridX, fromGridY);
+            const toNodeAllows = this.canBallMoveToNode(ballIndex, toGridX, toGridY);
+            
+    
+            
+            return fromNodeAllows && toNodeAllows;
         }
         
+
         return false;
     }
 
@@ -1528,11 +1571,22 @@ class GameManager {
         const currentGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
         const currentGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
         
+        // Get current and target node types for debugging
+        const currentNodeType = this.getNodeTypeAt(currentGridX, currentGridY);
+        const targetNodeType = this.getNodeTypeAt(targetGridX, targetGridY);
+        
+
+        
         // Check if target node allows this ball
-        if (!this.canBallMoveToNode(ballIndex, targetGridX, targetGridY)) return false;
+        if (!this.canBallMoveToNode(ballIndex, targetGridX, targetGridY)) {
+
+            return false;
+        }
         
         // Check if nodes are connected (adjacent and both allow this ball)
-        return this.areNodesConnected(currentGridX, currentGridY, targetGridX, targetGridY, ballIndex);
+        const areConnected = this.areNodesConnected(currentGridX, currentGridY, targetGridX, targetGridY, ballIndex);
+
+        return areConnected;
     }
 
     showTouchFeedback(ball) {
@@ -1674,10 +1728,25 @@ class GameManager {
         const targetGridX = Math.round((clampedX - this.boardStartX) / this.gridSize);
         const targetGridY = Math.round((clampedY - this.boardStartY) / this.gridSize);
         
-        // Always validate path-based moves, even during dragging
-        // This prevents balls from moving to invalid positions during drag
-        if (!this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY)) {
-            return; // Skip movement if not allowed by path rules
+        // Get current node type to check if we're on a switch
+        const currentGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const currentGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        const currentNodeType = this.getNodeTypeAt(currentGridX, currentGridY);
+        const targetNodeType = this.getNodeTypeAt(targetGridX, targetGridY);
+        
+        // If we're on a switch, allow movement to any adjacent node
+        const isOnSwitch = currentNodeType && currentNodeType.startsWith('s');
+        const isMovingToAdjacent = Math.abs(targetGridX - currentGridX) + Math.abs(targetGridY - currentGridY) === 1;
+        
+        if (isOnSwitch && isMovingToAdjacent) {
+            // Allow movement from switch to adjacent nodes without path validation
+
+        } else {
+            // Always validate path-based moves, even during dragging
+            // This prevents balls from moving to invalid positions during drag
+            if (!this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY)) {
+                return; // Skip movement if not allowed by path rules
+            }
         }
         
         // Prevent two balls in the same node
@@ -1687,6 +1756,11 @@ class GameManager {
         
         // Only update if position actually changed
         if (ball.x !== clampedX || ball.y !== clampedY) {
+                    // Check if ball left any switches before moving
+        this.checkSwitchDeactivation(this.selectedBallIndex);
+        
+        // Check if ball left any traps before moving
+        this.checkTrapDeactivation(this.selectedBallIndex);
             // Handle visited nodes tracking for balls with tail (both during dragging and final placement)
             if (ball.hasTail && ball.visitedNodes) {
                 
@@ -2144,6 +2218,16 @@ class GameManager {
     initializeBalls() {
         this.balls = [];
         
+        // Reset trap state when initializing balls (level reset/restart)
+        this.closedTraps = {
+            front: {},
+            rear: {}
+        };
+        this.trapAnimations = {
+            front: {},
+            rear: {}
+        };
+        
         if (this.levelData.balls && this.levelData.balls.length > 0) {
             this.levelData.balls.forEach((ballData, index) => {
                 
@@ -2200,6 +2284,8 @@ class GameManager {
                     hasTail: false,
                     // Visited nodes tracking for tail system
                     visitedNodes: [], // Array of {x, y, face} objects representing visited nodes
+                    // Trap system property
+                    isTrapped: false, // Track if ball is trapped by a trap node
                     // Animation properties for smooth movement
                     animation: {
                         isAnimating: false,
@@ -2232,6 +2318,7 @@ class GameManager {
                 currentFace: 'front', // Default ball starts on front face
                 hasTail: false, // Tail system property
                 visitedNodes: [], // Array of {x, y, face} objects representing visited nodes
+                isTrapped: false, // Track if ball is trapped by a trap node
                 endPositions: [[4, 2]], // New: array of end positions
                 endPositionsAbsolute: [{ // New: converted to absolute coordinates
                     x: this.boardStartX + (4 * this.gridSize),
@@ -2931,10 +3018,19 @@ class GameManager {
         // Draw end goals
         this.renderEndGoals();
         
-        // Draw balls LAST (on top of everything)
+        // Draw trap open states (under balls)
+        this.renderTrapOpenStates();
+        
+        // Draw switches (under balls)
+        this.renderSwitches();
+        
+        // Draw balls
         this.renderBalls();
         
-        // Draw movement trail animations (on top of balls)
+        // Draw trap closed states (over balls)
+        this.renderTrapClosedStates();
+        
+        // Draw movement trail animations (on top of everything)
         this.renderTrailAnimations();
         
         // Restore context if we applied reflection
@@ -3243,6 +3339,319 @@ class GameManager {
                             this.ctx.stroke();
                         });
                     }
+                    
+
+                }
+            }
+        }
+    }
+
+    renderTrapOpenStates() {
+        // Draw trap open states (under balls)
+        if (this.board && this.board.front) {
+            const nodes = this.getCurrentNodes();
+            if (!nodes) return;
+            
+            for (let row = 0; row < nodes.length; row++) {
+                const rowArray = nodes[row];
+                for (let col = 0; col < rowArray.length; col++) {
+                    const nodeType = rowArray[col];
+                    
+                    // Render TRAP nodes in open state (four squares)
+                    if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+                        const centerX = this.boardStartX + (col * this.gridSize);
+                        const centerY = this.boardStartY + (row * this.gridSize);
+                        
+                        // Check if this trap is closed (has trapped a ball)
+                        const nodeKey = `${row}_${col}`;
+                        const isClosed = this.closedTraps[this.currentFace] && 
+                                       this.closedTraps[this.currentFace][nodeKey];
+                        
+                        // Get trap animation state if it exists
+                        const trapAnimation = this.trapAnimations[this.currentFace] && 
+                                            this.trapAnimations[this.currentFace][nodeKey];
+                        
+                        // Only render open state if trap is open or during opening animation
+                        if (isClosed && !(trapAnimation && trapAnimation.isAnimating && trapAnimation.isOpening)) {
+                            continue; // Skip rendering open state for closed traps
+                        }
+                        
+                        // Get trap color - use darkened color for open state
+                        const baseColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType] || '#FF0000';
+                        let trapColor;
+                        
+                        if (trapAnimation && trapAnimation.isAnimating) {
+                            // Animate color during animation
+                            const elapsed = performance.now() - trapAnimation.startTime;
+                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
+                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
+                            const darkenedColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.TRAP_DARKENING_FACTOR);
+                            
+                            if (trapAnimation.isOpening) {
+                                // Animate from full to darkened color (opening animation)
+                                trapColor = this.interpolateColor(baseColor, darkenedColor, easedProgress);
+                            } else {
+                                // Animate from darkened to full color (closing animation)
+                                trapColor = this.interpolateColor(darkenedColor, baseColor, easedProgress);
+                            }
+                        } else {
+                            // Use darkened color when trap is open (no animation)
+                            trapColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.TRAP_DARKENING_FACTOR);
+                        }
+                        
+                        // Calculate rotation angle based on animation state
+                        let rotationAngle = Math.PI / 4; // X shape (open state) - rotated 45° from default
+                        if (trapAnimation && trapAnimation.isAnimating) {
+                            // Animate rotation during animation
+                            const elapsed = performance.now() - trapAnimation.startTime;
+                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
+                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
+                            
+                            if (trapAnimation.isOpening) {
+                                // Animate from + to X shape (opening animation)
+                                rotationAngle = (Math.PI / 4) * easedProgress; // 0 to π/4
+                            } else {
+                                // Animate from X to + shape (closing animation)
+                                rotationAngle = (Math.PI / 4) * (1 - easedProgress); // π/4 to 0
+                            }
+                        }
+                        
+                        // Calculate trap dimensions for open state (four squares)
+                        const squareDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_DISTANCE_RATIO;
+                        const squareSize = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_SIZE_RATIO;
+                        
+                        // Set up drawing context
+                        this.ctx.fillStyle = trapColor;
+                        this.ctx.save();
+                        this.ctx.translate(centerX, centerY);
+                        this.ctx.rotate(rotationAngle);
+                        
+                        if (trapAnimation && trapAnimation.isAnimating) {
+                            // During animation, show squares with appropriate fade
+                            const elapsed = performance.now() - trapAnimation.startTime;
+                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
+                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
+                            
+                            if (trapAnimation.isOpening) {
+                                // Opening: fade in squares
+                                this.ctx.globalAlpha = easedProgress;
+                            } else {
+                                // Closing: fade out squares
+                                this.ctx.globalAlpha = 1 - easedProgress;
+                            }
+                        }
+                        
+                        // Draw four squares in diagonal arrangement (open state)
+                        const positions = [
+                            [0, -squareDistance/2],  // Top (vertical axis)
+                            [squareDistance/2, 0],   // Right (horizontal axis)
+                            [0, squareDistance/2],   // Bottom (vertical axis)
+                            [-squareDistance/2, 0]   // Left (horizontal axis)
+                        ];
+                        
+                        positions.forEach(([x, y]) => {
+                            this.ctx.fillRect(x - squareSize/2, y - squareSize/2, squareSize, squareSize);
+                        });
+                        
+                        this.ctx.globalAlpha = 1;
+                        this.ctx.restore();
+                    }
+                }
+            }
+        }
+    }
+
+    renderTrapClosedStates() {
+        // Draw trap closed states (over balls)
+        if (this.board && this.board.front) {
+            const nodes = this.getCurrentNodes();
+            if (!nodes) return;
+            
+            for (let row = 0; row < nodes.length; row++) {
+                const rowArray = nodes[row];
+                for (let col = 0; col < rowArray.length; col++) {
+                    const nodeType = rowArray[col];
+                    
+                    // Render TRAP nodes in closed state (X/+ shape)
+                    if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+                        const centerX = this.boardStartX + (col * this.gridSize);
+                        const centerY = this.boardStartY + (row * this.gridSize);
+                        
+                        // Check if this trap is closed (has trapped a ball)
+                        const nodeKey = `${row}_${col}`;
+                        const isClosed = this.closedTraps[this.currentFace] && 
+                                       this.closedTraps[this.currentFace][nodeKey];
+                        
+                        // Get trap animation state if it exists
+                        const trapAnimation = this.trapAnimations[this.currentFace] && 
+                                            this.trapAnimations[this.currentFace][nodeKey];
+                        
+                        // Only render closed state if trap is closed or during closing animation
+                        if (!isClosed && !(trapAnimation && trapAnimation.isAnimating && !trapAnimation.isOpening)) {
+                            continue; // Skip rendering closed state for open traps
+                        }
+                        
+                        // Get trap color - use full color for closed state
+                        const baseColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType] || '#FF0000';
+                        let trapColor;
+                        
+                        if (trapAnimation && trapAnimation.isAnimating) {
+                            // Animate color during animation
+                            const elapsed = performance.now() - trapAnimation.startTime;
+                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
+                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
+                            const darkenedColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.TRAP_DARKENING_FACTOR);
+                            
+                            if (trapAnimation.isOpening) {
+                                // Animate from full to darkened color (opening animation)
+                                trapColor = this.interpolateColor(baseColor, darkenedColor, easedProgress);
+                            } else {
+                                // Animate from darkened to full color (closing animation)
+                                trapColor = this.interpolateColor(darkenedColor, baseColor, easedProgress);
+                            }
+                        } else {
+                            // Use full color when trap is closed (no animation)
+                            trapColor = baseColor;
+                        }
+                        
+                        // Calculate rotation angle based on animation state
+                        let rotationAngle = 0; // + shape (closed state) - no rotation
+                        if (trapAnimation && trapAnimation.isAnimating) {
+                            // Animate rotation during animation
+                            const elapsed = performance.now() - trapAnimation.startTime;
+                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
+                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
+                            
+                            if (trapAnimation.isOpening) {
+                                // Animate from + to X shape (opening animation)
+                                rotationAngle = (Math.PI / 4) * easedProgress; // 0 to π/4
+                            } else {
+                                // Animate from X to + shape (closing animation)
+                                rotationAngle = (Math.PI / 4) * (1 - easedProgress); // π/4 to 0
+                            }
+                        }
+                        
+                        // Calculate trap dimensions for closed state (X/+ shape)
+                        const goalInnerRadius = this.getGoalInnerRadius();
+                        const goalOuterRadius = this.getGoalOuterRadius();
+                        const trapThickness = 1.1 * (goalOuterRadius - goalInnerRadius);
+                        const trapLength = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_OUTER_RADIUS_RATIO;
+                        
+                        // Set up drawing context
+                        this.ctx.fillStyle = trapColor;
+                        this.ctx.save();
+                        this.ctx.translate(centerX, centerY);
+                        this.ctx.rotate(rotationAngle);
+                        
+                        if (trapAnimation && trapAnimation.isAnimating) {
+                            // During animation, show X/+ shape with appropriate fade
+                            const elapsed = performance.now() - trapAnimation.startTime;
+                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
+                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
+                            
+                            if (trapAnimation.isOpening) {
+                                // Opening: fade out X/+ shape
+                                this.ctx.globalAlpha = 1 - easedProgress;
+                            } else {
+                                // Closing: fade in X/+ shape
+                                this.ctx.globalAlpha = easedProgress;
+                            }
+                        }
+                        
+                        // Draw two rectangles forming X/+ shape (closed state)
+                        // First rectangle (horizontal in X, diagonal in +)
+                        this.ctx.fillRect(-trapLength/2, -trapThickness/2, trapLength, trapThickness);
+                        
+                        // Second rectangle (vertical in X, diagonal in +)
+                        this.ctx.fillRect(-trapThickness/2, -trapLength/2, trapThickness, trapLength);
+                        
+                        this.ctx.globalAlpha = 1;
+                        this.ctx.restore();
+                    }
+                }
+            }
+        }
+    }
+
+    renderSwitches() {
+        // Draw switch nodes on top of balls
+        if (this.board && this.board.front) {
+            const nodes = this.getCurrentNodes();
+            if (!nodes) return;
+            
+    
+            
+            for (let row = 0; row < nodes.length; row++) {
+                const rowArray = nodes[row];
+                for (let col = 0; col < rowArray.length; col++) {
+                    const nodeType = rowArray[col];
+                    
+                    // Render SWITCH nodes as four squares arranged diagonally
+                    if (nodeType.startsWith('s') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SWITCH) {
+        
+                        const centerX = this.boardStartX + (col * this.gridSize);
+                        const centerY = this.boardStartY + (row * this.gridSize);
+        
+                        
+                        // Check if this switch is closed (has a ball on it)
+                        const nodeKey = `${row}_${col}`;
+                        const isClosed = this.closedSwitches[this.currentFace] && 
+                                       this.closedSwitches[this.currentFace][nodeKey];
+                        
+                        // Get switch animation state if it exists
+                        const switchAnimation = this.switchAnimations[this.currentFace] && 
+                                              this.switchAnimations[this.currentFace][nodeKey];
+                        
+            
+                        
+                        // Get switch color - use full color when closed, darkened when open
+                        const baseColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType] || '#FFFF00';
+                        let switchColor;
+                        
+                        if (isClosed) {
+                            // Use full color when switch is closed
+                            switchColor = baseColor;
+                        } else if (switchAnimation && switchAnimation.isAnimating) {
+                            // Animate color from darkened to full during animation
+                            const elapsed = performance.now() - switchAnimation.startTime;
+                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.SWITCH_ANIMATION_DURATION, 1);
+                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
+                            const darkenedColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.SWITCH_DARKENING_FACTOR);
+                            switchColor = this.interpolateColor(darkenedColor, baseColor, easedProgress);
+                
+                        } else {
+                            // Use darkened color when switch is open
+                            switchColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.SWITCH_DARKENING_FACTOR);
+                        }
+                        
+                        // Calculate switch dimensions
+                        const discDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_DISTANCE_RATIO;
+                        const discRadius = (this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_SIZE_RATIO) / 2; // Diameter = square size
+                        
+                        // Set up drawing context
+            
+                        this.ctx.fillStyle = switchColor;
+                        this.ctx.save();
+                        this.ctx.translate(centerX, centerY);
+                        this.ctx.rotate(Math.PI / 4); // Rotate entire pattern by 45 degrees
+                        
+                        // Draw four discs on principal axes, then rotate to diagonal positions
+                        const positions = [
+                            [0, -discDistance/2],  // Top (vertical axis)
+                            [discDistance/2, 0],   // Right (horizontal axis)
+                            [0, discDistance/2],   // Bottom (vertical axis)
+                            [-discDistance/2, 0]   // Left (horizontal axis)
+                        ];
+                        
+                        positions.forEach(([x, y]) => {
+                            this.ctx.beginPath();
+                            this.ctx.arc(x, y, discRadius, 0, 2 * Math.PI);
+                            this.ctx.fill();
+                        });
+                        
+                        this.ctx.restore();
+            
+                    }
                 }
             }
         }
@@ -3263,7 +3672,7 @@ class GameManager {
             for (let col = 0; col < rowArray.length; col++) {
                 const nodeType = rowArray[col];
                 
-                // Process path nodes and WELL nodes (including new v# and h# nodes)
+                // Process path nodes, WELL nodes, TRAP nodes, and SWITCH nodes (including new v# and h# nodes)
                 if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1 ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2 ||
@@ -3274,7 +3683,9 @@ class GameManager {
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1 ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2 ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
-                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+                    nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER ||
+                    (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) ||
+                    (nodeType.startsWith('s'))) {
                     
                     const centerX = this.boardStartX + (col * this.gridSize);
                     const centerY = this.boardStartY + (row * this.gridSize);
@@ -3312,7 +3723,7 @@ class GameManager {
 
     // Check if two node types should be connected with a line
     shouldDrawConnection(nodeType1, nodeType2, direction) {
-        // Both nodes must be path nodes (not empty) or WELL nodes
+        // Both nodes must be path nodes (not empty), WELL nodes, or TRAP nodes
         const pathTypes = [
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1,
@@ -3326,6 +3737,22 @@ class GameManager {
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER
         ];
+        
+        // Add trap nodes to path types
+        if (nodeType1.startsWith('x') && nodeType1 !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+            pathTypes.push(nodeType1);
+        }
+        if (nodeType2.startsWith('x') && nodeType2 !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+            pathTypes.push(nodeType2);
+        }
+        
+        // Add switch nodes to path types
+        if (nodeType1.startsWith('s')) {
+            pathTypes.push(nodeType1);
+        }
+        if (nodeType2.startsWith('s')) {
+            pathTypes.push(nodeType2);
+        }
         
         if (!pathTypes.includes(nodeType1) || !pathTypes.includes(nodeType2)) {
             return false;
@@ -3375,25 +3802,32 @@ class GameManager {
             return true;
         }
         
+        // SWITCH nodes connect to any path type (allowing balls to enter switches)
+        if (nodeType1.startsWith('s') || nodeType2.startsWith('s')) {
+            return true;
+        }
+        
         // Different specific ball paths don't connect
         return false;
     }
 
     // Get the color for a connection between two node types
     getConnectionColor(nodeType1, nodeType2) {
-        // If one is PATH_ALL_BALLS, VERTICAL_ALL_BALLS, HORIZONTAL_ALL_BALLS, WELL, or STICKER, use the color of the specific ball path
+        // If one is PATH_ALL_BALLS, VERTICAL_ALL_BALLS, HORIZONTAL_ALL_BALLS, WELL, STICKER, or SWITCH, use the color of the specific ball path
         if (nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
             nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
             nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
             nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
-            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            nodeType1 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER ||
+            nodeType1.startsWith('s')) {
             return this.getPathColor(nodeType2);
         }
         if (nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS || 
             nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
             nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
             nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
-            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+            nodeType2 === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER ||
+            nodeType2.startsWith('s')) {
             return this.getPathColor(nodeType1);
         }
         
@@ -3877,6 +4311,11 @@ class GameManager {
         const ball = this.balls[ballIndex];
         const nodeType = this.getNodeType(gridX, gridY);
         
+        // Trapped balls cannot move
+        if (ball && ball.isTrapped) {
+            return false;
+        }
+        
         // Empty nodes are not accessible
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY) {
             return false;
@@ -3939,6 +4378,34 @@ class GameManager {
             return true;
         }
         
+        // TRAP nodes can be accessed by any ball, but check if already closed
+        if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+            const currentFace = this.getBallCurrentFace(ball);
+            const nodeKey = `${gridY}_${gridX}`;
+            const isClosed = this.closedTraps[currentFace] && 
+                           this.closedTraps[currentFace][nodeKey];
+            
+            // Check if there's an active switch of the same color
+            const trapColor = nodeType.charAt(1);
+            const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+            
+            // If there's an active switch of the same color, the trap should be open
+            if (hasActiveSwitch) {
+
+                return true; // Allow access to traps when there's an active switch of the same color
+            }
+            
+            if (isClosed) {
+                return false; // Block access to closed traps
+            }
+            return true; // Allow access to open traps
+        }
+        
+        // SWITCH nodes can be accessed by any ball (free movement)
+        if (nodeType.startsWith('s')) {
+            return true; // Allow free movement through switches
+        }
+        
         // Check if the ball can access this node type (ignoring directional constraints)
         const canAccessNodeType = this.canBallAccessNodeType(ballIndex, nodeType);
         if (!canAccessNodeType) {
@@ -3995,6 +4462,16 @@ class GameManager {
         
         // WELL nodes can be used by any ball
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+            return true;
+        }
+        
+        // TRAP nodes can be used by any ball
+        if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+            return true;
+        }
+        
+        // SWITCH nodes can be used by any ball
+        if (nodeType.startsWith('s')) {
             return true;
         }
         
@@ -4166,6 +4643,32 @@ class GameManager {
         // If the ball is on a well node, it can move in any direction
         if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
             return true;
+        }
+        
+        // If the ball is on a switch node, it can move in any direction
+        if (currentNodeType.startsWith('s')) {
+            return true;
+        }
+        
+        // If the ball is on a trap node, check if it's open (allow movement) or closed (block movement)
+        if (currentNodeType.startsWith('x') && currentNodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+            const currentFace = this.getBallCurrentFace(this.balls[ballIndex]);
+            const nodeKey = `${this.getBallGridPosition(ballIndex).y}_${this.getBallGridPosition(ballIndex).x}`;
+            const isClosed = this.closedTraps[currentFace] && 
+                           this.closedTraps[currentFace][nodeKey];
+            
+            // Check if there's an active switch of the same color
+            const trapColor = currentNodeType.charAt(1);
+            const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+            
+            // If there's an active switch of the same color, allow movement regardless of trap state
+            if (hasActiveSwitch) {
+
+                return true;
+            }
+            
+            // Allow movement only if trap is open (not closed)
+            return !isClosed;
         }
         
         // For other node types (wall, etc.), no movement allowed
@@ -4698,6 +5201,593 @@ class GameManager {
         };
     }
 
+    // Check if a ball entered a trap and activate it
+    checkTrapActivation(ballIndex) {
+        const ball = this.balls[ballIndex];
+        if (!ball) return;
+        
+        // Get ball's current grid position
+        const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // Get node type at ball's position
+        const nodeType = this.getNodeTypeAt(ballGridX, ballGridY);
+
+        
+        // Check if ball is on a trap node
+        if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+            const face = this.currentFace;
+            const nodeKey = `${ballGridY}_${ballGridX}`;
+            
+            // Check if trap is already closed
+            const isClosed = this.closedTraps[face] && 
+                           this.closedTraps[face][nodeKey];
+            
+
+            
+            // Check if there's an active switch of the same color
+            const trapColor = nodeType.charAt(1); // Get the color character (r, g, b, l, y, p, o)
+            const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+            
+            if (!isClosed && !hasActiveSwitch) {
+                // Only activate the trap if it's not already closed AND there's no active switch of the same color
+
+                this.activateTrap(ballGridX, ballGridY, ballIndex);
+            } else if (hasActiveSwitch) {
+
+                // Ensure the trap is not in closedTraps when there's an active switch
+                if (this.closedTraps[face] && this.closedTraps[face][nodeKey]) {
+                    delete this.closedTraps[face][nodeKey];
+
+                }
+                // Ensure the ball is not marked as trapped when there's an active switch
+                if (ball.isTrapped) {
+                    ball.isTrapped = false;
+
+                }
+            }
+        }
+    }
+
+    // Check if a ball entered a switch and activate it
+    checkSwitchActivation(ballIndex) {
+        const ball = this.balls[ballIndex];
+        if (!ball) return;
+        
+        // Get ball's current grid position
+        const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // Get node type at ball's position
+        const nodeType = this.getNodeTypeAt(ballGridX, ballGridY);
+
+        
+        // Check if ball is on a switch node (colored switches only)
+        if (nodeType.startsWith('s')) {
+            const face = this.currentFace;
+            const nodeKey = `${ballGridY}_${ballGridX}`;
+            
+            // Check if switch is already closed
+            const isClosed = this.closedSwitches[face] && 
+                           this.closedSwitches[face][nodeKey];
+            
+
+            
+            if (!isClosed) {
+                // Activate the switch
+
+                this.activateSwitch(ballGridX, ballGridY, ballIndex);
+            }
+        }
+    }
+
+    // Check if any ball left a switch and deactivate it
+    checkSwitchDeactivation(ballIndex) {
+        // Check both faces for switches that might have been left
+        ['front', 'rear'].forEach(face => {
+            if (this.closedSwitches[face]) {
+                Object.keys(this.closedSwitches[face]).forEach(nodeKey => {
+                    const [row, col] = nodeKey.split('_').map(Number);
+                    const nodeType = this.getNodeTypeAt(col, row);
+                    
+                    // Check if this is a switch node
+                    if (nodeType.startsWith('s')) {
+                        // Check if ANY ball is still on this switch
+                        let anyBallOnSwitch = false;
+                        
+                        for (let i = 0; i < this.balls.length; i++) {
+                            const checkBall = this.balls[i];
+                            if (!checkBall) continue;
+                            
+                            const checkBallGridX = Math.round((checkBall.x - this.boardStartX) / this.gridSize);
+                            const checkBallGridY = Math.round((checkBall.y - this.boardStartY) / this.gridSize);
+                            const checkBallFace = this.getBallCurrentFace(checkBall);
+                            
+                            if (checkBallFace === face && checkBallGridX === col && checkBallGridY === row) {
+                                anyBallOnSwitch = true;
+                                break; // Found a ball on this switch, no need to check others
+                            }
+                        }
+                        
+                        if (!anyBallOnSwitch) {
+                            // No ball is on this switch anymore, deactivate it
+
+                            this.deactivateSwitch(col, row, ballIndex);
+                        } else {
+
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // Check if a ball left a trap and handle it appropriately
+    checkTrapDeactivation(ballIndex) {
+        const ball = this.balls[ballIndex];
+        if (!ball) return;
+        
+        // Get ball's current grid position
+        const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+        const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+        
+        // Check both faces for traps that might have been left
+        ['front', 'rear'].forEach(face => {
+            if (this.closedTraps[face]) {
+                Object.keys(this.closedTraps[face]).forEach(nodeKey => {
+                    const [row, col] = nodeKey.split('_').map(Number);
+                    const nodeType = this.getNodeTypeAt(col, row);
+                    
+                    // Check if this is a trap node and if the ball is no longer on it
+                    if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+                        const ballFace = this.getBallCurrentFace(ball);
+                        const ballOnTrap = (ballFace === face && ballGridX === col && ballGridY === row);
+                        
+                        if (!ballOnTrap) {
+                            // Ball left the trap, check if we should close it
+                            const trapColor = nodeType.charAt(1);
+                            const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+                            
+                            if (!hasActiveSwitch) {
+                                // No active switch, close the trap
+        
+                                // Note: We don't actually close the trap here, just log it
+                                // The trap should remain closed until a switch opens it
+                            } else {
+                                // Active switch exists, trap should remain open
+        
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // Activate a trap (close it and trap the ball)
+    activateTrap(gridX, gridY, ballIndex) {
+        const face = this.currentFace;
+        const nodeKey = `${gridY}_${gridX}`;
+        
+        // Initialize face if it doesn't exist
+        if (!this.closedTraps[face]) {
+            this.closedTraps[face] = {};
+        }
+        
+        if (!this.trapAnimations[face]) {
+            this.trapAnimations[face] = {};
+        }
+        
+        // Start trap animation (don't mark as closed until animation completes)
+        this.trapAnimations[face][nodeKey] = {
+            isAnimating: true,
+            startTime: performance.now(),
+            isOpening: false // Closing animation (trap is being activated)
+        };
+
+        
+        // Play trap activation sound
+        if (this.soundManager) {
+            this.soundManager.playSound('trapActivate');
+        }
+        
+        // Force ball to rest state (drop it)
+        const ball = this.balls[ballIndex];
+        if (ball) {
+            ball.isTouched = false;
+            ball.touchOpacity = 0.0;
+            ball.touchScale = this.restScale;
+            
+            // Ensure ball is at exact center of trap node
+            ball.x = this.boardStartX + (gridX * this.gridSize);
+            ball.y = this.boardStartY + (gridY * this.gridSize);
+        }
+        
+        // Clear any ongoing animations for this ball
+        if (ball && ball.animation) {
+            ball.animation.isAnimating = false;
+        }
+        
+        // Mark ball as trapped (cannot move)
+        ball.isTrapped = true;
+    }
+
+    // Activate a switch (close it and control traps of the same color)
+    activateSwitch(gridX, gridY, ballIndex) {
+        const face = this.currentFace;
+        const nodeKey = `${gridY}_${gridX}`;
+        
+        // Get the switch node type to determine color
+        const nodeType = this.getNodeTypeAt(gridX, gridY);
+        const switchColor = nodeType.charAt(1); // Get the color character (r, g, b, l, y, p, o)
+        
+
+        
+        // Initialize face if it doesn't exist
+        if (!this.closedSwitches[face]) {
+            this.closedSwitches[face] = {};
+        }
+        
+        if (!this.switchAnimations[face]) {
+            this.switchAnimations[face] = {};
+        }
+        
+        // Start switch animation (don't mark as closed until animation completes)
+        this.switchAnimations[face][nodeKey] = {
+            isAnimating: true,
+            startTime: performance.now()
+        };
+
+        
+        // Play switch activation sound
+        if (this.soundManager) {
+            this.soundManager.playSound('switchActivate');
+        }
+        
+        // Open all traps of the same color in the level (all faces)
+        this.openTrapsOfColor(switchColor);
+        
+        // Immediately free any balls that are trapped in traps of the same color
+        this.freeTrappedBallsOfColor(switchColor);
+    }
+
+    // Deactivate a switch (open it and close traps of the same color)
+    deactivateSwitch(gridX, gridY, ballIndex) {
+        const face = this.currentFace;
+        const nodeKey = `${gridY}_${gridX}`;
+        
+        // Get the switch node type to determine color
+        const nodeType = this.getNodeTypeAt(gridX, gridY);
+        const switchColor = nodeType.charAt(1); // Get the color character (r, g, b, l, y, p, o)
+        
+
+        
+        // Remove from closed switches (open the switch)
+        if (this.closedSwitches[face] && this.closedSwitches[face][nodeKey]) {
+            delete this.closedSwitches[face][nodeKey];
+
+        }
+        
+        // Close all traps of the same color in the level (all faces)
+        this.closeTrapsOfColor(switchColor);
+    }
+
+    // Check and update trap animations
+    checkTrapAnimations() {
+        let hasActiveAnimations = false;
+        
+        // Check both faces
+        ['front', 'rear'].forEach(face => {
+            if (this.trapAnimations[face]) {
+                Object.keys(this.trapAnimations[face]).forEach(nodeKey => {
+                    const animation = this.trapAnimations[face][nodeKey];
+                    if (animation && animation.isAnimating) {
+                        const elapsed = performance.now() - animation.startTime;
+                        const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
+                        
+                        if (progress >= 1) {
+                            // Animation complete
+                            animation.isAnimating = false;
+                            
+                            if (animation.isOpening) {
+                                // Opening animation complete - remove from closed traps
+                                if (this.closedTraps[face] && this.closedTraps[face][nodeKey]) {
+                                    delete this.closedTraps[face][nodeKey];
+
+                                    
+                                    // Free any ball that was trapped in this trap
+                                    const [row, col] = nodeKey.split('_').map(Number);
+                                    this.balls.forEach((ball, ballIndex) => {
+                                        if (ball.isTrapped) {
+                                            const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+                                            const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+                                            const ballFace = this.getBallCurrentFace(ball);
+                                            
+                                            // Check if this ball is on the trap that just opened
+                                            if (ballFace === face && ballGridX === col && ballGridY === row) {
+                                                ball.isTrapped = false;
+        
+                                            }
+                                        }
+                                    });
+                                    
+                                    // Recalculate connected nodes after freeing ball
+                                    this.recalculateAllConnectedNodes();
+                                }
+                            } else {
+                                // Closing animation complete - mark trap as closed
+                                if (!this.closedTraps[face]) {
+                                    this.closedTraps[face] = {};
+                                }
+                                this.closedTraps[face][nodeKey] = true;
+
+                                
+                                // Trap any ball that is on this trap
+                                const [row, col] = nodeKey.split('_').map(Number);
+                                this.balls.forEach((ball, ballIndex) => {
+                                    const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+                                    const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+                                    const ballFace = this.getBallCurrentFace(ball);
+                                    
+                                    // Check if this ball is on the trap that just closed
+                                    if (ballFace === face && ballGridX === col && ballGridY === row) {
+                                        ball.isTrapped = true;
+
+                                    }
+                                });
+                                
+                                // Recalculate connected nodes after trapping ball
+                                this.recalculateAllConnectedNodes();
+                            }
+                        } else {
+                            hasActiveAnimations = true;
+                        }
+                    }
+                });
+            }
+        });
+        
+        return hasActiveAnimations;
+    }
+
+    // Check and update switch animations
+    checkSwitchAnimations() {
+        let hasActiveAnimations = false;
+        
+        // Check both faces
+        ['front', 'rear'].forEach(face => {
+            if (this.switchAnimations[face]) {
+                Object.keys(this.switchAnimations[face]).forEach(nodeKey => {
+                    const animation = this.switchAnimations[face][nodeKey];
+                    if (animation && animation.isAnimating) {
+                        const elapsed = performance.now() - animation.startTime;
+                        const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.SWITCH_ANIMATION_DURATION, 1);
+                        
+                        if (progress >= 1) {
+                            // Animation complete
+                            animation.isAnimating = false;
+                            
+                            // Mark switch as closed now that animation is complete
+                            if (!this.closedSwitches[face]) {
+                                this.closedSwitches[face] = {};
+                            }
+                            this.closedSwitches[face][nodeKey] = true;
+                            
+
+                        } else {
+                            hasActiveAnimations = true;
+                        }
+                    }
+                });
+            }
+        });
+        
+        return hasActiveAnimations;
+    }
+
+    // Open all traps of a specific color in the level (all faces) that are currently holding balls
+    openTrapsOfColor(color) {
+
+        
+        // Check both faces
+        ['front', 'rear'].forEach(face => {
+            if (this.board && this.board[face]) {
+                const nodes = this.board[face];
+                for (let row = 0; row < nodes.length; row++) {
+                    const rowArray = nodes[row];
+                    for (let col = 0; col < rowArray.length; col++) {
+                        const nodeType = rowArray[col];
+                        
+                        // Check if this is a trap of the specified color
+                        if (nodeType === `x${color}`) {
+                            const nodeKey = `${row}_${col}`;
+                            
+                            // Check if this trap is currently holding a ball
+                            const isHoldingBall = this.isTrapHoldingBall(face, row, col);
+                            
+                            if (isHoldingBall) {
+                                // Check if this trap is currently closed
+                                if (this.closedTraps[face] && this.closedTraps[face][nodeKey]) {
+                                    // Initialize trap animations if it doesn't exist
+                                    if (!this.trapAnimations[face]) {
+                                        this.trapAnimations[face] = {};
+                                    }
+                                    
+                                    // Start trap opening animation (from closed to open state)
+                                    this.trapAnimations[face][nodeKey] = {
+                                        isAnimating: true,
+                                        startTime: performance.now(),
+                                        isOpening: true // New flag to indicate opening animation
+                                    };
+
+                                    
+                                    // Play trap opening sound
+                                    if (this.soundManager) {
+                                        this.soundManager.playSound('success');
+                                    }
+                                }
+                            } else {
+                                
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Note: Balls will be freed when the trap opening animation completes
+        // Recalculate connected nodes for all balls after trap state changes
+        this.recalculateAllConnectedNodes();
+    }
+
+    // Check if there's an active switch of a specific color
+    hasActiveSwitchOfColor(color) {
+        // Check both faces for active switches of the specified color
+        for (const face of ['front', 'rear']) {
+            // Check for closed switches
+            if (this.closedSwitches[face]) {
+                for (const nodeKey of Object.keys(this.closedSwitches[face])) {
+                    const [row, col] = nodeKey.split('_').map(Number);
+                    const nodeType = this.getNodeTypeAt(col, row);
+                    
+                    // Check if this is a switch of the specified color
+                    if (nodeType === `s${color}`) {
+                        return true; // Found an active switch of this color
+                    }
+                }
+            }
+            
+            // Check for switches that are currently animating (being activated)
+            if (this.switchAnimations[face]) {
+                for (const nodeKey of Object.keys(this.switchAnimations[face])) {
+                    const animation = this.switchAnimations[face][nodeKey];
+                    if (animation && animation.isAnimating) {
+                        const [row, col] = nodeKey.split('_').map(Number);
+                        const nodeType = this.getNodeTypeAt(col, row);
+                        
+                        // Check if this is a switch of the specified color
+                        if (nodeType === `s${color}`) {
+                            return true; // Found a switch of this color that's being activated
+                        }
+                    }
+                }
+            }
+        }
+        return false; // No active switch of this color found
+    }
+
+    // Immediately free any balls that are trapped in traps of the specified color
+    freeTrappedBallsOfColor(color) {
+
+        
+        // Check both faces
+        ['front', 'rear'].forEach(face => {
+            if (this.board && this.board[face]) {
+                const nodes = this.board[face];
+                for (let row = 0; row < nodes.length; row++) {
+                    const rowArray = nodes[row];
+                    for (let col = 0; col < rowArray.length; col++) {
+                        const nodeType = rowArray[col];
+                        
+                        // Check if this is a trap of the specified color
+                        if (nodeType === `x${color}`) {
+                            // Check if any ball is trapped at this position
+                            this.balls.forEach((ball, ballIndex) => {
+                                if (ball && ball.isTrapped) {
+                                    const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+                                    const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+                                    const ballFace = this.getBallCurrentFace(ball);
+                                    
+                                    // Check if this ball is on the trap that should be opened
+                                    if (ballFace === face && ballGridX === col && ballGridY === row) {
+                                        ball.isTrapped = false;
+
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Recalculate connected nodes after freeing balls
+        this.recalculateAllConnectedNodes();
+    }
+
+    // Check if a trap at the specified position is currently holding a ball
+    isTrapHoldingBall(face, row, col) {
+        // Check if any ball is currently on this trap position
+        for (let ballIndex = 0; ballIndex < this.balls.length; ballIndex++) {
+            const ball = this.balls[ballIndex];
+            if (!ball) continue;
+            
+            const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+            const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+            const ballFace = this.getBallCurrentFace(ball);
+            
+            // Check if this ball is on the specified trap position
+            if (ballFace === face && ballGridX === col && ballGridY === row) {
+                return true; // This trap is holding a ball
+            }
+        }
+        return false; // No ball is on this trap
+    }
+
+    // Close all traps of a specific color in the level (all faces) that are currently holding balls
+    closeTrapsOfColor(color) {
+
+        
+        // Check both faces
+        ['front', 'rear'].forEach(face => {
+            if (this.board && this.board[face]) {
+                const nodes = this.board[face];
+                for (let row = 0; row < nodes.length; row++) {
+                    const rowArray = nodes[row];
+                    for (let col = 0; col < rowArray.length; col++) {
+                        const nodeType = rowArray[col];
+                        
+                        // Check if this is a trap of the specified color
+                        if (nodeType === `x${color}`) {
+                            const nodeKey = `${row}_${col}`;
+                            
+                            // Check if this trap is currently holding a ball
+                            const isHoldingBall = this.isTrapHoldingBall(face, row, col);
+                            
+                            if (isHoldingBall) {
+                                // Check if this trap is currently open (not in closedTraps)
+                                if (!this.closedTraps[face] || !this.closedTraps[face][nodeKey]) {
+                                    // Initialize trap animations if it doesn't exist
+                                    if (!this.trapAnimations[face]) {
+                                        this.trapAnimations[face] = {};
+                                    }
+                                    
+                                    // Start trap closing animation (from open to closed state)
+                                    this.trapAnimations[face][nodeKey] = {
+                                        isAnimating: true,
+                                        startTime: performance.now(),
+                                        isOpening: false // Closing animation
+                                    };
+
+                                    
+                                    // Play trap closing sound
+                                    if (this.soundManager) {
+                                        this.soundManager.playSound('trapClose');
+                                    }
+                                }
+                            } else {
+                                
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Recalculate connected nodes for all balls after trap state changes
+        this.recalculateAllConnectedNodes();
+    }
+
     // Get a consistent connection key (smaller coordinates first)
     getConnectionKey(x1, y1, x2, y2) {
         // Sort coordinates to ensure consistent key regardless of direction
@@ -4836,6 +5926,16 @@ class GameManager {
         
         // Reset activated stickers
         this.activatedStickers = {
+            front: {},
+            rear: {}
+        };
+        
+        // Reset trap state
+        this.closedTraps = {
+            front: {},
+            rear: {}
+        };
+        this.trapAnimations = {
             front: {},
             rear: {}
         };

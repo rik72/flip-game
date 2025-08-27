@@ -68,6 +68,13 @@ class SoundManager {
         this.sounds.success = this.createAudio('success.mp3', 0.7);
         this.sounds.warning = this.createAudio('warning.mp3', 0.5);
         
+        // Trap sounds
+        this.sounds.trapActivate = this.createAudio('error.mp3', 0.7); // Use error sound for trap activation
+        this.sounds.trapClose = this.createAudio('ball-snap.mp3', 0.6); // Use ball snap sound for trap closing
+        
+        // Switch sounds
+        this.sounds.switchActivate = this.createAudio('button-click.mp3', 0.6); // Use button click sound for switch activation
+        
         // Background music
         this.backgroundMusic = this.createAudio('background-music.mp3', this.musicVolume);
         this.backgroundMusic.loop = true;

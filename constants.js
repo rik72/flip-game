@@ -71,6 +71,13 @@ const CONSTANTS = {
 		GOAL_INNER_RADIUS_RATIO: 0.3, // Goal inner radius as ratio of gridSize
 		GOAL_OUTER_RADIUS_RATIO: 0.4, // Goal outer radius as ratio of gridSize
 		
+		// Trap sizing (larger than goals for better visibility)
+		TRAP_OUTER_RADIUS_RATIO: 0.8, // Trap outer radius as ratio of gridSize
+		
+		// Switch sizing (same distance as trap X dimension)
+		SWITCH_SQUARE_DISTANCE_RATIO: 0.6, // Distance of switch squares from center as ratio of gridSize
+		SWITCH_SQUARE_SIZE_RATIO: 0.12, // Size of each switch square as ratio of gridSize
+		
 		// Tail rendering configuration
 		TAIL_BALL_SIZE_RATIO: .7, // Tail ball size as ratio of normal ball size (1.0 = same size)
 		TAIL_LINE_WIDTH_MULTIPLIER: 5.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
@@ -106,6 +113,14 @@ const CONSTANTS = {
 		TRAIL_DURATION: 200, // milliseconds for movement trail animation
 		TRAIL_OPACITY: 0.15, // opacity for movement trail (lower than explosion)
 		
+		// Trap animation configuration
+		TRAP_ANIMATION_DURATION: 150, // milliseconds for trap X-to-+ rotation animation (increased for better visibility)
+		TRAP_DARKENING_FACTOR: 0.4, // Factor to darken trap colors (same as other elements)
+		
+		// Switch animation configuration
+		SWITCH_ANIMATION_DURATION: 400, // milliseconds for switch open-to-closed animation
+		SWITCH_DARKENING_FACTOR: 0.4, // Factor to darken switch colors when open
+		
 		// Easing functions
 		EASING: {
 			LINEAR: (t) => t,
@@ -135,9 +150,24 @@ const CONSTANTS = {
             WELL: 'w0',
 			WALL: 'x0',
 			TELEPORT: 't0',
-			SWITCH: 's0',
 			COLLECTIBLE: 'c0',
-			STICKER: '$0'
+			STICKER: '$0',
+			// Trap node types (color variants)
+			TRAP_RED: 'xr',
+			TRAP_GREEN: 'xg',
+			TRAP_BLUE: 'xb',
+			TRAP_LIGHTBLUE: 'xl',
+			TRAP_YELLOW: 'xy',
+			TRAP_PURPLE: 'xp',
+			TRAP_ORANGE: 'xo',
+			// Switch node types (color variants)
+			SWITCH_RED: 'sr',
+			SWITCH_GREEN: 'sg',
+			SWITCH_BLUE: 'sb',
+			SWITCH_LIGHTBLUE: 'sl',
+			SWITCH_YELLOW: 'sy',
+			SWITCH_PURPLE: 'sp',
+			SWITCH_ORANGE: 'so'
 		},
 		
 		// Node colors (only for square nodes, circles use their own colors)
@@ -156,9 +186,24 @@ const CONSTANTS = {
 			'w0': '#FFFFFF',  // Well
 			'x0': '#FF0000',  // Wall
 			't0': '#8000FF',  // Teleport
-			's0': '#FFFF00',  // Switch
 			'c0': '#FF00FF',  // Collectible
-			'$0': '#FFFFFF'   // Sticker (orange)
+			'$0': '#FFFFFF',   // Sticker (orange)
+			// Trap node colors (will be darkened versions of ball colors)
+			'xr': '#EE1111',  // Red trap
+			'xg': '#11EE11',  // Green trap
+			'xb': '#1111EE',  // Blue trap
+			'xl': '#BBBBFF',  // Lightblue trap
+			'xy': '#FFFF00',  // Yellow trap
+			'xp': '#FF00FF',  // Purple trap
+			'xo': '#FF6600',  // Orange trap
+			// Switch node colors (same as trap colors)
+			'sr': '#EE1111',  // Red switch
+			'sg': '#11EE11',  // Green switch
+			'sb': '#1111EE',  // Blue switch
+			'sl': '#BBBBFF',  // Lightblue switch
+			'sy': '#FFFF00',  // Yellow switch
+			'sp': '#FF00FF',  // Purple switch
+			'so': '#FF6600'   // Orange switch
 		},
 		
 		// Ball colors mapping
@@ -178,6 +223,13 @@ const CONSTANTS = {
 		STICKER_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for sticker nodes (0.5 = 50% darker)
 		GOAL_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for inactive goals (0.5 = 50% darker)
 		TAIL_DARKENING_FACTOR: 0.4 // Factor to darken ball colors for tail effects (0.5 = 50% darker)
+	},
+
+	// Touch configurations
+	TOUCH_CONFIG: {
+		// Touch interaction settings
+		TOUCH_SIZE_RATIO: 0.8, // Touch target size as ratio of grid cell
+		TOUCH_FEEDBACK_DURATION: 150, // Touch feedback animation duration in milliseconds
 	},
 
 	// Audio configurations
