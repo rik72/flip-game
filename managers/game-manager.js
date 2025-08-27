@@ -3418,7 +3418,7 @@ class GameManager {
                         
                         // Calculate trap dimensions for open state (four squares)
                         const squareDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_DISTANCE_RATIO;
-                        const squareSize = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_SIZE_RATIO;
+                        const squareSize = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_SIZE_RATIO * .75;
                         
                         // Draw dark cross under the squares that morphs into the final plus sign
                         const darkerColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.TRAP_DARKER_SHADE_FACTOR);
