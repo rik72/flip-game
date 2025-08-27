@@ -181,10 +181,7 @@ class GameManager {
         console.log('🎯 === END BALLS WITH TAILS STATUS ===\n');
     }
 
-    // Debug method to manually log balls with tails (can be called from console)
-    debugLogBallsWithTails() {
-        this.logBallsWithTails();
-    }
+
 
     // Determine which face a goal is on based on the ball's end coordinates
     getGoalCurrentFace(ball) {
@@ -208,6 +205,30 @@ class GameManager {
         const newR = Math.max(0, Math.floor(r * factor));
         const newG = Math.max(0, Math.floor(g * factor));
         const newB = Math.max(0, Math.floor(b * factor));
+        
+        // Convert back to hex
+        const result = '#' + 
+            newR.toString(16).padStart(2, '0') + 
+            newG.toString(16).padStart(2, '0') + 
+            newB.toString(16).padStart(2, '0');
+        
+        return result;
+    }
+
+    // Helper function to brighten a hex color
+    brightenColor(hexColor, factor = 0.3) {
+        // Remove # if present
+        const hex = hexColor.replace('#', '');
+        
+        // Parse RGB values
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Brighten by adding factor * (255 - current value)
+        const newR = Math.min(255, Math.floor(r + (255 - r) * factor));
+        const newG = Math.min(255, Math.floor(g + (255 - g) * factor));
+        const newB = Math.min(255, Math.floor(b + (255 - b) * factor));
         
         // Convert back to hex
         const result = '#' + 
@@ -3296,12 +3317,12 @@ class GameManager {
                         const isActivated = this.activatedStickers[this.currentFace] && 
                                           this.activatedStickers[this.currentFace][nodeKey];
                         
-                        // Always use darker shade of ball color for sticker nodes
+                        // Always use brighter shade of ball color for sticker nodes
                         let stickerColor;
                         if (isActivated) {
-                            // Use darker shade of the ball color that activated this sticker
+                            // Use brighter shade of the ball color that activated this sticker
                             const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[isActivated.color] || '#FFFFFF';
-                            stickerColor = this.darkenColor(ballColorHex, CONSTANTS.LEVEL_CONFIG.STICKER_DARKENING_FACTOR);
+                            stickerColor = this.brightenColor(ballColorHex, 0.3);
                         } else {
                             // Not activated - use default sticker color
                             stickerColor = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
@@ -4039,33 +4060,12 @@ class GameManager {
                 this.ctx.globalAlpha = finalAlpha;
             }
             
-            // Draw the main ball
-            this.ctx.fillStyle = colorHex;
+            // Draw the main ball with brightened color (no gradient)
+            const brightenedColor = this.brightenColor(colorHex, 0.3);
+            this.ctx.fillStyle = brightenedColor;
             this.ctx.beginPath();
             this.ctx.arc(ball.x, ball.y, finalBallRadius, 0, 2 * Math.PI);
             this.ctx.fill();
-            
-            // Add subtle white gradient if enabled
-            if (CONSTANTS.RENDER_SIZE_CONFIG.BALL_GRADIENT_ENABLED) {
-                const gradientRadius = finalBallRadius * CONSTANTS.RENDER_SIZE_CONFIG.BALL_GRADIENT_RADIUS_RATIO;
-                const gradientInnerRadius = finalBallRadius * CONSTANTS.RENDER_SIZE_CONFIG.BALL_GRADIENT_INNER_RADIUS_RATIO;
-                const gradientOpacity = CONSTANTS.RENDER_SIZE_CONFIG.BALL_GRADIENT_OPACITY;
-                
-                // Create radial gradient for subtle highlight effect
-                const gradient = this.ctx.createRadialGradient(
-                    // ball.x - gradientRadius * 0.3, ball.y - gradientRadius * 0.3, 0, // Start point (slightly offset for natural look)
-                    ball.x, ball.y, gradientRadius, // Start point (slightly offset for natural look)
-                    ball.x, ball.y, gradientInnerRadius // End point
-                );
-                
-                gradient.addColorStop(0, `rgba(255, 255, 255, ${gradientOpacity})`); // White at center
-                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)'); // Transparent at edge
-                
-                this.ctx.fillStyle = gradient;
-                this.ctx.beginPath();
-                this.ctx.arc(ball.x, ball.y, gradientRadius, 0, 2 * Math.PI);
-                this.ctx.fill();
-            }
             
             this.ctx.restore();
             
@@ -5110,9 +5110,9 @@ class GameManager {
             const centerX = this.boardStartX + (col * this.gridSize);
             const centerY = this.boardStartY + (row * this.gridSize);
             
-            // Get ball color and darken it for tail
+            // Get ball color and brighten it for tail
             const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
-            const ballColor = this.darkenColor(ballColorHex, CONSTANTS.LEVEL_CONFIG.TAIL_DARKENING_FACTOR);
+            const ballColor = this.brightenColor(ballColorHex, 0.3);
             
             // Calculate tail ball size
             const normalBallRadius = this.getVisualBallRadius({});
@@ -5139,9 +5139,9 @@ class GameManager {
             const x2 = this.boardStartX + (col2 * this.gridSize);
             const y2 = this.boardStartY + (row2 * this.gridSize);
             
-            // Get ball color and darken it for tail
+            // Get ball color and brighten it for tail
             const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailData.color] || '#FFFFFF';
-            const ballColor = this.darkenColor(ballColorHex, CONSTANTS.LEVEL_CONFIG.TAIL_DARKENING_FACTOR);
+            const ballColor = this.brightenColor(ballColorHex, 0.3);
             
             // Calculate tail line width
             const normalLineWidth = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_MIN_WIDTH, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_LINE_RATIO);
@@ -5160,6 +5160,18 @@ class GameManager {
     // Get the node type at a specific grid position
     getNodeTypeAt(gridX, gridY) {
         const nodes = this.getCurrentNodes();
+        if (!nodes || gridY < 0 || gridY >= nodes.length || gridX < 0 || gridX >= nodes[gridY].length) {
+            return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+        }
+        return nodes[gridY][gridX] || CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+    }
+
+    // Get the node type at a specific grid position for a specific face
+    getNodeTypeAtFace(gridX, gridY, face) {
+        if (!this.board || !this.board[face]) {
+            return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
+        }
+        const nodes = this.board[face];
         if (!nodes || gridY < 0 || gridY >= nodes.length || gridX < 0 || gridX >= nodes[gridY].length) {
             return CONSTANTS.LEVEL_CONFIG.NODE_TYPES.EMPTY;
         }
@@ -5261,7 +5273,7 @@ class GameManager {
         
         // Check if ball is on a trap node
         if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
-            const face = this.currentFace;
+            const face = this.getBallCurrentFace(ball);
             const nodeKey = `${ballGridY}_${ballGridX}`;
             
             // Check if trap is already closed
@@ -5309,7 +5321,7 @@ class GameManager {
         
         // Check if ball is on a switch node (colored switches only)
         if (nodeType.startsWith('s')) {
-            const face = this.currentFace;
+            const face = this.getBallCurrentFace(ball);
             const nodeKey = `${ballGridY}_${ballGridX}`;
             
             // Check if switch is already closed
@@ -5321,7 +5333,7 @@ class GameManager {
             if (!isClosed) {
                 // Activate the switch
 
-                this.activateSwitch(ballGridX, ballGridY, ballIndex);
+                this.activateSwitch(ballGridX, ballGridY, ballIndex, face);
             }
         }
     }
@@ -5357,7 +5369,7 @@ class GameManager {
                         if (!anyBallOnSwitch) {
                             // No ball is on this switch anymore, deactivate it
 
-                            this.deactivateSwitch(col, row, ballIndex);
+                            this.deactivateSwitch(col, row, ballIndex, face);
                         } else {
 
                         }
@@ -5411,7 +5423,8 @@ class GameManager {
 
     // Activate a trap (close it and trap the ball)
     activateTrap(gridX, gridY, ballIndex) {
-        const face = this.currentFace;
+        const ball = this.balls[ballIndex];
+        const face = this.getBallCurrentFace(ball);
         const nodeKey = `${gridY}_${gridX}`;
         
         // Initialize face if it doesn't exist
@@ -5437,7 +5450,6 @@ class GameManager {
         }
         
         // Force ball to rest state (drop it)
-        const ball = this.balls[ballIndex];
         if (ball) {
             ball.isTouched = false;
             ball.touchOpacity = 0.0;
@@ -5458,8 +5470,7 @@ class GameManager {
     }
 
     // Activate a switch (close it and control traps of the same color)
-    activateSwitch(gridX, gridY, ballIndex) {
-        const face = this.currentFace;
+    activateSwitch(gridX, gridY, ballIndex, face) {
         const nodeKey = `${gridY}_${gridX}`;
         
         // Get the switch node type to determine color
@@ -5482,7 +5493,6 @@ class GameManager {
             isAnimating: true,
             startTime: performance.now()
         };
-
         
         // Play switch activation sound
         if (this.soundManager) {
@@ -5497,8 +5507,7 @@ class GameManager {
     }
 
     // Deactivate a switch (open it and close traps of the same color)
-    deactivateSwitch(gridX, gridY, ballIndex) {
-        const face = this.currentFace;
+    deactivateSwitch(gridX, gridY, ballIndex, face) {
         const nodeKey = `${gridY}_${gridX}`;
         
         // Get the switch node type to determine color
@@ -5513,8 +5522,13 @@ class GameManager {
 
         }
         
-        // Close all traps of the same color in the level (all faces)
-        this.closeTrapsOfColor(switchColor);
+        // Check if there are still any active switches of this color
+        const hasActiveSwitch = this.hasActiveSwitchOfColor(switchColor);
+        
+        // Only close traps if there are no active switches of this color
+        if (!hasActiveSwitch) {
+            this.closeTrapsOfColor(switchColor);
+        }
     }
 
     // Check and update trap animations
@@ -5567,19 +5581,25 @@ class GameManager {
                                 this.closedTraps[face][nodeKey] = true;
 
                                 
-                                // Trap any ball that is on this trap
+                                // Trap any ball that is on this trap (only if no active switch of same color)
                                 const [row, col] = nodeKey.split('_').map(Number);
-                                this.balls.forEach((ball, ballIndex) => {
-                                    const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
-                                    const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
-                                    const ballFace = this.getBallCurrentFace(ball);
-                                    
-                                    // Check if this ball is on the trap that just closed
-                                    if (ballFace === face && ballGridX === col && ballGridY === row) {
-                                        ball.isTrapped = true;
+                                const nodeType = this.getNodeTypeAt(col, row);
+                                const trapColor = nodeType.charAt(1);
+                                const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+                                
+                                if (!hasActiveSwitch) {
+                                    this.balls.forEach((ball, ballIndex) => {
+                                        const ballGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
+                                        const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
+                                        const ballFace = this.getBallCurrentFace(ball);
+                                        
+                                        // Check if this ball is on the trap that just closed
+                                        if (ballFace === face && ballGridX === col && ballGridY === row) {
+                                            ball.isTrapped = true;
 
-                                    }
-                                });
+                                        }
+                                    });
+                                }
                                 
                                 // Recalculate connected nodes after trapping ball
                                 this.recalculateAllConnectedNodes();
@@ -5693,7 +5713,7 @@ class GameManager {
             if (this.closedSwitches[face]) {
                 for (const nodeKey of Object.keys(this.closedSwitches[face])) {
                     const [row, col] = nodeKey.split('_').map(Number);
-                    const nodeType = this.getNodeTypeAt(col, row);
+                    const nodeType = this.getNodeTypeAtFace(col, row, face);
                     
                     // Check if this is a switch of the specified color
                     if (nodeType === `s${color}`) {
@@ -5708,7 +5728,7 @@ class GameManager {
                     const animation = this.switchAnimations[face][nodeKey];
                     if (animation && animation.isAnimating) {
                         const [row, col] = nodeKey.split('_').map(Number);
-                        const nodeType = this.getNodeTypeAt(col, row);
+                        const nodeType = this.getNodeTypeAtFace(col, row, face);
                         
                         // Check if this is a switch of the specified color
                         if (nodeType === `s${color}`) {
@@ -5802,22 +5822,28 @@ class GameManager {
                             if (isHoldingBall) {
                                 // Check if this trap is currently open (not in closedTraps)
                                 if (!this.closedTraps[face] || !this.closedTraps[face][nodeKey]) {
-                                    // Initialize trap animations if it doesn't exist
-                                    if (!this.trapAnimations[face]) {
-                                        this.trapAnimations[face] = {};
-                                    }
+                                    // Check if there's an active switch of the same color
+                                    const hasActiveSwitch = this.hasActiveSwitchOfColor(color);
                                     
-                                    // Start trap closing animation (from open to closed state)
-                                    this.trapAnimations[face][nodeKey] = {
-                                        isAnimating: true,
-                                        startTime: performance.now(),
-                                        isOpening: false // Closing animation
-                                    };
+                                    // Only close the trap if there's no active switch
+                                    if (!hasActiveSwitch) {
+                                        // Initialize trap animations if it doesn't exist
+                                        if (!this.trapAnimations[face]) {
+                                            this.trapAnimations[face] = {};
+                                        }
+                                        
+                                        // Start trap closing animation (from open to closed state)
+                                        this.trapAnimations[face][nodeKey] = {
+                                            isAnimating: true,
+                                            startTime: performance.now(),
+                                            isOpening: false // Closing animation
+                                        };
 
-                                    
-                                    // Play trap closing sound
-                                    if (this.soundManager) {
-                                        this.soundManager.playSound('trapClose');
+                                        
+                                        // Play trap closing sound
+                                        if (this.soundManager) {
+                                            this.soundManager.playSound('trapClose');
+                                        }
                                     }
                                 }
                             } else {

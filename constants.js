@@ -220,10 +220,10 @@ const CONSTANTS = {
 			'pink': '#FF8080'
 		},
 		
-		// Visual darkening factors for different elements
+		// Visual color adjustment factors for different elements
 		STICKER_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for sticker nodes (0.5 = 50% darker)
 		GOAL_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for inactive goals (0.5 = 50% darker)
-		TAIL_DARKENING_FACTOR: 0.4 // Factor to darken ball colors for tail effects (0.5 = 50% darker)
+		TAIL_BRIGHTENING_FACTOR: 0.3 // Factor to brighten ball colors for tail effects (0.3 = 30% brighter)
 	},
 
 	// Touch configurations

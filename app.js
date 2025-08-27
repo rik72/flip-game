@@ -47,7 +47,6 @@ class App {
                         
                         this.currentLevel = 'test';
                         this.testLevelData = levelData;
-                        console.log(`🔧 Test mode: Loading test level from localStorage`);
                     } else {
                         console.error('No test level data found in localStorage');
                         this.loadDefaultLevel();
@@ -58,18 +57,15 @@ class App {
                 }
             } else if (urlLevel !== null && !isNaN(urlLevel) && urlLevel >= 1) {
                 this.currentLevel = parseInt(urlLevel);
-                console.log(`🔧 Development mode: Loading level ${this.currentLevel} from URL parameter`);
             } else if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
                 this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
-                console.log(`🔧 Development mode: Forcing start at level ${this.currentLevel}`);
             } else {
                 this.loadDefaultLevel();
             }
         } else {
-            // Production mode - check if we should force a specific level for development
-            if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
-                this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
-                console.log(`🔧 Development mode: Forcing start at level ${this.currentLevel}`);
+                    // Production mode - check if we should force a specific level for development
+        if (CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL !== null) {
+            this.currentLevel = CONSTANTS.GAME_CONFIG.FORCE_START_LEVEL;
             } else {
                 this.loadDefaultLevel();
             }
@@ -87,7 +83,7 @@ class App {
         // Expose debug methods globally for console access
         window.debugLogBallsWithTails = () => {
             if (this.gameManager) {
-                this.gameManager.debugLogBallsWithTails();
+                this.gameManager.logBallsWithTails();
             } else {
                 console.log('❌ Game manager not initialized yet');
             }
