@@ -1229,8 +1229,10 @@ class GameManager {
                         this.soundManager.playSound('ballSnap');
                     }
                     
-                            // Check if ball entered a trap
-        this.checkTrapActivation(i);
+                    // Check if ball entered a trap (skip during backtracking)
+                    if (!this.isBacktracking[i]) {
+                        this.checkTrapActivation(i);
+                    }
         
         // Check if ball left any switches
         this.checkSwitchDeactivation(i);
@@ -3009,17 +3011,17 @@ class GameManager {
         // Draw board nodes on top of path lines
         this.renderBoard();
         
-        // Draw tail connections on top of normal path lines
-        this.renderTailConnections();
-        
-        // Draw tail nodes on top of board nodes
-        this.renderTailNodes();
-        
         // Draw end goals
         this.renderEndGoals();
         
         // Draw trap open states (under balls)
         this.renderTrapOpenStates();
+        
+        // Draw tail connections on top of trap open states
+        this.renderTailConnections();
+        
+        // Draw tail nodes on top of trap open states
+        this.renderTailNodes();
         
         // Draw switches (under balls)
         this.renderSwitches();
