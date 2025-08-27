@@ -20,6 +20,12 @@ class GameManager {
         this.gameState = {
             isPlaying: false
         };
+        
+        // Glow animation system
+        this.glowAnimations = []; // Array to store glow animation data for each ball
+        this.glowAnimationStartTime = Date.now(); // Global start time for consistent timing
+        this.glowAnimationId = null; // For continuous glow animation loop
+        
         this.canvas = null;
         this.ctx = null;
         this.board = null;
@@ -266,6 +272,109 @@ class GameManager {
             b.toString(16).padStart(2, '0');
         
         return result;
+    }
+
+    // Glow animation methods
+    initializeGlowAnimations() {
+        // Initialize glow animation data for each ball
+        this.glowAnimations = this.balls.map((ball, index) => ({
+            startTime: this.glowAnimationStartTime + (index * CONSTANTS.RENDER_SIZE_CONFIG.GLOW_STAGGER_DELAY), // Stagger start times for individual animation
+            cycleDuration: CONSTANTS.RENDER_SIZE_CONFIG.GLOW_CYCLE_DURATION, // Cycle duration from constants
+            phase: 0 // Current phase of the animation
+        }));
+    }
+
+    updateGlowAnimations() {
+        const currentTime = Date.now();
+        
+        this.glowAnimations.forEach((animation, index) => {
+            if (!animation) return;
+            
+            // Calculate elapsed time for this ball's animation
+            const elapsedTime = currentTime - animation.startTime;
+            
+            // Calculate current phase (0 to 1) using sine wave
+            // This ensures perfect synchronization: phase 0 = darkest ball + minimum shadow, phase 1 = brightest ball + maximum shadow
+            animation.phase = (Math.sin((elapsedTime / animation.cycleDuration) * 2 * Math.PI) + 1) / 2;
+            animation.phase *= animation.phase;
+            animation.phase *= animation.phase;
+        });
+    }
+
+    glowAnimationLoop() {
+        // Update glow animations
+        this.updateGlowAnimations();
+        
+        // Trigger a render to show the updated colors
+        this.render();
+        
+        // Continue the animation loop
+        this.glowAnimationId = requestAnimationFrame(() => this.glowAnimationLoop());
+    }
+
+    startGlowAnimation() {
+        // Stop any existing glow animation
+        if (this.glowAnimationId) {
+            cancelAnimationFrame(this.glowAnimationId);
+        }
+        
+        // Start the continuous glow animation loop
+        this.glowAnimationId = requestAnimationFrame(() => this.glowAnimationLoop());
+    }
+
+    stopGlowAnimation() {
+        if (this.glowAnimationId) {
+            cancelAnimationFrame(this.glowAnimationId);
+            this.glowAnimationId = null;
+        }
+    }
+
+    getGlowColor(ballIndex, originalColor) {
+        // Return original color if no animation, ball is clamped, or game is not playing
+        if (!this.glowAnimations[ballIndex] || 
+            this.isBallClamped[ballIndex] || 
+            !this.gameState.isPlaying) {
+            return originalColor;
+        }
+        
+        const animation = this.glowAnimations[ballIndex];
+        const phase = animation.phase;
+        
+        // Interpolate between original color (phase 0) and brightened color (phase 1) using constant
+        // This ensures phase 0 = darkest ball, phase 1 = brightest ball
+        const brightenedColor = this.brightenColor(originalColor, CONSTANTS.RENDER_SIZE_CONFIG.GLOW_BRIGHTNESS_FACTOR);
+        const glowColor = this.interpolateColor(originalColor, brightenedColor, phase);
+        
+        return glowColor;
+    }
+
+    drawBallShadow(x, y, ballRadius, ballIndex, originalColor) {
+        // Only draw shadow if glow animation is active
+        if (!this.glowAnimations[ballIndex] || 
+            this.isBallClamped[ballIndex] || 
+            !this.gameState.isPlaying) {
+            return;
+        }
+        
+        const animation = this.glowAnimations[ballIndex];
+        const phase = animation.phase;
+        
+        // Calculate shadow properties based on glow phase using constants
+        // This ensures phase 0 = minimum shadow, phase 1 = maximum shadow
+        const maxShadowRadius = ballRadius * CONSTANTS.RENDER_SIZE_CONFIG.GLOW_SHADOW_MAX_RADIUS_RATIO; // Shadow expands based on constant
+        const shadowRadius = maxShadowRadius * phase; // Shadow size syncs with glow intensity (phase 0 = 0, phase 1 = max)
+        const shadowOpacity = CONSTANTS.RENDER_SIZE_CONFIG.GLOW_SHADOW_MAX_OPACITY * phase; // Shadow opacity syncs with glow intensity (phase 0 = 0, phase 1 = max)
+        
+        // Draw the shadow as a radial gradient
+        const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, shadowRadius);
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${shadowOpacity})`);
+        gradient.addColorStop(0.7, `rgba(255, 255, 255, ${shadowOpacity * 0.5})`);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        this.ctx.fillStyle = gradient;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, shadowRadius, 0, 2 * Math.PI);
+        this.ctx.fill();
     }
 
     // Update the toggle button visibility based on whether the board has a rear face
@@ -2223,6 +2332,9 @@ class GameManager {
             
             this.render();
             
+            // Start the continuous glow animation
+            this.startGlowAnimation();
+            
 
         } catch (error) {
             console.error('Error loading level:', error);
@@ -2360,6 +2472,9 @@ class GameManager {
         
         // Initialize goal states
         this.initializeGoalStates();
+        
+        // Initialize glow animations for all balls
+        this.initializeGlowAnimations();
     }
 
     // Initialize goal states for all balls
@@ -2545,6 +2660,9 @@ class GameManager {
         
         // Stop all animations immediately when win condition is met
         this.cleanupAnimations();
+        
+        // Stop glow animation when level is completed
+        this.stopGlowAnimation();
         
         // Create explosion animations for each goal node
         this.createExplosionAnimations();
@@ -2863,6 +2981,9 @@ class GameManager {
         // Clean up any existing level completion overlay
         this.cleanupLevelCompletionOverlay();
         
+        // Stop glow animation before resetting
+        this.stopGlowAnimation();
+        
         this.loadLevel(this.currentLevel).catch(error => {
             console.error('Failed to reset level:', error);
         });
@@ -3006,6 +3127,9 @@ class GameManager {
 
     render() {
         if (!this.ctx) return;
+        
+        // Update glow animations
+        this.updateGlowAnimations();
         
         // Clear canvas using display dimensions (since context is scaled)
         this.ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
@@ -4060,9 +4184,12 @@ class GameManager {
                 this.ctx.globalAlpha = finalAlpha;
             }
             
-            // Draw the main ball with brightened color (no gradient)
-            const brightenedColor = this.brightenColor(colorHex, 0.3);
-            this.ctx.fillStyle = brightenedColor;
+            // Draw the synchronized box shadow effect
+            this.drawBallShadow(ball.x, ball.y, finalBallRadius, index, colorHex);
+            
+            // Draw the main ball with glow animation color
+            const glowColor = this.getGlowColor(index, colorHex);
+            this.ctx.fillStyle = glowColor;
             this.ctx.beginPath();
             this.ctx.arc(ball.x, ball.y, finalBallRadius, 0, 2 * Math.PI);
             this.ctx.fill();
@@ -4604,6 +4731,9 @@ class GameManager {
         
         // Calculate initial connected nodes for all balls
         this.recalculateAllConnectedNodes();
+        
+        // Initialize glow animations for all balls
+        this.initializeGlowAnimations();
     }
 
     // Get ball's current grid position

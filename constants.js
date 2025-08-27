@@ -82,6 +82,13 @@ const CONSTANTS = {
 		TAIL_BALL_SIZE_RATIO: .7, // Tail ball size as ratio of normal ball size (1.0 = same size)
 		TAIL_LINE_WIDTH_MULTIPLIER: 5.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
 		
+		// Glow animation configuration
+		GLOW_SHADOW_MAX_OPACITY: 0.3, // Maximum opacity of the white glow shadow (0.0-1.0)
+		GLOW_SHADOW_MAX_RADIUS_RATIO: 1.6, // Maximum shadow radius as ratio of ball radius (0.8 = 80% of ball size)
+		GLOW_BRIGHTNESS_FACTOR: 0.4, // Brightness factor for glow color interpolation (0.0-1.0)
+		GLOW_CYCLE_DURATION: 2400, // Glow animation cycle duration in milliseconds
+		GLOW_STAGGER_DELAY: 800, // Delay between ball glow animations in milliseconds
+		
 	},
 
 

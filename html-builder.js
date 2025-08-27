@@ -66,7 +66,7 @@ class HtmlBuilder {
                         <div class="level-display-container">
                             <div id="levelNumberDisplay" class="level-number">#1</div>
                             <button id="restartLevelBtn" class="restart-level-btn" onclick="app.restartCurrentLevel()">
-                                <i class="bi bi-arrow-clockwise"></i>
+                                <i class="bi bi-emoji-dizzy-fill"></i>
                             </button>
                         </div>
                         <button id="nextLevelBtn" class="level-nav-btn" style="visibility: hidden;">
