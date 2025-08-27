@@ -31,6 +31,7 @@ class GameManager {
         this.board = null;
         this.levelData = null; // Store current level data
         this.currentFace = 'front'; // Track which face is currently being shown ('front' or 'rear')
+        this.gradientColors = { topColor: '#000000', bottomColor: '#000000' }; // Store gradient colors for current level
         this.balls = []; // Array of ball objects
         this.selectedBallIndex = -1; // Index of currently selected ball
         this.touchStartPos = null;
@@ -461,7 +462,7 @@ class GameManager {
             gameFooter.style.minHeight = isMobile ? '80px' : '60px';
             gameFooter.style.height = 'auto';
             gameFooter.style.padding = '5px';
-            gameFooter.style.background = 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)';
+            //gameFooter.style.background = 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)';
             gameFooter.style.border = 'none';
             gameFooter.appendChild(toggleButton);
         } else {
@@ -2309,6 +2310,9 @@ class GameManager {
             
             this.board = this.levelData.board;
             
+            // Generate gradient colors based on level data
+            this.gradientColors = CONSTANTS.generateGradientColors(this.levelData);
+            
             // Convert board faces from space-separated strings to arrays of arrays
             this.convertBoardToArrays();
             
@@ -3134,8 +3138,15 @@ class GameManager {
         // Clear canvas using display dimensions (since context is scaled)
         this.ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
         
-        // Draw background
-        this.ctx.fillStyle = '#000000';
+        // Draw background gradient
+        if (CONSTANTS.BACKGROUND_CONFIG.GRADIENT_ENABLED) {
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.displayHeight);
+            gradient.addColorStop(0, this.gradientColors.topColor);
+            gradient.addColorStop(1, this.gradientColors.bottomColor);
+            this.ctx.fillStyle = gradient;
+        } else {
+            this.ctx.fillStyle = '#000000';
+        }
         this.ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
         
         // Apply horizontal reflection for rear face
