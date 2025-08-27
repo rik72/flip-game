@@ -3420,8 +3420,51 @@ class GameManager {
                         const squareDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_DISTANCE_RATIO;
                         const squareSize = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_SIZE_RATIO;
                         
-                        // Set up drawing context
-                        this.ctx.fillStyle = trapColor;
+                        // Draw dark cross under the squares that morphs into the final plus sign
+                        const darkerColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.TRAP_DARKER_SHADE_FACTOR);
+                        this.ctx.fillStyle = darkerColor;
+                        
+                        // Calculate cross dimensions (same as closed state)
+                        const goalInnerRadius = this.getGoalInnerRadius();
+                        const goalOuterRadius = this.getGoalOuterRadius();
+                        const crossThickness = 1.1 * (goalOuterRadius - goalInnerRadius);
+                        const crossLength = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_OUTER_RADIUS_RATIO;
+                        
+                        // Set up drawing context for cross
+                        this.ctx.save();
+                        this.ctx.translate(centerX, centerY);
+                        
+                        // Draw the cross with rotation animation
+                        if (trapAnimation && trapAnimation.isAnimating) {
+                            // During animation, animate the cross rotation
+                            const elapsed = performance.now() - trapAnimation.startTime;
+                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
+                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
+                            
+                            let crossRotationAngle;
+                            if (trapAnimation.isOpening) {
+                                // Opening: animate from X (π/4) to + (0) shape
+                                crossRotationAngle = (Math.PI / 4) * easedProgress; // π/4 to 0
+                            } else {
+                                // Closing: animate from + (0) to X (π/4) shape
+                                crossRotationAngle = (Math.PI / 4) * (1 - easedProgress); // 0 to π/4
+                            }
+                            
+                            // Apply cross rotation
+                            this.ctx.rotate(crossRotationAngle);
+                        } else {
+                            // No animation: show X shape (0 rotation) for open state
+                            this.ctx.rotate(Math.PI / 4);
+                        }
+                        
+                        // Draw two rectangles forming the cross
+                        this.ctx.fillRect(-crossLength/2, -crossThickness/2, crossLength, crossThickness);
+                        this.ctx.fillRect(-crossThickness/2, -crossLength/2, crossThickness, crossLength);
+                        
+                        this.ctx.restore(); // Restore cross context
+                        
+                        // Set up drawing context for squares (on top of cross)
+                        this.ctx.fillStyle = baseColor;
                         this.ctx.save();
                         this.ctx.translate(centerX, centerY);
                         this.ctx.rotate(rotationAngle);
@@ -3441,7 +3484,7 @@ class GameManager {
                             }
                         }
                         
-                        // Draw four squares in diagonal arrangement (open state)
+                        // Draw four squares in diagonal arrangement (open state) - on top of cross
                         const positions = [
                             [0, -squareDistance/2],  // Top (vertical axis)
                             [squareDistance/2, 0],   // Right (horizontal axis)

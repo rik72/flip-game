@@ -72,11 +72,11 @@ const CONSTANTS = {
 		GOAL_OUTER_RADIUS_RATIO: 0.4, // Goal outer radius as ratio of gridSize
 		
 		// Trap sizing (larger than goals for better visibility)
-		TRAP_OUTER_RADIUS_RATIO: 0.8, // Trap outer radius as ratio of gridSize
+		TRAP_OUTER_RADIUS_RATIO: 0.75, // Trap outer radius as ratio of gridSize
 		
 		// Switch sizing (same distance as trap X dimension)
 		SWITCH_SQUARE_DISTANCE_RATIO: 0.6, // Distance of switch squares from center as ratio of gridSize
-		SWITCH_SQUARE_SIZE_RATIO: 0.12, // Size of each switch square as ratio of gridSize
+		SWITCH_SQUARE_SIZE_RATIO: 0.10, // Size of each switch square as ratio of gridSize
 		
 		// Tail rendering configuration
 		TAIL_BALL_SIZE_RATIO: .7, // Tail ball size as ratio of normal ball size (1.0 = same size)
@@ -116,6 +116,7 @@ const CONSTANTS = {
 		// Trap animation configuration
 		TRAP_ANIMATION_DURATION: 150, // milliseconds for trap X-to-+ rotation animation (increased for better visibility)
 		TRAP_DARKENING_FACTOR: 0.4, // Factor to darken trap colors (same as other elements)
+		TRAP_DARKER_SHADE_FACTOR: 0.15, // Factor for very dark cross under squares (darker than default darkenColor)
 		
 		// Switch animation configuration
 		SWITCH_ANIMATION_DURATION: 400, // milliseconds for switch open-to-closed animation
