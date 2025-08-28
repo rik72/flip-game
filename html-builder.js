@@ -65,7 +65,10 @@ class HtmlBuilder {
                         </button>
                         <div class="level-display-container">
                             <div id="levelNumberDisplay" class="level-number">#1</div>
-                            <button id="restartLevelBtn" class="restart-level-btn" onclick="app.restartCurrentLevel()">
+                            <button id="restartLevelBtn" class="restart-level-btn">
+                                <i class="bi bi-emoji-dizzy-fill"></i>
+                            </button>
+                            <button id="restartLevelBtnLarge" class="restart-level-btn-large">
                                 <i class="bi bi-emoji-dizzy-fill"></i>
                             </button>
                         </div>

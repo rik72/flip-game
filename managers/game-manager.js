@@ -3300,21 +3300,6 @@ class GameManager {
             
             // Ensure we have minimum available space
             availableHeight = Math.max(availableHeight, 200); // Minimum 200px available height
-            
-            // Debug logging for grid sizing issues
-            if (CONSTANTS.APP_CONFIG.DEVEL) {
-                console.log('Grid calculation debug:', {
-                    displayWidth: this.displayWidth,
-                    displayHeight: this.displayHeight,
-                    headerHeight,
-                    footerHeight,
-                    totalVerticalUI,
-                    availableWidth,
-                    availableHeight,
-                    boardRows,
-                    boardCols
-                });
-            }
         }
         
         // For node-oriented grid: we need spacing between nodes, not cell sizes
@@ -3452,19 +3437,6 @@ class GameManager {
             boardWidth: this.boardWidth,
             boardHeight: this.boardHeight
         };
-        
-        // Debug logging for grid size tracking
-        if (CONSTANTS.APP_CONFIG.DEVEL) {
-            console.log('Grid size stored:', {
-                gridSize: this.gridSize,
-                boardStartX: this.boardStartX,
-                boardStartY: this.boardStartY,
-                boardWidth: this.boardWidth,
-                boardHeight: this.boardHeight
-            });
-        }
-        
-
         
         // Position footer consistently across all devices
         const footer = document.querySelector('.game-footer');

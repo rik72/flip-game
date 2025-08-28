@@ -390,13 +390,14 @@ body {
     background: none;
     border: none;
     color: #ffffff;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease, opacity 0.3s ease;
     font-size: 24px;
     min-width: 44px;
     min-height: 44px;
     flex-shrink: 0;
     cursor: pointer;
     margin-top: 2px;
+    opacity: 1;
 }
 
 .restart-level-btn:hover {
@@ -411,6 +412,50 @@ body {
 
 .restart-level-btn:focus {
     outline: none;
+}
+
+/* Restart Level Button - Large Version (Always Centered) */
+.restart-level-btn-large {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60vw;
+    height: 60vw;
+    max-width: 300px;
+    max-height: 300px;
+    z-index: 2000;
+    background: radial-gradient(black 0, transparent 70%);
+    border: 2px solid transparent;
+    font-size: 120px;
+    color: #ccffcc;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: none;
+}
+
+.restart-level-btn-large:hover {
+    color: #ccffcc;
+    transform: translate(-50%, -50%) scale(1.25);
+    transition: transform 0.2s ease;
+}
+
+.restart-level-btn-large:active {
+    color: #ccffcc;
+    transform: translate(-50%, -50%) scale(1.25);
+    transition: transform 0.2s ease;
+}
+
+/* Exit animation state */
+.restart-level-btn-large.exiting {
+    transform: translate(-50%, -50%) scale(10) !important;
+    opacity: 0 !important;
+    transition: transform 0.9s ease, opacity 1.2s ease !important;
 }
 
 /* Prize Scene */
@@ -699,6 +744,15 @@ body {
         color: #ffffff;
         transform: none;
     }
+    
+    /* Restart level button large version mobile optimization */
+    .restart-level-btn-large {
+        width: 60vw;
+        height: 60vw;
+        max-width: 250px;
+        max-height: 250px;
+        font-size: 80px;
+    }
 }
 
 /* Landscape Mode */
@@ -743,6 +797,15 @@ body {
     .restart-level-btn:hover {
         color: #ffffff;
         transform: none;
+    }
+    
+    /* Restart level button large version landscape optimization */
+    .restart-level-btn-large {
+        width: 50vw;
+        height: 50vw;
+        max-width: 200px;
+        max-height: 200px;
+        font-size: 60px;
     }
 
 }

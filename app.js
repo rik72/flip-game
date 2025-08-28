@@ -110,6 +110,8 @@ class App {
         const gameContainer = document.getElementById('gameContainer');
         if (gameContainer) {
             DisplayManager.renderGameState(gameContainer, this.gameState);
+            // Setup the restart button after the UI is rendered
+            this.setupRestartButton();
         }
     }
 
@@ -693,6 +695,96 @@ class App {
         this.loadLevel(this.currentLevel).catch(error => {
             console.error('Failed to restart current level:', error);
         });
+        
+        // Ensure restart button is set up after level reload
+        setTimeout(() => {
+            this.setupRestartButton();
+        }, 100);
+    }
+
+    setupRestartButton() {
+        const restartBtn = document.getElementById('restartLevelBtn');
+        const restartBtnLarge = document.getElementById('restartLevelBtnLarge');
+        if (!restartBtn || !restartBtnLarge) return;
+
+        // Prevent multiple event listeners from being attached
+        if (restartBtn.dataset.restartButtonSetup === 'true') return;
+        restartBtn.dataset.restartButtonSetup = 'true';
+
+        let isEnlarged = false;
+
+        const resetButton = () => {
+            // Fade out large button, fade in small button
+            restartBtnLarge.style.opacity = '0';
+            restartBtnLarge.style.pointerEvents = 'none';
+            restartBtnLarge.classList.remove('exiting');
+            restartBtn.style.opacity = '1';
+            isEnlarged = false;
+
+            // Clean up event listeners
+            document.removeEventListener('click', handleDocumentClick);
+            document.removeEventListener('touchstart', handleDocumentClick);
+        };
+
+        const handleDocumentClick = (event) => {
+            if (isEnlarged && !restartBtnLarge.contains(event.target)) {
+                resetButton();
+                document.removeEventListener('click', handleDocumentClick);
+                document.removeEventListener('touchstart', handleDocumentClick);
+            }
+        };
+
+        const handleSmallButtonClick = (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            
+            // First click: fade out small button, fade in large button
+            restartBtn.style.opacity = '0';
+            restartBtnLarge.style.opacity = '1';
+            restartBtnLarge.style.pointerEvents = 'auto';
+            isEnlarged = true;
+            
+            // Add document click listener to handle cancellation
+            setTimeout(() => {
+                document.addEventListener('click', handleDocumentClick);
+                document.addEventListener('touchstart', handleDocumentClick, { passive: false });
+            }, 100);
+            
+            // Play hover sound
+            this.soundManager.playSound('buttonHover');
+        };
+
+        const handleLargeButtonClick = (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            
+            // Second click: animate to 200% size while fading out, and restart immediately
+            restartBtnLarge.classList.add('exiting');
+            restartBtnLarge.style.pointerEvents = 'none';
+            
+            // Clean up event listeners immediately
+            document.removeEventListener('click', handleDocumentClick);
+            document.removeEventListener('touchstart', handleDocumentClick);
+            
+            // Restart the level immediately while animation plays
+            this.restartCurrentLevel();
+            
+            // Wait for animation to complete, then reset button state
+            setTimeout(() => {
+                // Reset button state after animation completes
+                restartBtnLarge.classList.remove('exiting');
+                restartBtnLarge.style.opacity = '0';
+                restartBtnLarge.style.pointerEvents = 'none';
+                restartBtn.style.opacity = '1';
+                isEnlarged = false;
+            }, 1200); // Match the transition duration
+        };
+
+        restartBtn.addEventListener('click', handleSmallButtonClick);
+        restartBtn.addEventListener('touchstart', handleSmallButtonClick, { passive: false });
+        
+        restartBtnLarge.addEventListener('click', handleLargeButtonClick);
+        restartBtnLarge.addEventListener('touchstart', handleLargeButtonClick, { passive: false });
     }
 
     saveProgress() {
