@@ -36,7 +36,26 @@ function generateBuildInfo() {
     }
     
     const buildType = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
-    const buildId = `${gitCommit}-${Date.now().toString(36)}`;
+    
+    // Convert timestamp to katakana sequence (limited to 4 characters)
+    const currentTime = Date.now();
+    const katakanaChars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+    let katakanaSequence = '';
+    let tempTimestamp = currentTime;
+    
+    // Generate katakana sequence
+    while (tempTimestamp > 0 && katakanaSequence.length < 4) {
+        const index = tempTimestamp % katakanaChars.length;
+        katakanaSequence = katakanaChars[index] + katakanaSequence;
+        tempTimestamp = Math.floor(tempTimestamp / katakanaChars.length);
+    }
+    
+    // Pad with leading katakana if less than 4 characters
+    while (katakanaSequence.length < 4) {
+        katakanaSequence = katakanaChars[0] + katakanaSequence;
+    }
+    
+    const buildId = `${gitCommit}-${katakanaSequence}`;
     
     const buildInfo = {
         timestamp,

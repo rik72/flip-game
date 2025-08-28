@@ -421,22 +421,9 @@ class GameManager {
             const buttonSize = isMobile ? '56px' : '44px';
             const fontSize = isMobile ? '32px' : '24px';
             
-            // Position button one full grid cell below the board
-            let bottomOffset = '0';
-            if (this.gridSize && this.boardStartY !== undefined && this.boardHeight !== undefined) {
-                // Calculate position: board bottom + one grid cell + button radius
-                const boardBottom = this.boardStartY + this.boardHeight;
-                const gridCellBelow = boardBottom + 3*this.gridSize;
-                const buttonRadius = parseInt(buttonSize) / 2;
-                const buttonCenterY = gridCellBelow + buttonRadius;
-                
-                // Convert to bottom offset from screen bottom
-                const screenBottom = this.displayHeight || window.innerHeight;
-                bottomOffset = `${screenBottom - buttonCenterY}px`;
-            } else if (isMobile) {
-                // Fallback if board positioning not available
-                bottomOffset = '80px';
-            }
+            // Position footer at fixed distance from screen bottom
+            const fixedBottomDistance = isMobile ? '20px' : '10px';
+            const bottomOffset = fixedBottomDistance;
             
             toggleButton.style.width = buttonSize;
             toggleButton.style.height = buttonSize;
@@ -476,6 +463,14 @@ class GameManager {
         } else {
             // Reset footer alignment when no toggle button
             gameFooter.style.justifyContent = 'flex-end';
+            
+            // Ensure footer is still positioned consistently
+            const isMobile = this.isMobileDevice();
+            if (isMobile) {
+                gameFooter.style.position = 'fixed';
+                gameFooter.style.bottom = '20px';
+                gameFooter.style.top = 'auto';
+            }
         }
     }
 
@@ -3471,10 +3466,11 @@ class GameManager {
         
 
         
-        // Position footer on desktop - 2 grid box sizes below grid
-        if (isDesktop) {
-            const footer = document.querySelector('.game-footer');
-            if (footer) {
+        // Position footer consistently across all devices
+        const footer = document.querySelector('.game-footer');
+        if (footer) {
+            if (isDesktop) {
+                // Desktop: position relative to grid if space allows, otherwise fixed at bottom
                 const footerHeight = 60; // Footer height in pixels
                 const calculatedFooterTop = boardStartY + boardHeight + (gridSize * 2);
                 const maxFooterTop = this.displayHeight - footerHeight; // Maximum top position to stay in view
@@ -3482,7 +3478,7 @@ class GameManager {
                 if (calculatedFooterTop > maxFooterTop) {
                     // Footer would go outside view - make it fixed at bottom
                     footer.style.position = 'fixed';
-                    footer.style.bottom = '0px';
+                    footer.style.bottom = '10px';
                     footer.style.top = 'auto';
                 } else {
                     // Footer fits in view - position it 2 grid spaces below grid
@@ -3490,6 +3486,11 @@ class GameManager {
                     footer.style.top = calculatedFooterTop + 'px';
                     footer.style.bottom = 'auto';
                 }
+            } else {
+                // Mobile: always fixed at bottom with consistent distance
+                footer.style.position = 'fixed';
+                footer.style.bottom = '20px';
+                footer.style.top = 'auto';
             }
         }
     }
