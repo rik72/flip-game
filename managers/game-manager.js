@@ -417,7 +417,7 @@ class GameManager {
         if (this.board && this.board.rear) {
             const toggleButton = document.createElement('button');
             toggleButton.id = 'faceToggleButton';
-            toggleButton.className = 'btn btn-outline-light face-toggle-btn';
+            toggleButton.className = 'mx-4 btn btn-outline-light face-toggle-btn';
             toggleButton.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
             toggleButton.title = 'Toggle board face';
             // Ensure visibility on mobile with clean styling
@@ -464,7 +464,7 @@ class GameManager {
         // Add next level button (always present, but only visible when level is completed)
         const nextLevelButton = document.createElement('button');
         nextLevelButton.id = 'nextLevelButton';
-        nextLevelButton.className = 'btn btn-outline-light next-level-btn';
+        nextLevelButton.className = 'mx-4 btn btn-outline-light next-level-btn';
         nextLevelButton.innerHTML = '<i class="bi bi-arrow-right-circle-fill"></i>';
         nextLevelButton.title = 'Next level';
         nextLevelButton.style.zIndex = '9999';
