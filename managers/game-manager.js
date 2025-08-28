@@ -108,6 +108,14 @@ class GameManager {
         return this.board.front;
     }
 
+    /**
+     * Determines if the current device is mobile based on touch capability
+     * @returns {boolean} True if mobile device, false if desktop
+     */
+    isMobileDevice() {
+        return !(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+    }
+
     // Determine which face a ball is currently on based on its position
     getBallCurrentFace(ball) {
         if (!this.board || !this.board.front) return 'front';
@@ -209,9 +217,9 @@ class GameManager {
         const b = parseInt(hex.substr(4, 2), 16);
         
         // Darken by multiplying by factor
-        const newR = Math.max(0, Math.floor(r * factor));
-        const newG = Math.max(0, Math.floor(g * factor));
-        const newB = Math.max(0, Math.floor(b * factor));
+        const newR = Math.max(0, Math.floor(r * (1 - factor)));
+        const newG = Math.max(0, Math.floor(g * (1 - factor)));
+        const newB = Math.max(0, Math.floor(b * (1 - factor)));
         
         // Convert back to hex
         const result = '#' + 
@@ -408,8 +416,8 @@ class GameManager {
             toggleButton.style.alignItems = 'center';
             toggleButton.style.justifyContent = 'center';
             toggleButton.style.position = 'relative';
-            // Responsive sizing and positioning for mobile
-            const isMobile = window.innerWidth <= 768;
+                    // Responsive sizing and positioning for mobile
+        const isMobile = this.isMobileDevice();
             const buttonSize = isMobile ? '56px' : '44px';
             const fontSize = isMobile ? '32px' : '24px';
             
@@ -2333,8 +2341,8 @@ class GameManager {
             
             this.board = this.levelData.board;
             
-            // Generate gradient colors based on level data
-            this.gradientColors = CONSTANTS.generateGradientColors(this.levelData);
+            			// Generate gradient colors based on level data
+			this.gradientColors = Utils.generateGradientColors(this.levelData);
             console.log('Generated gradient colors:', this.gradientColors);
             
             // Apply gradient background to flip wrapper
@@ -3239,18 +3247,37 @@ class GameManager {
         
         if (boardRows === 0 || boardCols === 0) return;
         
-        // Calculate grid size based on available canvas space with margins
-        // Use display dimensions (CSS size) for calculations, not actual canvas size
-        const margin = 80; // Space for level number and menus
+        // Determine if we're on mobile or desktop
+        const isDesktop = !this.isMobileDevice();
         
-        // Desktop-specific settings
-        let isDesktop = false;
-        if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-            isDesktop = true;
+        // Calculate actual available space accounting for UI elements
+        let availableWidth, availableHeight;
+        
+        if (isDesktop) {
+            // Desktop: use simple margins
+            const margin = 80; // Space for level number and menus
+            availableWidth = this.displayWidth - (margin * 2);
+            availableHeight = this.displayHeight - (margin * 2);
+        } else {
+            // Mobile: calculate actual available space by measuring UI elements
+            const header = document.querySelector('.game-header');
+            const footer = document.querySelector('.game-footer');
+            
+            // Get actual UI element heights
+            const headerHeight = header ? header.offsetHeight : 90; // Default mobile header height
+            const footerHeight = footer ? footer.offsetHeight : 80; // Default mobile footer height
+            
+            // Add extra padding for safe areas and touch targets
+            const safeAreaPadding = 20;
+            const totalVerticalUI = headerHeight + footerHeight + (safeAreaPadding * 2);
+            
+            // Calculate available space
+            availableWidth = this.displayWidth - 40; // 20px margin on each side
+            availableHeight = this.displayHeight - totalVerticalUI;
+            
+            // Ensure we have minimum available space
+            availableHeight = Math.max(availableHeight, 200); // Minimum 200px available height
         }
-        
-        const availableWidth = this.displayWidth - (margin * 2);
-        const availableHeight = this.displayHeight - (margin * 2);
         
         // For node-oriented grid: we need spacing between nodes, not cell sizes
         // For N nodes, we need (N-1) spaces between them
@@ -3261,8 +3288,8 @@ class GameManager {
         let gridSize;
         if (isDesktop) {
             // Desktop: limit to 20% width and 70% height
-            const maxGridWidth = this.displayWidth * 0.2;
-            const maxGridHeight = this.displayHeight * 0.7;
+            const maxGridWidth = this.displayWidth * CONSTANTS.RENDER_SIZE_CONFIG.DESKTOP_MAX_WIDTH_RATIO;
+            const maxGridHeight = this.displayHeight * CONSTANTS.RENDER_SIZE_CONFIG.DESKTOP_MAX_HEIGHT_RATIO;
             
             const maxGridSpacingX = boardCols > 1 ? maxGridWidth / (boardCols - 1) : maxGridWidth;
             const maxGridSpacingY = boardRows > 1 ? maxGridHeight / (boardRows - 1) : maxGridHeight;
@@ -3270,8 +3297,27 @@ class GameManager {
             // Use the smaller spacing to ensure grid fits within both constraints
             gridSize = Math.min(maxGridSpacingX, maxGridSpacingY, gridSpacingX, gridSpacingY);
         } else {
-            // Mobile: use available space
-            gridSize = Math.min(gridSpacingX, gridSpacingY);
+            // Mobile: ensure grid fits within available space regardless of size
+            const maxGridWidth = availableWidth * 0.95; // 95% of available width
+            const maxGridHeight = availableHeight * 0.95; // 95% of available height
+            
+            // Calculate maximum grid size that would fit the available space
+            const maxGridSpacingX = boardCols > 1 ? maxGridWidth / (boardCols - 1) : maxGridWidth;
+            const maxGridSpacingY = boardRows > 1 ? maxGridHeight / (boardRows - 1) : maxGridHeight;
+            
+            // Use the smaller spacing to ensure grid fits within available space
+            gridSize = Math.min(maxGridSpacingX, maxGridSpacingY, gridSpacingX, gridSpacingY);
+            
+            // Additional safety check: ensure the resulting grid actually fits
+            const calculatedGridWidth = (boardCols - 1) * gridSize;
+            const calculatedGridHeight = (boardRows - 1) * gridSize;
+            
+            if (calculatedGridHeight > availableHeight || calculatedGridWidth > availableWidth) {
+                // Grid is still too large, force it to fit
+                const maxAllowedGridSizeX = availableWidth / (boardCols - 1);
+                const maxAllowedGridSizeY = availableHeight / (boardRows - 1);
+                gridSize = Math.min(maxAllowedGridSizeX, maxAllowedGridSizeY, gridSize);
+            }
         }
         
         // Ensure minimum grid size for consistent visual scaling across different window sizes
@@ -3281,12 +3327,71 @@ class GameManager {
         
         // Calculate board position to center it
         // Board area spans from first node to last node
-        const boardWidth = (boardCols - 1) * gridSize;
-        const boardHeight = (boardRows - 1) * gridSize;
+        let boardWidth = (boardCols - 1) * gridSize;
+        let boardHeight = (boardRows - 1) * gridSize;
         
         // Center the grid both horizontally and vertically
-        const boardStartX = (this.displayWidth - boardWidth) / 2;
-        const boardStartY = (this.displayHeight - boardHeight) / 2;
+        let boardStartX = (this.displayWidth - boardWidth) / 2;
+        let boardStartY = (this.displayHeight - boardHeight) / 2;
+        
+        // Mobile: Ensure grid stays within viewport bounds
+        if (!isDesktop) {
+            const header = document.querySelector('.game-header');
+            const footer = document.querySelector('.game-footer');
+            const headerHeight = header ? header.offsetHeight : 90;
+            const footerHeight = footer ? footer.offsetHeight : 80;
+            
+            // Calculate the actual available vertical space
+            const availableVerticalSpace = this.displayHeight - headerHeight - footerHeight - 20; // 20px total padding
+            
+            // Account for rendered elements that extend beyond grid boundaries
+            const ballRadius = this.getLogicalBallRadius();
+            const goalRadius = this.getGoalOuterRadius();
+            const maxElementRadius = Math.max(ballRadius, goalRadius);
+            
+            // Calculate effective grid bounds including rendered elements
+            const effectiveGridWidth = boardWidth + (maxElementRadius * 2);
+            const effectiveGridHeight = boardHeight + (maxElementRadius * 2);
+            
+            // If effective grid is larger than available space, scale it down
+            if (effectiveGridHeight > availableVerticalSpace || effectiveGridWidth > availableWidth) {
+                const scaleFactorY = availableVerticalSpace / effectiveGridHeight;
+                const scaleFactorX = (availableWidth - 40) / effectiveGridWidth; // 40px horizontal padding
+                const scaleFactor = Math.min(scaleFactorY, scaleFactorX, 0.9); // Cap at 90% to add padding
+                
+                const newGridSize = gridSize * scaleFactor;
+                
+                // Recalculate grid dimensions with new size
+                gridSize = newGridSize;
+                boardWidth = (boardCols - 1) * gridSize;
+                boardHeight = (boardRows - 1) * gridSize;
+            }
+            
+            // Position grid to ensure all elements fit within viewport
+            const effectiveWidth = boardWidth + (maxElementRadius * 2);
+            const effectiveHeight = boardHeight + (maxElementRadius * 2);
+            
+            // Center the grid itself (not the effective bounds) within available space
+            boardStartX = (this.displayWidth - boardWidth) / 2;
+            boardStartY = headerHeight + (availableVerticalSpace / 2) - (boardHeight / 2);
+            
+            // Ensure the effective grid (including rendered elements) doesn't go off-screen
+            const effectiveStartX = boardStartX - maxElementRadius;
+            const effectiveStartY = boardStartY - maxElementRadius;
+            
+            // If effective bounds would go off-screen, adjust the grid position
+            if (effectiveStartX < 10) {
+                boardStartX = maxElementRadius + 10;
+            } else if (effectiveStartX + effectiveWidth > this.displayWidth - 10) {
+                boardStartX = this.displayWidth - effectiveWidth + maxElementRadius - 10;
+            }
+            
+            if (effectiveStartY < headerHeight + 10) {
+                boardStartY = headerHeight + maxElementRadius + 10;
+            } else if (effectiveStartY + effectiveHeight > this.displayHeight - footerHeight - 10) {
+                boardStartY = this.displayHeight - footerHeight - effectiveHeight + maxElementRadius - 10;
+            }
+        }
         
 
         
@@ -3296,6 +3401,34 @@ class GameManager {
         this.boardStartY = boardStartY;
         this.boardWidth = boardWidth;
         this.boardHeight = boardHeight;
+        
+        // Debug logging for mobile grid positioning
+        if (!isDesktop) {
+            const header = document.querySelector('.game-header');
+            const footer = document.querySelector('.game-footer');
+            const headerHeight = header ? header.offsetHeight : 90;
+            const footerHeight = footer ? footer.offsetHeight : 80;
+            const availableVerticalSpace = this.displayHeight - headerHeight - footerHeight - 20;
+            
+            // Calculate effective bounds including rendered elements
+            const ballRadius = this.getLogicalBallRadius();
+            const goalRadius = this.getGoalOuterRadius();
+            const maxElementRadius = Math.max(ballRadius, goalRadius);
+            const effectiveWidth = boardWidth + (maxElementRadius * 2);
+            const effectiveHeight = boardHeight + (maxElementRadius * 2);
+            
+            console.log(`📱 Mobile Grid Debug:`);
+            console.log(`   Viewport: ${this.displayWidth}x${this.displayHeight}`);
+            console.log(`   Available: ${availableWidth}x${availableHeight}`);
+            console.log(`   UI Elements: Header=${headerHeight}px, Footer=${footerHeight}px`);
+            console.log(`   Available Vertical: ${availableVerticalSpace}px`);
+            console.log(`   Grid: ${boardWidth}x${boardHeight} at (${boardStartX}, ${boardStartY})`);
+            console.log(`   Grid Size: ${gridSize}px`);
+            console.log(`   Board: ${boardCols}x${boardRows} nodes`);
+            console.log(`   Element Radius: ${maxElementRadius}px (Ball: ${ballRadius}px, Goal: ${goalRadius}px)`);
+            console.log(`   Effective Bounds: ${effectiveWidth}x${effectiveHeight}`);
+            console.log(`   Fits in viewport: ${effectiveHeight <= availableVerticalSpace && effectiveWidth <= availableWidth ? '✅ Yes' : '❌ No'}`);
+        }
         
         // Position footer on desktop - 2 grid box sizes below grid
         if (isDesktop) {

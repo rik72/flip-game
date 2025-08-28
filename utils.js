@@ -100,4 +100,39 @@ class Utils {
 		const value = this.getUrlParameter(name);
 		return value !== null ? value : defaultValue;
 	}
+
+	// Utility function to generate gradient colors from level data
+	static generateGradientColors(levelData) {
+		// Create a checksum from the level data
+		const levelString = JSON.stringify(levelData);
+		let checksum = 0;
+		for (let i = 0; i < levelString.length; i++) {
+			checksum = ((checksum << 5) - checksum + levelString.charCodeAt(i)) & 0xFFFFFFFF;
+		}
+		
+		// Use checksum to generate two dark colors
+		const seed1 = checksum & 0xFFFF;
+		const seed2 = (checksum >> 16) & 0xFFFF;
+		
+		// Generate dark colors (values between 16-64 for dark, 8-32 for darker)
+		const r1 = 16 + (seed1 % 48);
+		const g1 = 16 + ((seed1 >> 4) % 48);
+		const b1 = 16 + ((seed1 >> 8) % 48);
+		
+		const r2 = 8 + (seed2 % 24);
+		const g2 = 8 + ((seed2 >> 4) % 24);
+		const b2 = 8 + ((seed2 >> 8) % 24);
+		
+		// Convert to hex colors
+		const topColor = '#' + 
+			(r1.toString(16).padStart(2, '0')) + 
+			(g1.toString(16).padStart(2, '0')) + 
+			(b1.toString(16).padStart(2, '0'));
+		const bottomColor = '#' + 
+			(r2.toString(16).padStart(2, '0')) + 
+			(g2.toString(16).padStart(2, '0')) + 
+			(b2.toString(16).padStart(2, '0'));
+		
+		return { topColor, bottomColor };
+	}
 } 

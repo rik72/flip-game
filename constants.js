@@ -43,6 +43,15 @@ const CONSTANTS = {
 		RENDER_CONNECTIONS: false, // true => current behaviour, false => connections edges are not rendered
 		RENDER_EMPTY_NODES: false, // true => current behaviour, false => empty nodes are not rendered
 		
+		// Mobile grid boundary constraints
+		MOBILE_MAX_WIDTH_RATIO: 0.9, // Mobile: limit to 90% of screen width
+		MOBILE_MAX_HEIGHT_RATIO: 0.8, // Mobile: limit to 80% of screen height
+		MOBILE_SAFE_MARGIN: 100, // Mobile: additional margin for UI elements (header, footer, safe areas)
+		
+		// Desktop grid boundary constraints (existing)
+		DESKTOP_MAX_WIDTH_RATIO: 0.2, // Desktop: limit to 20% of screen width
+		DESKTOP_MAX_HEIGHT_RATIO: 0.7, // Desktop: limit to 70% of screen height
+		
 		// Ball sizing
 		BALL_RADIUS_RATIO: 0.375, // Ball radius as ratio of gridSize (37.5% of grid cell)
 		BALL_REST_SCALE: 0.6, // Resting visual scale for balls during animations
@@ -83,7 +92,7 @@ const CONSTANTS = {
 		TAIL_LINE_WIDTH_MULTIPLIER: 5.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
 		
 		// Glow animation configuration
-		GLOW_SHADOW_MAX_OPACITY: 0.3, // Maximum opacity of the white glow shadow (0.0-1.0)
+		GLOW_SHADOW_MAX_OPACITY: 0.2, // Maximum opacity of the white glow shadow (0.0-1.0)
 		GLOW_SHADOW_MAX_RADIUS_RATIO: 1.6, // Maximum shadow radius as ratio of ball radius (0.8 = 80% of ball size)
 		GLOW_BRIGHTNESS_FACTOR: 0.4, // Brightness factor for glow color interpolation (0.0-1.0)
 		GLOW_CYCLE_DURATION: 2400, // Glow animation cycle duration in milliseconds
@@ -230,7 +239,7 @@ const CONSTANTS = {
 		// Visual color adjustment factors for different elements
 		STICKER_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for sticker nodes (0.5 = 50% darker)
 		GOAL_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for inactive goals (0.5 = 50% darker)
-		TAIL_BRIGHTENING_FACTOR: 0.3 // Factor to brighten ball colors for tail effects (0.3 = 30% brighter)
+		TAIL_BRIGHTENING_FACTOR: 0.4 // Factor to brighten ball colors for tail effects (0.3 = 30% brighter)
 	},
 
 	// Touch configurations
@@ -250,40 +259,5 @@ const CONSTANTS = {
 	BACKGROUND_CONFIG: {
 		GRADIENT_ENABLED: true,
 		// Colors will be generated dynamically based on level data checksum
-	},
-	
-	// Utility function to generate gradient colors from level data
-	generateGradientColors: function(levelData) {
-		// Create a checksum from the level data
-		const levelString = JSON.stringify(levelData);
-		let checksum = 0;
-		for (let i = 0; i < levelString.length; i++) {
-			checksum = ((checksum << 5) - checksum + levelString.charCodeAt(i)) & 0xFFFFFFFF;
-		}
-		
-		// Use checksum to generate two dark colors
-		const seed1 = checksum & 0xFFFF;
-		const seed2 = (checksum >> 16) & 0xFFFF;
-		
-		// Generate dark colors (values between 16-64 for dark, 8-32 for darker)
-		const r1 = 16 + (seed1 % 48);
-		const g1 = 16 + ((seed1 >> 4) % 48);
-		const b1 = 16 + ((seed1 >> 8) % 48);
-		
-		const r2 = 8 + (seed2 % 24);
-		const g2 = 8 + ((seed2 >> 4) % 24);
-		const b2 = 8 + ((seed2 >> 8) % 24);
-		
-		// Convert to hex colors
-		const topColor = '#' + 
-			(r1.toString(16).padStart(2, '0')) + 
-			(g1.toString(16).padStart(2, '0')) + 
-			(b1.toString(16).padStart(2, '0'));
-		const bottomColor = '#' + 
-			(r2.toString(16).padStart(2, '0')) + 
-			(g2.toString(16).padStart(2, '0')) + 
-			(b2.toString(16).padStart(2, '0'));
-		
-		return { topColor, bottomColor };
 	},
 }; 
