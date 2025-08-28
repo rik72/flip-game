@@ -394,11 +394,24 @@ class GameManager {
             return;
         }
 
-        // Remove existing toggle button if present
-        const existingButton = document.getElementById('faceToggleButton');
-        if (existingButton) {
-            existingButton.remove();
+        // Remove existing buttons if present
+        const existingToggleButton = document.getElementById('faceToggleButton');
+        if (existingToggleButton) {
+            existingToggleButton.remove();
         }
+        
+        const existingNextLevelButton = document.getElementById('nextLevelButton');
+        if (existingNextLevelButton) {
+            existingNextLevelButton.remove();
+        }
+
+        // Create a container for the buttons
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'game-controls';
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.gap = '10px';
+        buttonContainer.style.alignItems = 'center';
+        buttonContainer.style.justifyContent = 'center';
 
         // Add toggle button if board has rear face
         if (this.board && this.board.rear) {
@@ -416,8 +429,9 @@ class GameManager {
             toggleButton.style.alignItems = 'center';
             toggleButton.style.justifyContent = 'center';
             toggleButton.style.position = 'relative';
-                    // Responsive sizing and positioning for mobile
-        const isMobile = this.isMobileDevice();
+            
+            // Responsive sizing and positioning for mobile
+            const isMobile = this.isMobileDevice();
             const buttonSize = isMobile ? '56px' : '44px';
             const fontSize = isMobile ? '32px' : '24px';
             
@@ -444,34 +458,57 @@ class GameManager {
             toggleButton.setAttribute('aria-label', 'Toggle board face');
             toggleButton.onclick = () => this.toggleBoardFace();
             
-            // Insert button and position closer to board on mobile
-            
-            gameFooter.style.justifyContent = 'center';
-            gameFooter.style.display = 'flex !important';
-            gameFooter.style.alignItems = 'center';
-            gameFooter.style.position = 'fixed';
-            gameFooter.style.bottom = bottomOffset;
-            gameFooter.style.left = '0';
-            gameFooter.style.right = '0';
-            gameFooter.style.zIndex = '9998';
-            gameFooter.style.minHeight = isMobile ? '80px' : '60px';
-            gameFooter.style.height = 'auto';
-            gameFooter.style.padding = '5px';
-            //gameFooter.style.background = 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)';
-            gameFooter.style.border = 'none';
-            gameFooter.appendChild(toggleButton);
-        } else {
-            // Reset footer alignment when no toggle button
-            gameFooter.style.justifyContent = 'flex-end';
-            
-            // Ensure footer is still positioned consistently
-            const isMobile = this.isMobileDevice();
-            if (isMobile) {
-                gameFooter.style.position = 'fixed';
-                gameFooter.style.bottom = '20px';
-                gameFooter.style.top = 'auto';
-            }
+            buttonContainer.appendChild(toggleButton);
         }
+
+        // Add next level button (always present, but only visible when level is completed)
+        const nextLevelButton = document.createElement('button');
+        nextLevelButton.id = 'nextLevelButton';
+        nextLevelButton.className = 'btn btn-outline-light next-level-btn';
+        nextLevelButton.innerHTML = '<i class="bi bi-arrow-right-circle-fill"></i>';
+        nextLevelButton.title = 'Next level';
+        nextLevelButton.style.zIndex = '9999';
+        nextLevelButton.style.display = 'none'; // Hidden by default
+        nextLevelButton.style.position = 'relative';
+        
+        // Responsive sizing and positioning for mobile
+        const isMobile = this.isMobileDevice();
+        const buttonSize = isMobile ? '56px' : '44px';
+        const fontSize = isMobile ? '32px' : '24px';
+        
+        nextLevelButton.style.width = buttonSize;
+        nextLevelButton.style.height = buttonSize;
+        nextLevelButton.style.minWidth = buttonSize;
+        nextLevelButton.style.minHeight = buttonSize;
+        nextLevelButton.style.maxWidth = buttonSize;
+        nextLevelButton.style.maxHeight = buttonSize;
+        nextLevelButton.style.flexShrink = '0';
+        nextLevelButton.style.fontSize = fontSize;
+        nextLevelButton.style.lineHeight = '1';
+        nextLevelButton.style.padding = '0';
+        nextLevelButton.style.margin = '0';
+        nextLevelButton.style.boxSizing = 'border-box';
+        nextLevelButton.style.touchAction = 'manipulation';
+        nextLevelButton.style.webkitTapHighlightColor = 'transparent';
+        nextLevelButton.setAttribute('aria-label', 'Next level');
+        nextLevelButton.onclick = () => this.proceedToNextLevel();
+        
+        buttonContainer.appendChild(nextLevelButton);
+        
+        // Insert button container and position closer to board on mobile
+        gameFooter.style.justifyContent = 'center';
+        gameFooter.style.display = 'flex !important';
+        gameFooter.style.alignItems = 'center';
+        gameFooter.style.position = 'fixed';
+        gameFooter.style.bottom = isMobile ? '20px' : '10px';
+        gameFooter.style.left = '0';
+        gameFooter.style.right = '0';
+        gameFooter.style.zIndex = '9998';
+        gameFooter.style.minHeight = isMobile ? '80px' : '60px';
+        gameFooter.style.height = 'auto';
+        gameFooter.style.padding = '5px';
+        gameFooter.style.border = 'none';
+        gameFooter.appendChild(buttonContainer);
     }
 
     // Toggle between front and rear board faces with animation
@@ -2290,11 +2327,14 @@ class GameManager {
         // Track if this level was loaded via navigation (for win condition checking)
         this.levelLoadedViaNavigation = false;
         
-        // Remove any existing level completion overlay when loading a new level
-        const overlay = document.querySelector('.level-completion-overlay');
-        if (overlay && overlay.parentElement) {
-            overlay.parentElement.removeChild(overlay);
+        // Hide the next level button when loading a new level
+        const nextLevelButton = document.getElementById('nextLevelButton');
+        if (nextLevelButton) {
+            nextLevelButton.style.display = 'none';
+            nextLevelButton.style.animation = '';
         }
+        
+
         
         // Remove any remaining explosion discs
         const discs = document.querySelectorAll('.explosion-disc');
@@ -2702,8 +2742,8 @@ class GameManager {
         // Create explosion animations for each goal node
         this.createExplosionAnimations();
         
-        // Show completion overlay with touch event
-        this.showLevelCompletionOverlay();
+        // Show next level button instead of overlay
+        this.showNextLevelButton();
     }
 
     createExplosionAnimations() {
@@ -2923,50 +2963,31 @@ class GameManager {
         }
     }
 
-    showLevelCompletionOverlay() {
-        const canvasContainer = this.canvas?.parentElement;
-        if (!canvasContainer) return;
-        
-        // Create overlay for touch events
-        const overlay = document.createElement('div');
-        overlay.className = 'level-completion-overlay';
-        overlay.style.background = 'transparent'; // Make it invisible
-        
-        // Add click event to proceed to next level
-        overlay.addEventListener('click', (e) => {
-            this.proceedToNextLevel();
-        });
-        
-        // Add touch event for mobile support
-        overlay.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.proceedToNextLevel();
-        }, { passive: false });
-        
-        // Prevent any other touch events from bubbling through
-        overlay.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
-        
-        overlay.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        }, { passive: false });
-        
-        // Add to container
-        canvasContainer.appendChild(overlay);
-        
-        // Activate overlay
-        setTimeout(() => {
-            overlay.classList.add('active');
-        }, 100);
+    showNextLevelButton() {
+        // Show the next level button
+        const nextLevelButton = document.getElementById('nextLevelButton');
+        if (nextLevelButton) {
+            nextLevelButton.style.display = 'flex';
+            // Add fade-in animation only, icon has its own glow
+            nextLevelButton.style.animation = 'fadeIn 0.5s ease-out';
+        }
     }
 
     proceedToNextLevel() {
-        // Clean up overlay and animations
-        this.cleanupLevelCompletionOverlay();
+        // Hide the next level button
+        const nextLevelButton = document.getElementById('nextLevelButton');
+        if (nextLevelButton) {
+            nextLevelButton.style.display = 'none';
+            nextLevelButton.style.animation = '';
+        }
+        
+        // Clean up any remaining explosion discs
+        const discs = document.querySelectorAll('.explosion-disc');
+        discs.forEach(disc => {
+            if (disc.parentElement) {
+                disc.parentElement.removeChild(disc);
+            }
+        });
         
         // Ensure game state is properly reset
         this.gameState.isPlaying = true;
@@ -2975,21 +2996,7 @@ class GameManager {
         this.nextLevel();
     }
     
-    cleanupLevelCompletionOverlay() {
-        // Remove overlay
-        const overlay = document.querySelector('.level-completion-overlay');
-        if (overlay && overlay.parentElement) {
-            overlay.parentElement.removeChild(overlay);
-        }
-        
-        // Remove any remaining explosion discs
-        const discs = document.querySelectorAll('.explosion-disc');
-        discs.forEach(disc => {
-            if (disc.parentElement) {
-                disc.parentElement.removeChild(disc);
-            }
-        });
-    }
+
 
     nextLevel() {
         this.currentLevel++;
@@ -3014,8 +3021,20 @@ class GameManager {
     }
 
     resetLevel() {
-        // Clean up any existing level completion overlay
-        this.cleanupLevelCompletionOverlay();
+        // Hide the next level button if it's visible
+        const nextLevelButton = document.getElementById('nextLevelButton');
+        if (nextLevelButton) {
+            nextLevelButton.style.display = 'none';
+            nextLevelButton.style.animation = '';
+        }
+        
+        // Clean up any remaining explosion discs
+        const discs = document.querySelectorAll('.explosion-disc');
+        discs.forEach(disc => {
+            if (disc.parentElement) {
+                disc.parentElement.removeChild(disc);
+            }
+        });
         
         // Stop glow animation before resetting
         this.stopGlowAnimation();
