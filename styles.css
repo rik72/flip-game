@@ -679,6 +679,12 @@ body {
         min-height: 40px;
     }
     
+    /* Disable hover effects on touch devices to prevent stuck hover states */
+    .face-toggle-btn:hover {
+        color: #ffffff;
+        transform: none;
+    }
+    
     /* Restart level button mobile optimization */
     .restart-level-btn {
         width: 40px;
@@ -686,6 +692,12 @@ body {
         font-size: 24px;
         min-width: 40px;
         min-height: 40px;
+    }
+    
+    /* Disable hover effects on touch devices to prevent stuck hover states */
+    .restart-level-btn:hover {
+        color: #ffffff;
+        transform: none;
     }
 }
 
@@ -712,6 +724,12 @@ body {
         min-height: 36px;
     }
     
+    /* Disable hover effects on touch devices in landscape mode */
+    .face-toggle-btn:hover {
+        color: #ffffff;
+        transform: none;
+    }
+    
     /* Restart level button landscape optimization */
     .restart-level-btn {
         width: 36px;
@@ -719,6 +737,12 @@ body {
         font-size: 24px;
         min-width: 36px;
         min-height: 36px;
+    }
+    
+    /* Disable hover effects on touch devices in landscape mode */
+    .restart-level-btn:hover {
+        color: #ffffff;
+        transform: none;
     }
 
 }

@@ -631,6 +631,9 @@ class GameManager {
         this.canvas.width = displayWidth * devicePixelRatio;
         this.canvas.height = displayHeight * devicePixelRatio;
         
+        // Reset the transformation matrix before applying new scale
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        
         // Scale the drawing context to match the device pixel ratio
         this.ctx.scale(devicePixelRatio, devicePixelRatio);
         
@@ -638,6 +641,9 @@ class GameManager {
         this.devicePixelRatio = devicePixelRatio;
         this.displayWidth = displayWidth;
         this.displayHeight = displayHeight;
+        
+        // Clear board position cache when display dimensions change
+        this._boardPositionCache = null;
         
         // Recalculate board position and update toggle button after resize
         if (this.board) {
@@ -656,16 +662,12 @@ class GameManager {
             // Create CSS gradient string
             const gradientString = `linear-gradient(to bottom, ${this.gradientColors.topColor}, ${this.gradientColors.bottomColor})`;
             this.flipWrapper.style.background = gradientString;
-            console.log('Applied gradient to flip wrapper:', gradientString);
             
             // Also apply to canvas container as fallback
             const canvasContainer = document.querySelector('.game-canvas-container');
             if (canvasContainer) {
                 canvasContainer.style.background = gradientString;
-                console.log('Applied gradient to canvas container as fallback');
             }
-        } else {
-            console.log('Flip wrapper not found or gradient disabled');
         }
     }
 
@@ -2343,7 +2345,6 @@ class GameManager {
             
             			// Generate gradient colors based on level data
 			this.gradientColors = Utils.generateGradientColors(this.levelData);
-            console.log('Generated gradient colors:', this.gradientColors);
             
             // Apply gradient background to flip wrapper
             this.applyGradientToFlipWrapper();
@@ -3175,6 +3176,9 @@ class GameManager {
         // Update glow animations
         this.updateGlowAnimations();
         
+        // Reset context state to ensure clean rendering
+        this.ctx.setTransform(this.devicePixelRatio, 0, 0, this.devicePixelRatio, 0, 0);
+        
         // Clear canvas using display dimensions (since context is scaled)
         this.ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
         
@@ -3240,6 +3244,30 @@ class GameManager {
     calculateBoardPosition() {
         if (!this.canvas || !this.board || !this.board.front) return;
         
+        // Create a cache key based on the current state
+        const cacheKey = `${this.displayWidth}x${this.displayHeight}_${this.board.front.length}x${this.board.front[0]?.length || 0}`;
+        
+        // Check if we have a cached result for this exact state
+        if (this._boardPositionCache && this._boardPositionCache.key === cacheKey) {
+            // Use cached values
+            this.gridSize = this._boardPositionCache.gridSize;
+            this.boardStartX = this._boardPositionCache.boardStartX;
+            this.boardStartY = this._boardPositionCache.boardStartY;
+            this.boardWidth = this._boardPositionCache.boardWidth;
+            this.boardHeight = this._boardPositionCache.boardHeight;
+            
+            if (CONSTANTS.APP_CONFIG.DEVEL) {
+                console.log('Using cached grid values:', {
+                    gridSize: this.gridSize,
+                    boardStartX: this.boardStartX,
+                    boardStartY: this.boardStartY,
+                    boardWidth: this.boardWidth,
+                    boardHeight: this.boardHeight
+                });
+            }
+            return;
+        }
+        
         const nodes = this.getCurrentNodes();
         if (!nodes) return;
         const boardRows = nodes.length;
@@ -3263,7 +3291,7 @@ class GameManager {
             const header = document.querySelector('.game-header');
             const footer = document.querySelector('.game-footer');
             
-            // Get actual UI element heights
+            // Get actual UI element heights with fallbacks
             const headerHeight = header ? header.offsetHeight : 90; // Default mobile header height
             const footerHeight = footer ? footer.offsetHeight : 80; // Default mobile footer height
             
@@ -3277,6 +3305,21 @@ class GameManager {
             
             // Ensure we have minimum available space
             availableHeight = Math.max(availableHeight, 200); // Minimum 200px available height
+            
+            // Debug logging for grid sizing issues
+            if (CONSTANTS.APP_CONFIG.DEVEL) {
+                console.log('Grid calculation debug:', {
+                    displayWidth: this.displayWidth,
+                    displayHeight: this.displayHeight,
+                    headerHeight,
+                    footerHeight,
+                    totalVerticalUI,
+                    availableWidth,
+                    availableHeight,
+                    boardRows,
+                    boardCols
+                });
+            }
         }
         
         // For node-oriented grid: we need spacing between nodes, not cell sizes
@@ -3325,14 +3368,17 @@ class GameManager {
         const minGridSize = 40; // Minimum grid size in pixels
         gridSize = Math.max(gridSize, minGridSize);
         
+        // Round grid size to prevent floating-point precision issues
+        gridSize = Math.round(gridSize);
+        
         // Calculate board position to center it
         // Board area spans from first node to last node
         let boardWidth = (boardCols - 1) * gridSize;
         let boardHeight = (boardRows - 1) * gridSize;
         
         // Center the grid both horizontally and vertically
-        let boardStartX = (this.displayWidth - boardWidth) / 2;
-        let boardStartY = (this.displayHeight - boardHeight) / 2;
+        let boardStartX = Math.round((this.displayWidth - boardWidth) / 2);
+        let boardStartY = Math.round((this.displayHeight - boardHeight) / 2);
         
         // Mobile: Ensure grid stays within viewport bounds
         if (!isDesktop) {
@@ -3372,8 +3418,8 @@ class GameManager {
             const effectiveHeight = boardHeight + (maxElementRadius * 2);
             
             // Center the grid itself (not the effective bounds) within available space
-            boardStartX = (this.displayWidth - boardWidth) / 2;
-            boardStartY = headerHeight + (availableVerticalSpace / 2) - (boardHeight / 2);
+            boardStartX = Math.round((this.displayWidth - boardWidth) / 2);
+            boardStartY = Math.round(headerHeight + (availableVerticalSpace / 2) - (boardHeight / 2));
             
             // Ensure the effective grid (including rendered elements) doesn't go off-screen
             const effectiveStartX = boardStartX - maxElementRadius;
@@ -3381,15 +3427,15 @@ class GameManager {
             
             // If effective bounds would go off-screen, adjust the grid position
             if (effectiveStartX < 10) {
-                boardStartX = maxElementRadius + 10;
+                boardStartX = Math.round(maxElementRadius + 10);
             } else if (effectiveStartX + effectiveWidth > this.displayWidth - 10) {
-                boardStartX = this.displayWidth - effectiveWidth + maxElementRadius - 10;
+                boardStartX = Math.round(this.displayWidth - effectiveWidth + maxElementRadius - 10);
             }
             
             if (effectiveStartY < headerHeight + 10) {
-                boardStartY = headerHeight + maxElementRadius + 10;
+                boardStartY = Math.round(headerHeight + maxElementRadius + 10);
             } else if (effectiveStartY + effectiveHeight > this.displayHeight - footerHeight - 10) {
-                boardStartY = this.displayHeight - footerHeight - effectiveHeight + maxElementRadius - 10;
+                boardStartY = Math.round(this.displayHeight - footerHeight - effectiveHeight + maxElementRadius - 10);
             }
         }
         
@@ -3402,33 +3448,28 @@ class GameManager {
         this.boardWidth = boardWidth;
         this.boardHeight = boardHeight;
         
-        // Debug logging for mobile grid positioning
-        if (!isDesktop) {
-            const header = document.querySelector('.game-header');
-            const footer = document.querySelector('.game-footer');
-            const headerHeight = header ? header.offsetHeight : 90;
-            const footerHeight = footer ? footer.offsetHeight : 80;
-            const availableVerticalSpace = this.displayHeight - headerHeight - footerHeight - 20;
-            
-            // Calculate effective bounds including rendered elements
-            const ballRadius = this.getLogicalBallRadius();
-            const goalRadius = this.getGoalOuterRadius();
-            const maxElementRadius = Math.max(ballRadius, goalRadius);
-            const effectiveWidth = boardWidth + (maxElementRadius * 2);
-            const effectiveHeight = boardHeight + (maxElementRadius * 2);
-            
-            console.log(`📱 Mobile Grid Debug:`);
-            console.log(`   Viewport: ${this.displayWidth}x${this.displayHeight}`);
-            console.log(`   Available: ${availableWidth}x${availableHeight}`);
-            console.log(`   UI Elements: Header=${headerHeight}px, Footer=${footerHeight}px`);
-            console.log(`   Available Vertical: ${availableVerticalSpace}px`);
-            console.log(`   Grid: ${boardWidth}x${boardHeight} at (${boardStartX}, ${boardStartY})`);
-            console.log(`   Grid Size: ${gridSize}px`);
-            console.log(`   Board: ${boardCols}x${boardRows} nodes`);
-            console.log(`   Element Radius: ${maxElementRadius}px (Ball: ${ballRadius}px, Goal: ${goalRadius}px)`);
-            console.log(`   Effective Bounds: ${effectiveWidth}x${effectiveHeight}`);
-            console.log(`   Fits in viewport: ${effectiveHeight <= availableVerticalSpace && effectiveWidth <= availableWidth ? '✅ Yes' : '❌ No'}`);
+        // Cache the result for future use
+        this._boardPositionCache = {
+            key: cacheKey,
+            gridSize: this.gridSize,
+            boardStartX: this.boardStartX,
+            boardStartY: this.boardStartY,
+            boardWidth: this.boardWidth,
+            boardHeight: this.boardHeight
+        };
+        
+        // Debug logging for grid size tracking
+        if (CONSTANTS.APP_CONFIG.DEVEL) {
+            console.log('Grid size stored:', {
+                gridSize: this.gridSize,
+                boardStartX: this.boardStartX,
+                boardStartY: this.boardStartY,
+                boardWidth: this.boardWidth,
+                boardHeight: this.boardHeight
+            });
         }
+        
+
         
         // Position footer on desktop - 2 grid box sizes below grid
         if (isDesktop) {
@@ -3459,8 +3500,11 @@ class GameManager {
         // Check if empty nodes should be rendered
         if (!CONSTANTS.RENDER_SIZE_CONFIG.RENDER_EMPTY_NODES) return;
         
-        // Ensure board position is calculated
-        this.calculateBoardPosition();
+        // Board position should already be calculated during level loading
+        // Only recalculate if gridSize is not set (fallback)
+        if (typeof this.gridSize === 'undefined' || this.gridSize === null) {
+            this.calculateBoardPosition();
+        }
         
         const nodes = this.getCurrentNodes();
         if (!nodes) return;
@@ -3722,8 +3766,20 @@ class GameManager {
                             trapColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.TRAP_DARKENING_FACTOR);
                         }
                         
+                        // Calculate trap dimensions for open state (four discs)
+                        const discDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_DISC_DISTANCE_RATIO;
+                        const discRadius = (this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_DISC_SIZE_RATIO) / 2; // Same as switch discs
+                        
+                        // Calculate thin X dimensions
+                        const xLength = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_OUTER_RADIUS_RATIO;
+                        
+                        // Set up drawing context for discs
+                        this.ctx.fillStyle = trapColor;
+                        this.ctx.save();
+                        this.ctx.translate(centerX, centerY);
+                        
                         // Calculate rotation angle based on animation state
-                        let rotationAngle = Math.PI / 4; // X shape (open state) - rotated 45° from default
+                        let rotationAngle = Math.PI / 4; // X shape orientation (45°)
                         if (trapAnimation && trapAnimation.isAnimating) {
                             // Animate rotation during animation
                             const elapsed = performance.now() - trapAnimation.startTime;
@@ -3731,93 +3787,53 @@ class GameManager {
                             const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
                             
                             if (trapAnimation.isOpening) {
-                                // Animate from + to X shape (opening animation)
-                                rotationAngle = (Math.PI / 4) * easedProgress; // 0 to π/4
+                                // Opening: rotate clockwise by π/2 (90°) from X to X
+                                rotationAngle = Math.PI / 4 + (Math.PI / 2) * easedProgress;
                             } else {
-                                // Animate from X to + shape (closing animation)
-                                rotationAngle = (Math.PI / 4) * (1 - easedProgress); // π/4 to 0
+                                // Closing: rotate counter-clockwise by π/2 (90°) from X to X
+                                rotationAngle = Math.PI / 4 - (Math.PI / 2) * easedProgress;
                             }
                         }
                         
-                        // Calculate trap dimensions for open state (four squares)
-                        const squareDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_DISTANCE_RATIO;
-                        const squareSize = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_SIZE_RATIO * .75;
-                        
-                        // Draw dark cross under the squares that morphs into the final plus sign
-                        const darkerColor = this.darkenColor(baseColor, CONSTANTS.ANIMATION_CONFIG.TRAP_DARKER_SHADE_FACTOR);
-                        this.ctx.fillStyle = darkerColor;
-                        
-                        // Calculate cross dimensions (same as closed state)
-                        const goalInnerRadius = this.getGoalInnerRadius();
-                        const goalOuterRadius = this.getGoalOuterRadius();
-                        const crossThickness = 1.1 * (goalOuterRadius - goalInnerRadius);
-                        const crossLength = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_OUTER_RADIUS_RATIO;
-                        
-                        // Set up drawing context for cross
-                        this.ctx.save();
-                        this.ctx.translate(centerX, centerY);
-                        
-                        // Draw the cross with rotation animation
-                        if (trapAnimation && trapAnimation.isAnimating) {
-                            // During animation, animate the cross rotation
-                            const elapsed = performance.now() - trapAnimation.startTime;
-                            const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
-                            const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
-                            
-                            let crossRotationAngle;
-                            if (trapAnimation.isOpening) {
-                                // Opening: animate from X (π/4) to + (0) shape
-                                crossRotationAngle = (Math.PI / 4) * easedProgress; // π/4 to 0
-                            } else {
-                                // Closing: animate from + (0) to X (π/4) shape
-                                crossRotationAngle = (Math.PI / 4) * (1 - easedProgress); // 0 to π/4
-                            }
-                            
-                            // Apply cross rotation
-                            this.ctx.rotate(crossRotationAngle);
-                        } else {
-                            // No animation: show X shape (0 rotation) for open state
-                            this.ctx.rotate(Math.PI / 4);
-                        }
-                        
-                        // Draw two rectangles forming the cross
-                        this.ctx.fillRect(-crossLength/2, -crossThickness/2, crossLength, crossThickness);
-                        this.ctx.fillRect(-crossThickness/2, -crossLength/2, crossThickness, crossLength);
-                        
-                        this.ctx.restore(); // Restore cross context
-                        
-                        // Set up drawing context for squares (on top of cross)
-                        this.ctx.fillStyle = baseColor;
-                        this.ctx.save();
-                        this.ctx.translate(centerX, centerY);
                         this.ctx.rotate(rotationAngle);
                         
                         if (trapAnimation && trapAnimation.isAnimating) {
-                            // During animation, show squares with appropriate fade
+                            // During animation, show discs with appropriate fade
                             const elapsed = performance.now() - trapAnimation.startTime;
                             const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
                             const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
                             
                             if (trapAnimation.isOpening) {
-                                // Opening: fade in squares
+                                // Opening: fade in discs
                                 this.ctx.globalAlpha = easedProgress;
                             } else {
-                                // Closing: fade out squares
+                                // Closing: fade out discs
                                 this.ctx.globalAlpha = 1 - easedProgress;
                             }
                         }
                         
-                        // Draw four squares in diagonal arrangement (open state) - on top of cross
+                        // Draw four discs in diagonal arrangement (open state)
                         const positions = [
-                            [0, -squareDistance/2],  // Top (vertical axis)
-                            [squareDistance/2, 0],   // Right (horizontal axis)
-                            [0, squareDistance/2],   // Bottom (vertical axis)
-                            [-squareDistance/2, 0]   // Left (horizontal axis)
+                            [0, -discDistance/2],  // Top (vertical axis)
+                            [discDistance/2, 0],   // Right (horizontal axis)
+                            [0, discDistance/2],   // Bottom (vertical axis)
+                            [-discDistance/2, 0]   // Left (horizontal axis)
                         ];
-                        
                         positions.forEach(([x, y]) => {
-                            this.ctx.fillRect(x - squareSize/2, y - squareSize/2, squareSize, squareSize);
+                            this.ctx.beginPath();
+                            this.ctx.arc(x, y, discRadius, 0, 2 * Math.PI);
+                            this.ctx.fill();
                         });
+                        
+                        // Draw thin X (1px) in trap color
+                        this.ctx.strokeStyle = trapColor;
+                        this.ctx.lineWidth = 1;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(positions[0][0], positions[0][1]);
+                        this.ctx.lineTo(positions[2][0], positions[2][1]);
+                        this.ctx.moveTo(positions[1][0], positions[1][1]);
+                        this.ctx.lineTo(positions[3][0], positions[3][1]);
+                        this.ctx.stroke();
                         
                         this.ctx.globalAlpha = 1;
                         this.ctx.restore();
@@ -3880,8 +3896,20 @@ class GameManager {
                             trapColor = baseColor;
                         }
                         
+                        // Calculate trap dimensions for closed state (same as open state)
+                        const discDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_DISC_DISTANCE_RATIO;
+                        const discRadius = (this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_DISC_SIZE_RATIO) / 2; // Same as switch discs
+                        
+                        // Calculate thin X dimensions
+                        const xLength = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_OUTER_RADIUS_RATIO;
+                        
+                        // Set up drawing context
+                        this.ctx.fillStyle = trapColor;
+                        this.ctx.save();
+                        this.ctx.translate(centerX, centerY);
+                        
                         // Calculate rotation angle based on animation state
-                        let rotationAngle = 0; // + shape (closed state) - no rotation
+                        let rotationAngle = Math.PI / 4; // X shape orientation (45°)
                         if (trapAnimation && trapAnimation.isAnimating) {
                             // Animate rotation during animation
                             const elapsed = performance.now() - trapAnimation.startTime;
@@ -3889,47 +3917,55 @@ class GameManager {
                             const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
                             
                             if (trapAnimation.isOpening) {
-                                // Animate from + to X shape (opening animation)
-                                rotationAngle = (Math.PI / 4) * easedProgress; // 0 to π/4
+                                // Opening: rotate clockwise by π/2 (90°) from X to X
+                                rotationAngle = Math.PI / 4 + (Math.PI / 2) * easedProgress;
                             } else {
-                                // Animate from X to + shape (closing animation)
-                                rotationAngle = (Math.PI / 4) * (1 - easedProgress); // π/4 to 0
+                                // Closing: rotate counter-clockwise by π/2 (90°) from X to X
+                                rotationAngle = Math.PI / 4 - (Math.PI / 2) * easedProgress;
                             }
                         }
                         
-                        // Calculate trap dimensions for closed state (X/+ shape)
-                        const goalInnerRadius = this.getGoalInnerRadius();
-                        const goalOuterRadius = this.getGoalOuterRadius();
-                        const trapThickness = 1.1 * (goalOuterRadius - goalInnerRadius);
-                        const trapLength = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_OUTER_RADIUS_RATIO;
-                        
-                        // Set up drawing context
-                        this.ctx.fillStyle = trapColor;
-                        this.ctx.save();
-                        this.ctx.translate(centerX, centerY);
                         this.ctx.rotate(rotationAngle);
                         
                         if (trapAnimation && trapAnimation.isAnimating) {
-                            // During animation, show X/+ shape with appropriate fade
+                            // During animation, show with appropriate fade
                             const elapsed = performance.now() - trapAnimation.startTime;
                             const progress = Math.min(elapsed / CONSTANTS.ANIMATION_CONFIG.TRAP_ANIMATION_DURATION, 1);
                             const easedProgress = CONSTANTS.ANIMATION_CONFIG.EASING.EASE_OUT(progress);
                             
                             if (trapAnimation.isOpening) {
-                                // Opening: fade out X/+ shape
+                                // Opening: fade out closed state
                                 this.ctx.globalAlpha = 1 - easedProgress;
                             } else {
-                                // Closing: fade in X/+ shape
+                                // Closing: fade in closed state
                                 this.ctx.globalAlpha = easedProgress;
                             }
                         }
                         
-                        // Draw two rectangles forming X/+ shape (closed state)
-                        // First rectangle (horizontal in X, diagonal in +)
-                        this.ctx.fillRect(-trapLength/2, -trapThickness/2, trapLength, trapThickness);
+                        // Positions of the four discs in diagonal arrangement (same as open state)
+                        const positions = [
+                            [0, -discDistance/2],  // Top (vertical axis)
+                            [discDistance/2, 0],   // Right (horizontal axis)
+                            [0, discDistance/2],   // Bottom (vertical axis)
+                            [-discDistance/2, 0]   // Left (horizontal axis)
+                        ];
                         
-                        // Second rectangle (vertical in X, diagonal in +)
-                        this.ctx.fillRect(-trapThickness/2, -trapLength/2, trapThickness, trapLength);
+                        // Draw four discs in diagonal arrangement (same as open state)
+                        positions.forEach(([x, y]) => {
+                            this.ctx.beginPath();
+                            this.ctx.arc(x, y, discRadius, 0, 2 * Math.PI);
+                            this.ctx.fill();
+                        });
+                        
+                        // Draw thin X (1px) in trap color (on top of trapped ball)
+                        this.ctx.strokeStyle = trapColor;
+                        this.ctx.lineWidth = 1;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(positions[0][0], positions[0][1]);
+                        this.ctx.lineTo(positions[2][0], positions[2][1]);
+                        this.ctx.moveTo(positions[1][0], positions[1][1]);
+                        this.ctx.lineTo(positions[3][0], positions[3][1]);
+                        this.ctx.stroke();
                         
                         this.ctx.globalAlpha = 1;
                         this.ctx.restore();
@@ -3944,8 +3980,6 @@ class GameManager {
         if (this.board && this.board.front) {
             const nodes = this.getCurrentNodes();
             if (!nodes) return;
-            
-    
             
             for (let row = 0; row < nodes.length; row++) {
                 const rowArray = nodes[row];
@@ -3991,8 +4025,8 @@ class GameManager {
                         }
                         
                         // Calculate switch dimensions
-                        const discDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_DISTANCE_RATIO;
-                        const discRadius = (this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_SQUARE_SIZE_RATIO) / 2; // Diameter = square size
+                        const discDistance = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_DISC_DISTANCE_RATIO;
+                        const discRadius = (this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_DISC_SIZE_RATIO) / 2; // Diameter = disc size
                         
                         // Set up drawing context
             
@@ -4014,6 +4048,13 @@ class GameManager {
                             this.ctx.arc(x, y, discRadius, 0, 2 * Math.PI);
                             this.ctx.fill();
                         });
+                        
+                        // Draw thin circle passing through the centers of the four discs
+                        this.ctx.strokeStyle = switchColor;
+                        this.ctx.lineWidth = 1;
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, 0, discDistance/2, 0, 2 * Math.PI);
+                        this.ctx.stroke();
                         
                         this.ctx.restore();
             
