@@ -194,13 +194,13 @@ body {
 .game-flip-wrapper.fade-out {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease-in-out;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .game-flip-wrapper.fade-in {
     opacity: 1;
     pointer-events: auto;
-    transition: opacity 0.8s ease-in-out;
+    transition: opacity 0.5s ease-in-out;
 }
 
 /* Flip animation states */
