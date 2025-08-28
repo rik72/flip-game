@@ -3421,6 +3421,9 @@ class GameManager {
             this.ctx.translate(-this.displayWidth, 0);
         }
         
+        // Draw infinite grid first (under everything else)
+        this.renderInfiniteGrid();
+        
         // Draw grid
         this.renderGrid();
         
@@ -3689,6 +3692,87 @@ class GameManager {
                 footer.style.top = 'auto';
             }
         }
+    }
+
+    renderInfiniteGrid() {
+        if (!this.board || !this.board.front) return;
+        
+        // Check if infinite grid should be rendered
+        if (!CONSTANTS.INFINITE_GRID_CONFIG.ENABLED) return;
+        
+        // Board position should already be calculated during level loading
+        // Only recalculate if gridSize is not set (fallback)
+        if (typeof this.gridSize === 'undefined' || this.gridSize === null) {
+            this.calculateBoardPosition();
+        }
+        
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return;
+        const boardRows = nodes.length;
+        const boardCols = nodes[0] ? nodes[0].length : 0;
+        
+        if (boardRows === 0 || boardCols === 0) return;
+        
+        // Set up infinite grid drawing style
+        this.ctx.strokeStyle = CONSTANTS.INFINITE_GRID_CONFIG.COLOR;
+        this.ctx.lineWidth = CONSTANTS.INFINITE_GRID_CONFIG.LINE_WIDTH;
+        this.ctx.lineCap = 'round';
+        this.ctx.globalAlpha = CONSTANTS.INFINITE_GRID_CONFIG.OPACITY;
+        
+        // Calculate the infinite grid that extends beyond the level boundaries
+        // The grid lines should be spaced exactly at gridSize intervals
+        // and should align with the level grid lines
+        
+        // Calculate how many grid lines we need to cover the entire canvas
+        const canvasWidth = this.displayWidth;
+        const canvasHeight = this.displayHeight;
+        
+        // Calculate the infinite grid that aligns with the level grid
+        // The level grid starts at boardStartX, boardStartY and has spacing of gridSize
+        // We need to extend this grid pattern to cover the entire canvas
+        
+        // The infinite grid should align with the level grid positions
+        // Level grid nodes are centered at boardStartX + col*gridSize, boardStartY + row*gridSize
+        // So the grid lines should pass through these centers
+        // We need to extend the grid in all directions, including negative coordinates
+        
+        // Calculate the infinite grid that extends in both negative AND positive directions
+        // We need to ensure the grid covers the entire canvas area
+        
+        // Calculate how far we need to extend in each direction to cover the canvas
+        const extendLeft = Math.ceil(canvasWidth / this.gridSize) + 2;
+        const extendRight = Math.ceil(canvasWidth / this.gridSize) + 2;
+        const extendUp = Math.ceil(canvasHeight / this.gridSize) + 2;
+        const extendDown = Math.ceil(canvasHeight / this.gridSize) + 2;
+        
+        // Calculate the starting positions to extend in all directions
+        const leftmostGridLine = this.boardStartX - (extendLeft * this.gridSize);
+        const topmostGridLine = this.boardStartY - (extendUp * this.gridSize);
+        
+        // Calculate total number of lines needed
+        const numVerticalLines = extendLeft + extendRight + 1; // +1 for the level grid line
+        const numHorizontalLines = extendUp + extendDown + 1; // +1 for the level grid line
+        
+        this.ctx.beginPath();
+        
+        // Draw vertical lines
+        for (let i = 0; i < numVerticalLines; i++) {
+            const x = leftmostGridLine + (i * this.gridSize);
+            this.ctx.moveTo(x, 0);
+            this.ctx.lineTo(x, canvasHeight);
+        }
+        
+        // Draw horizontal lines
+        for (let i = 0; i < numHorizontalLines; i++) {
+            const y = topmostGridLine + (i * this.gridSize);
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(canvasWidth, y);
+        }
+        
+        this.ctx.stroke();
+        
+        // Reset globalAlpha to avoid affecting other rendering operations
+        this.ctx.globalAlpha = 1.0;
     }
 
     renderGrid() {

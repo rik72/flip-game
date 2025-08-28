@@ -277,4 +277,13 @@ const CONSTANTS = {
 		GRADIENT_ENABLED: true,
 		// Colors will be generated dynamically based on level data checksum
 	},
+
+	// Infinite grid configurations
+	INFINITE_GRID_CONFIG: {
+		ENABLED: true,
+		LINE_WIDTH: 1, // 1px line width
+		COLOR: '#aaaaaa', // Very dark color, darker than grid dots
+		OPACITY: 0.05, // Opacity of the infinite grid lines (0.0 = transparent, 1.0 = fully opaque)
+		EXTEND_TO_CANVAS_EDGES: true // Extend beyond board boundaries to canvas edges
+	},
 }; 
