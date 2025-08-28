@@ -114,6 +114,16 @@ const CONSTANTS = {
 		// Animation states
 		FLIP_HALFWAY_THRESHOLD: 0.5, // When to switch face content (0.0-1.0) - at halfway point
 		
+		// Level transition fade animations
+		// NOTE: Keep these durations in sync with CSS transitions in styles.css:
+		// - .game-flip-wrapper.fade-out transition: opacity 0.2s ease-in-out
+		// - .game-flip-wrapper.fade-in transition: opacity 0.8s ease-in-out
+		LEVEL_FADE_OUT_DURATION: 200, // milliseconds for fade out animation (CSS: 0.2s)
+		LEVEL_FADE_IN_DURATION: 800, // milliseconds for fade in animation (CSS: 0.8s)
+		
+		// Next level button appearance delay
+		NEXT_LEVEL_BUTTON_DELAY: 1000, // milliseconds delay before showing next level button
+		
 		// Ball movement animation
 		BALL_DRAG_DURATION: 20, // milliseconds for smooth ball movement
 		BALL_BACKTRACK_DURATION: 1, // milliseconds for faster backtracking movement (uses instant easing)

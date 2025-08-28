@@ -181,12 +181,26 @@ body {
     left: 0;
     transform-style: preserve-3d;
     /* Direct animation properties - no custom properties */
-    transition: transform 0.6s ease-in-out;
+    transition: transform 0.6s ease-in-out, opacity 0.4s ease-in-out;
     /* Remove backface-visibility to see if it's causing the black screen */
     /* backface-visibility: hidden; */
     /* Background will be set dynamically via JavaScript */
     /* Ensure wrapper is above canvas and all other elements */
     z-index: 10000;
+    opacity: 1;
+}
+
+/* Level transition fade states */
+.game-flip-wrapper.fade-out {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.game-flip-wrapper.fade-in {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.8s ease-in-out;
 }
 
 /* Flip animation states */
@@ -256,7 +270,7 @@ body {
     background: none;
     border: none;
     color: #ffffff;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease, position 0.3s ease, top 0.3s ease, left 0.3s ease, right 0.3s ease, bottom 0.3s ease;
     font-size: 24px;
     min-width: 44px;
     min-height: 44px;
@@ -277,6 +291,21 @@ body {
     outline: none;
 }
 
+
+
+/* Flip button fade transitions during level changes */
+.face-toggle-btn.fade-out {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.face-toggle-btn.fade-in {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.8s ease-in-out;
+}
+
 /* Next Level Button */
 .next-level-btn {
     width: 44px;
@@ -288,12 +317,19 @@ body {
     background: none;
     border: none;
     color: #ffffff;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease, position 0.3s ease, top 0.3s ease, left 0.3s ease, right 0.3s ease, bottom 0.3s ease;
     font-size: 24px;
     min-width: 44px;
     min-height: 44px;
     flex-shrink: 0;
     animation: fadeIn 0.5s ease-out;
+}
+
+/* Next level button fade transitions during level changes */
+.next-level-btn.fade-out {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
 }
 
 #nextLevelButton {
@@ -472,7 +508,7 @@ body {
     background: none;
     border: none;
     color: #ffffff;
-    transition: all 0.3s ease, opacity 0.3s ease;
+    transition: all 0.3s ease, opacity 0.3s ease, position 0.3s ease, top 0.3s ease, left 0.3s ease, right 0.3s ease, bottom 0.3s ease;
     font-size: 24px;
     min-width: 44px;
     min-height: 44px;

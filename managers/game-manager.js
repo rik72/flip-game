@@ -2742,8 +2742,10 @@ class GameManager {
         // Create explosion animations for each goal node
         this.createExplosionAnimations();
         
-        // Show next level button instead of overlay
-        this.showNextLevelButton();
+        // Show next level button after delay instead of overlay
+        setTimeout(() => {
+            this.showNextLevelButton();
+        }, CONSTANTS.ANIMATION_CONFIG.NEXT_LEVEL_BUTTON_DELAY);
     }
 
     createExplosionAnimations() {
@@ -2971,15 +2973,126 @@ class GameManager {
             // Add fade-in animation only, icon has its own glow
             nextLevelButton.style.animation = 'fadeIn 0.5s ease-out';
         }
+        
+        // Animate flip button position if present
+        this.animateFlipButtonPosition();
+    }
+    
+    /**
+     * Animate the flip button to its new position when next level button appears
+     */
+    animateFlipButtonPosition() {
+        const flipButton = document.getElementById('faceToggleButton');
+        if (!flipButton) return;
+        
+        // Add a small delay to ensure the next level button is rendered
+        setTimeout(() => {
+            // Force a reflow to ensure the new layout is calculated
+            // This triggers the existing position transition
+            flipButton.offsetHeight;
+        }, 50);
+    }
+    
+    /**
+     * Animate the flip button back to original position when next level button is hidden
+     * @returns {Promise} Promise that resolves when animation is complete
+     */
+    async animateFlipButtonBack() {
+        const flipButton = document.getElementById('faceToggleButton');
+        if (!flipButton) return Promise.resolve();
+        
+        return new Promise((resolve) => {
+            // Force a reflow to ensure the new layout is calculated
+            // This triggers the existing position transition
+            flipButton.offsetHeight;
+            
+            // Wait for the transition to complete
+            setTimeout(() => {
+                resolve();
+            }, 300); // Match the transition duration
+        });
+    }
+    
+    /**
+     * Fade out the flip button during level transition
+     */
+    fadeOutFlipButton() {
+        const flipButton = document.getElementById('faceToggleButton');
+        if (!flipButton) return;
+        
+        flipButton.classList.add('fade-out');
+    }
+    
+    /**
+     * Fade in the flip button during level transition
+     */
+    fadeInFlipButton() {
+        const flipButton = document.getElementById('faceToggleButton');
+        if (!flipButton) return;
+        
+        flipButton.classList.remove('fade-out');
+        flipButton.classList.add('fade-in');
+        
+        // Remove fade-in class after animation completes
+        setTimeout(() => {
+            flipButton.classList.remove('fade-in');
+        }, CONSTANTS.ANIMATION_CONFIG.LEVEL_FADE_IN_DURATION);
+    }
+    
+    /**
+     * Fade in the flip button if it was faded out and is needed for the new level
+     */
+    fadeInFlipButtonIfNeeded() {
+        const flipButton = document.getElementById('faceToggleButton');
+        if (!flipButton) return;
+        
+        // Only fade in if the button has the fade-out class (was faded out)
+        if (flipButton.classList.contains('fade-out')) {
+            flipButton.classList.remove('fade-out');
+            flipButton.classList.add('fade-in');
+            
+            // Remove fade-in class after animation completes
+            setTimeout(() => {
+                flipButton.classList.remove('fade-in');
+            }, CONSTANTS.ANIMATION_CONFIG.LEVEL_FADE_IN_DURATION);
+        }
+    }
+    
+    /**
+     * Fade out both next level button and flip button together
+     * @returns {Promise} Promise that resolves when fade out is complete
+     */
+    async fadeOutButtons() {
+        const nextLevelButton = document.getElementById('nextLevelButton');
+        const flipButton = document.getElementById('faceToggleButton');
+        
+        return new Promise((resolve) => {
+            // Fade out next level button if present
+            if (nextLevelButton) {
+                nextLevelButton.classList.add('fade-out');
+            }
+            
+            // Fade out flip button if present
+            if (flipButton) {
+                flipButton.classList.add('fade-out');
+            }
+            
+            // Wait for fade out animation to complete
+            setTimeout(() => {
+                // Hide next level button after fade out
+                if (nextLevelButton) {
+                    nextLevelButton.style.display = 'none';
+                    nextLevelButton.style.animation = '';
+                    nextLevelButton.classList.remove('fade-out');
+                }
+                resolve();
+            }, CONSTANTS.ANIMATION_CONFIG.LEVEL_FADE_OUT_DURATION);
+        });
     }
 
-    proceedToNextLevel() {
-        // Hide the next level button
-        const nextLevelButton = document.getElementById('nextLevelButton');
-        if (nextLevelButton) {
-            nextLevelButton.style.display = 'none';
-            nextLevelButton.style.animation = '';
-        }
+    async proceedToNextLevel() {
+        // Fade out both buttons together
+        await this.fadeOutButtons();
         
         // Clean up any remaining explosion discs
         const discs = document.querySelectorAll('.explosion-disc');
@@ -2992,11 +3105,96 @@ class GameManager {
         // Ensure game state is properly reset
         this.gameState.isPlaying = true;
         
-        // Proceed to next level
-        this.nextLevel();
+        // Proceed to next level with fade transition
+        this.nextLevelWithFade();
     }
     
-
+    /**
+     * Fade out the current level
+     * @returns {Promise} Promise that resolves when fade out is complete
+     */
+    async fadeOut() {
+        if (!this.ensureFlipWrapper()) {
+            return Promise.resolve();
+        }
+        
+        return new Promise((resolve) => {
+            // Add fade-out class to flip wrapper
+            this.flipWrapper.classList.add('fade-out');
+            
+            // Also fade out the flip button if present
+            this.fadeOutFlipButton();
+            
+            // Wait for fade out animation to complete
+            setTimeout(() => {
+                resolve();
+            }, CONSTANTS.ANIMATION_CONFIG.LEVEL_FADE_OUT_DURATION);
+        });
+    }
+    
+    /**
+     * Fade in the new level
+     * @returns {Promise} Promise that resolves when fade in is complete
+     */
+    async fadeIn() {
+        if (!this.ensureFlipWrapper()) {
+            return Promise.resolve();
+        }
+        
+        return new Promise((resolve) => {
+            // Remove fade-out class and add fade-in class
+            this.flipWrapper.classList.remove('fade-out');
+            this.flipWrapper.classList.add('fade-in');
+            
+            // Also fade in the flip button if present and needed
+            this.fadeInFlipButtonIfNeeded();
+            
+            // Wait for fade in animation to complete
+            setTimeout(() => {
+                this.flipWrapper.classList.remove('fade-in');
+                resolve();
+            }, CONSTANTS.ANIMATION_CONFIG.LEVEL_FADE_IN_DURATION);
+        });
+    }
+    
+    /**
+     * Load level with fade transition
+     * @param {number} levelNumber - The level number to load
+     * @returns {Promise} Promise that resolves when level is loaded and faded in
+     */
+    async loadLevelWithFade(levelNumber) {
+        // Fade out current level
+        await this.fadeOut();
+        
+        // Load new level
+        await this.loadLevel(levelNumber);
+        
+        // Fade in new level
+        await this.fadeIn();
+    }
+    
+    /**
+     * Next level with fade transition
+     */
+    async nextLevelWithFade() {
+        this.currentLevel++;
+        // Synchronize with App instance if available
+        if (this.appReference) {
+            this.appReference.currentLevel = this.currentLevel;
+        }
+        
+        // Set flag to indicate this is a level progression (not a fresh start)
+        this.isLevelProgression = true;
+        
+        if (this.currentLevel > CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
+            // Show prize scene instead of loading a level
+            if (this.appReference) {
+                this.appReference.showPrizeScene();
+            }
+        } else {
+            await this.loadLevelWithFade(this.currentLevel);
+        }
+    }
 
     nextLevel() {
         this.currentLevel++;
@@ -3039,9 +3237,15 @@ class GameManager {
         // Stop glow animation before resetting
         this.stopGlowAnimation();
         
-        this.loadLevel(this.currentLevel).catch(error => {
-            console.error('Failed to reset level:', error);
-        });
+        // Reset level with fade transition
+        this.resetLevelWithFade();
+    }
+    
+    /**
+     * Reset level with fade transition
+     */
+    async resetLevelWithFade() {
+        await this.loadLevelWithFade(this.currentLevel);
     }
 
     rotateBoard(degrees) {

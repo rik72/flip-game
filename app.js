@@ -153,7 +153,8 @@ class App {
             this.soundManager.playSound('levelStart');
             
             if (this.gameManager) {
-                await this.gameManager.loadLevel(levelNumber);
+                // Use fade transition for level loading
+                await this.gameManager.loadLevelWithFade(levelNumber);
             }
         } catch (error) {
             console.error('Error loading level in App:', error);
@@ -176,6 +177,7 @@ class App {
         if (this.currentLevel > CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
             this.showPrizeScene();
         } else {
+            // Use fade transition for next level
             this.loadLevel(this.currentLevel).catch(error => {
                 console.error('Failed to load next level in App:', error);
             });
