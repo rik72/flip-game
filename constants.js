@@ -231,7 +231,7 @@ const CONSTANTS = {
 		BALL_COLORS: {
 			'red': '#EE1111',
 			'green': '#11EE11',
-			'blue': '#1111EE',
+			'blue': '#2222FF',
 			'lightblue': '#BBBBFF',
 			'gray': '#666666',
 			'yellow': '#FFFF00',
@@ -243,7 +243,8 @@ const CONSTANTS = {
 		// Visual color adjustment factors for different elements
 		STICKER_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for sticker nodes (0.5 = 50% darker)
 		GOAL_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for inactive goals (0.5 = 50% darker)
-		TAIL_BRIGHTENING_FACTOR: 0.4 // Factor to brighten ball colors for tail effects (0.3 = 30% brighter)
+		TAIL_BRIGHTENING_FACTOR: 0.4, // Factor to brighten ball colors for tail effects (0.3 = 30% brighter)
+		EXPLOSION_BRIGHTENING_FACTOR: 0.7 // Factor to brighten ball colors for goal explosion effects (0.7 = 70% brighter)
 	},
 
 	// Touch configurations

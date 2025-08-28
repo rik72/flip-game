@@ -2785,8 +2785,9 @@ class GameManager {
         disc.style.height = `${startRadius * 2}px`;
         disc.style.opacity = '0.5';
         
-        // Set the explosion color to the exact ball color
-        disc.style.backgroundColor = ballColorHex;
+        // Set the explosion color to a brightened version of the ball color
+        const brightenedColor = this.brightenColor(ballColorHex, CONSTANTS.LEVEL_CONFIG.EXPLOSION_BRIGHTENING_FACTOR);
+        disc.style.backgroundColor = brightenedColor;
         
         // Set higher z-index for later explosions to ensure they're visible
         disc.style.zIndex = 150 + index;
