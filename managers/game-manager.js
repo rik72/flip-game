@@ -4022,9 +4022,9 @@ class GameManager {
                             this.ctx.fill();
                         });
                         
-                        // Draw thin X (1px) in trap color
+                        // Draw thin X in trap color
                         this.ctx.strokeStyle = trapColor;
-                        this.ctx.lineWidth = 1;
+                        this.ctx.lineWidth = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_X_LINE_WIDTH_RATIO;
                         this.ctx.beginPath();
                         this.ctx.moveTo(positions[0][0], positions[0][1]);
                         this.ctx.lineTo(positions[2][0], positions[2][1]);
@@ -4154,9 +4154,9 @@ class GameManager {
                             this.ctx.fill();
                         });
                         
-                        // Draw thin X (1px) in trap color (on top of trapped ball)
+                        // Draw thin X in trap color (on top of trapped ball)
                         this.ctx.strokeStyle = trapColor;
-                        this.ctx.lineWidth = 1;
+                        this.ctx.lineWidth = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.TRAP_X_LINE_WIDTH_RATIO;
                         this.ctx.beginPath();
                         this.ctx.moveTo(positions[0][0], positions[0][1]);
                         this.ctx.lineTo(positions[2][0], positions[2][1]);
@@ -4248,7 +4248,7 @@ class GameManager {
                         
                         // Draw thin circle passing through the centers of the four discs
                         this.ctx.strokeStyle = switchColor;
-                        this.ctx.lineWidth = 1;
+                        this.ctx.lineWidth = this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.SWITCH_CIRCLE_LINE_WIDTH_RATIO;
                         this.ctx.beginPath();
                         this.ctx.arc(0, 0, discDistance/2, 0, 2 * Math.PI);
                         this.ctx.stroke();

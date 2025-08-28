@@ -86,10 +86,12 @@ const CONSTANTS = {
 		// Switch sizing (same distance as trap X dimension)
 		SWITCH_DISC_DISTANCE_RATIO: 0.6, // Distance of switch discs from center as ratio of gridSize
 		SWITCH_DISC_SIZE_RATIO: 0.15, // Size of each switch disc as ratio of gridSize
+		SWITCH_CIRCLE_LINE_WIDTH_RATIO: 0.05, // Line width for switch circle as ratio of gridSize
 		
 		// Trap sizing (same distance as switch discs)
 		TRAP_DISC_DISTANCE_RATIO: 0.6, // Distance of trap discs from center as ratio of gridSize
 		TRAP_DISC_SIZE_RATIO: 0.12, // Size of each trap disc as ratio of gridSize
+		TRAP_X_LINE_WIDTH_RATIO: 0.05, // Line width for trap X lines as ratio of gridSize
 		
 		// Tail rendering configuration
 		TAIL_BALL_SIZE_RATIO: .7, // Tail ball size as ratio of normal ball size (1.0 = same size)
