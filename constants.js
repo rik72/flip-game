@@ -120,8 +120,8 @@ const CONSTANTS = {
 		// NOTE: Keep these durations in sync with CSS transitions in styles.css:
 		// - .game-flip-wrapper.fade-out transition: opacity 0.2s ease-in-out
 		// - .game-flip-wrapper.fade-in transition: opacity 0.8s ease-in-out
-		LEVEL_FADE_OUT_DURATION: 300, // milliseconds for fade out animation (CSS: 0.2s)
-		LEVEL_FADE_IN_DURATION: 500, // milliseconds for fade in animation (CSS: 0.8s)
+		LEVEL_FADE_OUT_DURATION: 200, // milliseconds for fade out animation
+		LEVEL_FADE_IN_DURATION: 300, // milliseconds for fade in animation
 		
 		// Next level button appearance delay
 		NEXT_LEVEL_BUTTON_DELAY: 1000, // milliseconds delay before showing next level button
