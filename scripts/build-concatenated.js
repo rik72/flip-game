@@ -33,6 +33,55 @@ const EDITOR_FILES = [
     'src/editor.js'
 ];
 
+function detectMaxLevel() {
+    const levelsDir = path.resolve(__dirname, '..', 'levels');
+    const levelFiles = fs.readdirSync(levelsDir)
+        .filter(file => file.startsWith('level_') && file.endsWith('.json'))
+        .map(file => {
+            const match = file.match(/level_(\d+)\.json/);
+            return match ? parseInt(match[1]) : 0;
+        })
+        .filter(level => level > 0);
+    
+    const maxLevel = Math.max(...levelFiles);
+    console.log(`🔍 Detected ${levelFiles.length} level files, max level: ${maxLevel}`);
+    return maxLevel;
+}
+
+function updateConstantsWithMaxLevel(maxLevel) {
+    const constantsPath = path.resolve(__dirname, '..', 'constants.js');
+    let constantsContent = fs.readFileSync(constantsPath, 'utf8');
+    
+    // Extract current ACTUAL_MAX_LEVEL value
+    const currentValueMatch = constantsContent.match(/ACTUAL_MAX_LEVEL:\s*(\d+)/);
+    if (!currentValueMatch) {
+        console.error('❌ ACTUAL_MAX_LEVEL pattern not found in constants.js');
+        return;
+    }
+    
+    const currentValue = parseInt(currentValueMatch[1]);
+    
+    // Check if the value actually needs to change
+    if (currentValue === maxLevel) {
+        console.log(`ℹ️  ACTUAL_MAX_LEVEL already set to ${maxLevel} - no update needed`);
+        return;
+    }
+    
+    // Update the ACTUAL_MAX_LEVEL line
+    const pattern = /ACTUAL_MAX_LEVEL:\s*\d+,?\s*\/\/\s*Actual final level of the game(?:\s*\(auto-detected\))*/;
+    const updatedContent = constantsContent.replace(
+        pattern,
+        `ACTUAL_MAX_LEVEL: ${maxLevel}, // Actual final level of the game`
+    );
+    
+    if (constantsContent !== updatedContent) {
+        fs.writeFileSync(constantsPath, updatedContent, 'utf8');
+        console.log(`✅ Updated ACTUAL_MAX_LEVEL from ${currentValue} to ${maxLevel} in constants.js`);
+    } else {
+        console.log(`ℹ️  ACTUAL_MAX_LEVEL already set to ${maxLevel}`);
+    }
+}
+
 function concatenateFiles(fileList, outputPath, description) {
     console.log(`🔧 Building ${description}...`);
     
@@ -78,6 +127,10 @@ function concatenateFiles(fileList, outputPath, description) {
 function main() {
     console.log('🚀 Building concatenated JavaScript files...\n');
     
+    // Auto-detect and update max level
+    const maxLevel = detectMaxLevel();
+    updateConstantsWithMaxLevel(maxLevel);
+    
     // Ensure src directory exists
     const srcDir = path.resolve(__dirname, '..', 'src');
     if (!fs.existsSync(srcDir)) {
@@ -107,4 +160,4 @@ if (require.main === module) {
     main();
 }
 
-module.exports = { concatenateFiles, GAME_FILES, EDITOR_FILES }; 
+module.exports = { concatenateFiles, GAME_FILES, EDITOR_FILES, detectMaxLevel, updateConstantsWithMaxLevel }; 
