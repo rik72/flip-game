@@ -343,8 +343,8 @@ body {
 }
 
 .next-level-btn:active {
-    color: #ffffff;
-    transform: scale(0.95);
+    color: #ffffff !important;
+    transform: scale(0.95) !important;
 }
 
 .next-level-btn:focus {

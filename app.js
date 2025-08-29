@@ -693,6 +693,20 @@ class App {
         // Play button click sound
         this.soundManager.playSound('buttonClick');
         
+        // For test level mode, reload from localStorage instead of file
+        if (this.currentLevel === 'test') {
+            try {
+                const testData = localStorage.getItem('testLevel');
+                if (testData) {
+                    const levelData = JSON.parse(testData);
+                    this.testLevelData = levelData;
+                    this.gameManager.testLevelData = levelData;
+                }
+            } catch (error) {
+                console.error('Error reloading test level data:', error);
+            }
+        }
+        
         // Reload the current level
         this.loadLevel(this.currentLevel).catch(error => {
             console.error('Failed to restart current level:', error);

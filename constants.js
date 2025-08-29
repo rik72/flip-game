@@ -49,7 +49,7 @@ const CONSTANTS = {
 		MOBILE_SAFE_MARGIN: 100, // Mobile: additional margin for UI elements (header, footer, safe areas)
 		
 		// Desktop grid boundary constraints (existing)
-		DESKTOP_MAX_WIDTH_RATIO: 0.2, // Desktop: limit to 20% of screen width
+		DESKTOP_MAX_WIDTH_RATIO: 0.15, // Desktop: limit to 15% of screen width (reduced for larger boards like 8x16)
 		DESKTOP_MAX_HEIGHT_RATIO: 0.7, // Desktop: limit to 70% of screen height
 		
 		// Ball sizing

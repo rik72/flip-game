@@ -2713,8 +2713,10 @@ class GameManager {
     levelCompleted() {
         this.gameState.isPlaying = false;
         
-        // Save progress
-        this.storageManager.saveGameProgress(this.currentLevel);
+        // Save progress (skip for test levels)
+        if (this.currentLevel !== 'test') {
+            this.storageManager.saveGameProgress(this.currentLevel);
+        }
         
         // Play level completion sound
         if (this.soundManager) {
@@ -3091,6 +3093,12 @@ class GameManager {
     }
 
     async proceedToNextLevel() {
+        // For test level mode, don't proceed to next level
+        if (this.currentLevel === 'test') {
+            console.log('Next level button disabled in test mode');
+            return;
+        }
+        
         // Fade out both buttons together
         await this.fadeOutButtons();
         
@@ -3504,10 +3512,17 @@ class GameManager {
         let availableWidth, availableHeight;
         
         if (isDesktop) {
-            // Desktop: use simple margins
-            const margin = 80; // Space for level number and menus
-            availableWidth = this.displayWidth - (margin * 2);
-            availableHeight = this.displayHeight - (margin * 2);
+            // Desktop: calculate actual available space by measuring UI elements
+            const header = document.querySelector('.game-header');
+            const headerHeight = header ? header.offsetHeight : 90;
+            
+            // Account for header and safe margins
+            const safeMargin = 40; // Safe margin from edges
+            availableWidth = this.displayWidth - (safeMargin * 2);
+            availableHeight = this.displayHeight - headerHeight - (safeMargin * 2);
+            
+            // Ensure we have minimum available space
+            availableHeight = Math.max(availableHeight, 300); // Minimum 300px available height for desktop
         } else {
             // Mobile: calculate actual available space by measuring UI elements
             const header = document.querySelector('.game-header');
@@ -3537,7 +3552,7 @@ class GameManager {
         // Calculate grid size with maximum constraints
         let gridSize;
         if (isDesktop) {
-            // Desktop: limit to 20% width and 70% height
+            // Desktop: limit to 15% width and 70% height
             const maxGridWidth = this.displayWidth * CONSTANTS.RENDER_SIZE_CONFIG.DESKTOP_MAX_WIDTH_RATIO;
             const maxGridHeight = this.displayHeight * CONSTANTS.RENDER_SIZE_CONFIG.DESKTOP_MAX_HEIGHT_RATIO;
             
@@ -3546,6 +3561,23 @@ class GameManager {
             
             // Use the smaller spacing to ensure grid fits within both constraints
             gridSize = Math.min(maxGridSpacingX, maxGridSpacingY, gridSpacingX, gridSpacingY);
+            
+            // Debug logging for 8x16 boards
+            if (boardCols === 8 && boardRows === 16) {
+                console.log('8x16 Board Debug:', {
+                    displayWidth: this.displayWidth,
+                    displayHeight: this.displayHeight,
+                    maxGridWidth,
+                    maxGridHeight,
+                    maxGridSpacingX,
+                    maxGridSpacingY,
+                    gridSpacingX,
+                    gridSpacingY,
+                    calculatedGridSize: gridSize,
+                    boardCols,
+                    boardRows
+                });
+            }
         } else {
             // Mobile: ensure grid fits within available space regardless of size
             const maxGridWidth = availableWidth * 0.95; // 95% of available width
@@ -3572,7 +3604,8 @@ class GameManager {
         
         // Ensure minimum grid size for consistent visual scaling across different window sizes
         // This prevents test levels from having different visual scaling than normal levels
-        const minGridSize = 40; // Minimum grid size in pixels
+        // For larger boards, use a smaller minimum to prevent oversized rendering
+        const minGridSize = boardCols > 6 || boardRows > 10 ? 20 : 40; // Adaptive minimum grid size
         gridSize = Math.max(gridSize, minGridSize);
         
         // Round grid size to prevent floating-point precision issues
@@ -3583,9 +3616,57 @@ class GameManager {
         let boardWidth = (boardCols - 1) * gridSize;
         let boardHeight = (boardRows - 1) * gridSize;
         
+        // Debug logging for 8x16 boards
+        if (boardCols === 8 && boardRows === 16) {
+            console.log('8x16 Board Final Dimensions:', {
+                boardWidth,
+                boardHeight,
+                gridSize,
+                minGridSize: boardCols > 6 || boardRows > 10 ? 20 : 40,
+                boardStartX: Math.round((this.displayWidth - boardWidth) / 2),
+                boardStartY: Math.round((this.displayHeight - boardHeight) / 2)
+            });
+        }
+        
         // Center the grid both horizontally and vertically
         let boardStartX = Math.round((this.displayWidth - boardWidth) / 2);
         let boardStartY = Math.round((this.displayHeight - boardHeight) / 2);
+        
+        // Desktop: Ensure grid doesn't overlap with UI elements
+        if (isDesktop) {
+            const header = document.querySelector('.game-header');
+            const headerHeight = header ? header.offsetHeight : 90;
+            
+            // Account for rendered elements that extend beyond grid boundaries
+            const ballRadius = this.getLogicalBallRadius();
+            const goalRadius = this.getGoalOuterRadius();
+            const maxElementRadius = Math.max(ballRadius, goalRadius);
+            
+            // Calculate effective grid bounds including rendered elements
+            const effectiveGridWidth = boardWidth + (maxElementRadius * 2);
+            const effectiveGridHeight = boardHeight + (maxElementRadius * 2);
+            
+            // Ensure grid doesn't overlap with header
+            const minTopPosition = headerHeight + maxElementRadius + 40; // 40px padding from header
+            const maxTopPosition = this.displayHeight - effectiveGridHeight - maxElementRadius - 40; // 40px padding from bottom
+            
+            // Adjust vertical position if needed
+            if (boardStartY < minTopPosition) {
+                boardStartY = minTopPosition;
+            } else if (boardStartY > maxTopPosition) {
+                boardStartY = maxTopPosition;
+            }
+            
+            // Ensure grid doesn't go off-screen horizontally
+            const minLeftPosition = maxElementRadius + 20; // 20px padding from left
+            const maxLeftPosition = this.displayWidth - effectiveGridWidth - maxElementRadius - 20; // 20px padding from right
+            
+            if (boardStartX < minLeftPosition) {
+                boardStartX = minLeftPosition;
+            } else if (boardStartX > maxLeftPosition) {
+                boardStartX = maxLeftPosition;
+            }
+        }
         
         // Mobile: Ensure grid stays within viewport bounds
         if (!isDesktop) {
