@@ -613,7 +613,7 @@ class LevelEditor {
                     <button class="position-btn start" onclick="editor.selectPositioning(${index}, 'start')" title="Set start position">
                         <i class="bi bi-arrow-down"></i>
                     </button>
-                    <button class="position-btn end" onclick="editor.selectPositioning(${index}, 'end')" title="Toggle end position">
+                    <button class="position-btn end" onclick="editor.selectPositioning(${index}, 'end')" title="Toggle end position selection">
                         <i class="bi bi-arrow-up"></i>
                     </button>
                 </div>
@@ -625,6 +625,14 @@ class LevelEditor {
                 </div>
             `;
             ballsList.appendChild(ballItem);
+            
+            // Restore active state for positioning buttons if this ball is in positioning mode
+            if (this.positioningMode && this.positioningBallIndex === index) {
+                const selectedBtn = ballItem.querySelector(`.position-btn.${this.positioningMode}`);
+                if (selectedBtn) {
+                    selectedBtn.classList.add('active');
+                }
+            }
         });
         
         // Update the Add Ball button state
@@ -749,6 +757,23 @@ class LevelEditor {
 
     
     selectPositioning(ballIndex, mode) {
+        // Check if we're already in positioning mode for the same ball and mode
+        if (this.positioningMode === mode && this.positioningBallIndex === ballIndex) {
+            // Toggle off the positioning mode
+            this.positioningMode = null;
+            this.positioningBallIndex = -1;
+            
+            // Clear button states
+            document.querySelectorAll('.position-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Re-enable node tools
+            this.updateNodeToolsState(false);
+            
+            return;
+        }
+        
         this.positioningMode = mode;
         this.positioningBallIndex = ballIndex;
         
@@ -766,9 +791,25 @@ class LevelEditor {
             }
         }
         
+        // Disable node tools when positioning mode is active
+        this.updateNodeToolsState(true);
+        
         // Show visual feedback
         const modeText = mode === 'start' ? 'start position' : 'end position';
         const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[this.balls[ballIndex].color] || '#fff';
+    }
+    
+    updateNodeToolsState(disabled) {
+        const nodeTools = document.querySelectorAll('.node-tool');
+        nodeTools.forEach(tool => {
+            if (disabled) {
+                tool.classList.add('disabled');
+                tool.style.pointerEvents = 'none';
+            } else {
+                tool.classList.remove('disabled');
+                tool.style.pointerEvents = 'auto';
+            }
+        });
     }
     
     setBallPosition(row, col, face) {
@@ -784,6 +825,18 @@ class LevelEditor {
             
             if (this.positioningMode === 'start') {
                 ball.start = [coordCol, coordRow];
+                
+                // Clear positioning mode for start position (auto-deselect)
+                this.positioningMode = null;
+                this.positioningBallIndex = -1;
+                
+                // Clear button states
+                document.querySelectorAll('.position-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Re-enable node tools
+                this.updateNodeToolsState(false);
             } else {
                 // Handle multiple end positions - toggle behavior
                 if (!Array.isArray(ball.end[0])) {
@@ -808,18 +861,10 @@ class LevelEditor {
                     // Add new end position
                     ball.end.push([coordCol, coordRow]);
                 }
+                
+                // Keep positioning mode active for end positions (don't auto-deselect)
+                // Button states remain active
             }
-            
-            // Clear positioning mode
-            this.positioningMode = null;
-            this.positioningBallIndex = -1;
-            
-            // Clear button states
-            document.querySelectorAll('.position-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-
             
             // Update visuals
             this.updateGridVisuals();
