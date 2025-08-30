@@ -1068,6 +1068,8 @@ class GameManager {
         
 
         
+
+        
         // Transform pointer coordinates to grid coordinates and log the click event
         const gridCoords = this.pointerToGridCoordinates(x, y);
         if (gridCoords) {
@@ -1164,7 +1166,9 @@ class GameManager {
     }
 
     handleMouseMove(e) {
-        if (!this.isDragging || this.selectedBallIndex === -1 || !this.ballOriginNode) return;
+        if (!this.isDragging || this.selectedBallIndex === -1 || !this.ballOriginNode) {
+            return;
+        }
         
         const rect = this.canvas.getBoundingClientRect();
         
@@ -1727,52 +1731,59 @@ class GameManager {
         });
     }
 
-    // Check if a grid node is already occupied by another ball on the same face
-    isNodeOccupied(gridX, gridY, ignoreBallIndex = -1) {
-        // Get the face of the ball being moved (if ignoreBallIndex is valid)
-        let movingBallFace = 'front'; // Default to front
-        if (ignoreBallIndex >= 0 && ignoreBallIndex < this.balls.length) {
-            movingBallFace = this.getBallCurrentFace(this.balls[ignoreBallIndex]);
-        }
-        
-        // Check if the moving ball is trying to return to a previously visited node
-        if (ignoreBallIndex >= 0 && ignoreBallIndex < this.balls.length) {
-            const movingBall = this.balls[ignoreBallIndex];
-            if (movingBall.hasTail && movingBall.visitedNodes) {
-                // Check if this node is in the ball's visited nodes list
-                const isPreviouslyVisited = movingBall.visitedNodes.some(node => 
-                    node.x === gridX && node.y === gridY && node.face === movingBallFace
-                );
-                
-                // If it's a previously visited node, allow the ball to return
-                if (isPreviouslyVisited) {
-                    return false; // Not occupied for this ball
+            // Check if a grid node is already occupied by another ball on the same face
+        isNodeOccupied(gridX, gridY, ignoreBallIndex = -1) {
+            // Get the face of the ball being moved (if ignoreBallIndex is valid)
+            let movingBallFace = 'front'; // Default to front
+            if (ignoreBallIndex >= 0 && ignoreBallIndex < this.balls.length) {
+                movingBallFace = this.getBallCurrentFace(this.balls[ignoreBallIndex]);
+            }
+            
+            // Check if the moving ball is trying to return to a previously visited node
+            if (ignoreBallIndex >= 0 && ignoreBallIndex < this.balls.length) {
+                const movingBall = this.balls[ignoreBallIndex];
+                if (movingBall.hasTail && movingBall.visitedNodes) {
+                    // Check if this node is in the ball's visited nodes list
+                    const isPreviouslyVisited = movingBall.visitedNodes.some(node => 
+                        node.x === gridX && node.y === gridY && node.face === movingBallFace
+                    );
+                    
+                    // If it's a previously visited node, allow the ball to return
+                    if (isPreviouslyVisited) {
+                        return false; // Not occupied for this ball
+                    }
                 }
             }
-        }
-        
-        // Check if node has a tail property (occupied by any ball)
-        if (this.nodeTails[movingBallFace] && this.nodeTails[movingBallFace][`${gridY}_${gridX}`]) {
-            // Check if the tail belongs to the moving ball
-            const tailData = this.nodeTails[movingBallFace][`${gridY}_${gridX}`];
-            if (tailData.ballIndex === ignoreBallIndex) {
-                return false; // Not occupied for this ball (it's their own tail)
+            
+            // Check if node has a tail property (occupied by any ball)
+            if (this.nodeTails[movingBallFace] && this.nodeTails[movingBallFace][`${gridY}_${gridX}`]) {
+                // Check if the tail belongs to the moving ball
+                const tailData = this.nodeTails[movingBallFace][`${gridY}_${gridX}`];
+                if (tailData.ballIndex === ignoreBallIndex) {
+                    return false; // Not occupied for this ball (it's their own tail)
+                }
+                return true; // Occupied by another ball's tail
             }
-            return true; // Occupied by another ball's tail
+            
+            // Check if any other ball is at this position
+            for (let idx = 0; idx < this.balls.length; idx++) {
+                if (idx === ignoreBallIndex) continue;
+                
+                const otherBall = this.balls[idx];
+                // Only check balls on the same face
+                const otherBallFace = this.getBallCurrentFace(otherBall);
+                if (otherBallFace !== movingBallFace) continue;
+                
+                const otherGridX = Math.round((otherBall.x - this.boardStartX) / this.gridSize);
+                const otherGridY = Math.round((otherBall.y - this.boardStartY) / this.gridSize);
+                
+                if (otherGridX === gridX && otherGridY === gridY) {
+                    return true;
+                }
+            }
+            
+            return false;
         }
-        
-        return this.balls.some((otherBall, idx) => {
-            if (idx === ignoreBallIndex) return false;
-            
-            // Only check balls on the same face
-            const otherBallFace = this.getBallCurrentFace(otherBall);
-            if (otherBallFace !== movingBallFace) return false;
-            
-            const otherGridX = Math.round((otherBall.x - this.boardStartX) / this.gridSize);
-            const otherGridY = Math.round((otherBall.y - this.boardStartY) / this.gridSize);
-            return otherGridX === gridX && otherGridY === gridY;
-        });
-    }
 
     // Check if a well destination is occupied on the other face
     isWellDestinationOccupied(wellGridX, wellGridY, ballIndex) {
@@ -1877,25 +1888,20 @@ class GameManager {
 
 
 
-    // Check if two adjacent nodes are connected via valid paths for a specific ball
+        // Check if two adjacent nodes are connected via valid paths for a specific ball
     areNodesConnected(fromGridX, fromGridY, toGridX, toGridY, ballIndex) {
         // Only allow horizontal or vertical movement (no diagonal)
         const deltaX = Math.abs(toGridX - fromGridX);
         const deltaY = Math.abs(toGridY - fromGridY);
-        
-
         
         if ((deltaX === 1 && deltaY === 0) || (deltaX === 0 && deltaY === 1)) {
             // Check if both nodes allow this ball to move on them
             const fromNodeAllows = this.canBallMoveToNode(ballIndex, fromGridX, fromGridY);
             const toNodeAllows = this.canBallMoveToNode(ballIndex, toGridX, toGridY);
             
-    
-            
             return fromNodeAllows && toNodeAllows;
         }
         
-
         return false;
     }
 
@@ -1904,7 +1910,9 @@ class GameManager {
     // Check if a ball can move from its current position to a target position
     isValidPathMove(ballIndex, targetGridX, targetGridY) {
         const ball = this.balls[ballIndex];
-        if (!ball) return false;
+        if (!ball) {
+            return false;
+        }
         
         // Get current grid position
         const currentGridX = Math.round((ball.x - this.boardStartX) / this.gridSize);
@@ -1914,11 +1922,9 @@ class GameManager {
         const currentNodeType = this.getNodeTypeAt(currentGridX, currentGridY);
         const targetNodeType = this.getNodeTypeAt(targetGridX, targetGridY);
         
-
-        
         // Check if target node allows this ball
-        if (!this.canBallMoveToNode(ballIndex, targetGridX, targetGridY)) {
-
+        const canMoveToNode = this.canBallMoveToNode(ballIndex, targetGridX, targetGridY);
+        if (!canMoveToNode) {
             return false;
         }
         
@@ -2041,7 +2047,12 @@ class GameManager {
 
 
     moveBallToPosition(x, y, animate = false) {
-        if (this.selectedBallIndex === -1) return;
+        if (this.selectedBallIndex === -1) {
+            return;
+        }
+        
+        // Debug coordinate conversion
+        const gridCoords = this.pointerToGridCoordinates(x, y);
         
         const ball = this.balls[this.selectedBallIndex];
         
@@ -2079,17 +2090,18 @@ class GameManager {
         
         if (isOnSwitch && isMovingToAdjacent) {
             // Allow movement from switch to adjacent nodes without path validation
-
         } else {
             // Always validate path-based moves, even during dragging
             // This prevents balls from moving to invalid positions during drag
-            if (!this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY)) {
+            const isValidPath = this.isValidPathMove(this.selectedBallIndex, targetGridX, targetGridY);
+            if (!isValidPath) {
                 return; // Skip movement if not allowed by path rules
             }
         }
         
         // Prevent two balls in the same node
-        if (this.isNodeOccupied(targetGridX, targetGridY, this.selectedBallIndex)) {
+        const isNodeOccupied = this.isNodeOccupied(targetGridX, targetGridY, this.selectedBallIndex);
+        if (isNodeOccupied) {
             return; // Skip movement if target node is occupied
         }
         
@@ -2621,6 +2633,36 @@ class GameManager {
             this.appReference.currentLevel = levelNumber;
         }
         
+        // Clean up any existing animations and states before loading new level
+        
+        this.cleanupAnimations();
+        
+        // Reset ball interaction states
+        this.selectedBallIndex = -1;
+        this.touchStartPos = null;
+        this.isDragging = false;
+        this.ballOriginNode = null;
+        
+        // Reset enhanced movement system arrays to prevent state persistence
+        this.connectedNodes = [];
+        this.lastNodePositions = [];
+        this.isBallClamped = [];
+        this.transitionInProgress = [];
+        this.isBacktracking = [];
+        this.backtrackingQueue = [];
+        
+                // Reset sticker activation state to prevent persistence between levels
+        this.activatedStickers = {
+            front: {},
+            rear: {}
+        };
+        
+        // Reset tail system data to prevent persistence between levels
+        this.nodeTails = {
+            front: {},
+            rear: {}
+        };
+        
         // Always flip board to front face before level loading (invisible to user)
         this.flipToFrontFaceSilently();
         
@@ -2710,8 +2752,9 @@ class GameManager {
             // Add toggle button if board has rear face (after board position is calculated)
             this.updateToggleButton();
             
-            // Initialize balls array from level data
+                        // Initialize balls array from level data
             this.initializeBalls();
+
             
             // Initialize enhanced ball movement system
             this.initializeEnhancedBallMovement();
@@ -3620,6 +3663,7 @@ class GameManager {
         
         // Set flag to indicate this is a level progression (not a fresh start)
         this.isLevelProgression = true;
+
         
         if (this.currentLevel > CONSTANTS.GAME_CONFIG.ACTUAL_MAX_LEVEL) {
             // Show prize scene instead of loading a level
@@ -5664,6 +5708,8 @@ class GameManager {
     
     // Check if a ball can access a specific node type (ignoring directional constraints)
     canBallAccessNodeType(ballIndex, nodeType) {
+
+        
         // Path for all balls ('0') can be used by any ball
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
             return true;
@@ -5699,6 +5745,7 @@ class GameManager {
         
         // STICKER nodes can be used by any ball
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
+    
             return true;
         }
         
@@ -5722,6 +5769,7 @@ class GameManager {
             return true;
         }
         
+
         return false;
     }
     
@@ -5821,52 +5869,54 @@ class GameManager {
         return { x: gridX, y: gridY };
     }
 
-    // Calculate connected nodes for a specific ball
-    calculateConnectedNodes(ballIndex) {
-        const nodes = this.getCurrentNodes();
-        if (!nodes) return [];
-        
-        const currentPos = this.getBallGridPosition(ballIndex);
-        const connected = [];
-        
-        // Get the current node type to check for directional constraints
-        const currentNodeType = this.getNodeType(currentPos.x, currentPos.y);
-        
-        // Check all four adjacent directions
-        const directions = [
-            { dx: 1, dy: 0 },   // Right
-            { dx: -1, dy: 0 },  // Left
-            { dx: 0, dy: 1 },   // Down
-            { dx: 0, dy: -1 }   // Up
-        ];
-        
-        for (const dir of directions) {
-            const newX = currentPos.x + dir.dx;
-            const newY = currentPos.y + dir.dy;
-            
-            // Check bounds
-            if (newY < 0 || newY >= nodes.length || 
-                newX < 0 || newX >= nodes[newY].length) {
-                continue;
+            // Calculate connected nodes for a specific ball
+        calculateConnectedNodes(ballIndex) {
+            const nodes = this.getCurrentNodes();
+            if (!nodes) {
+                return [];
             }
             
-            // Check if the ball can move in this direction from its current position
-            const canMoveInDirection = this.canBallMoveInDirectionFromCurrent(ballIndex, dir, currentNodeType);
-            if (!canMoveInDirection) {
-                continue;
+            const currentPos = this.getBallGridPosition(ballIndex);
+            const connected = [];
+            
+            // Get the current node type to check for directional constraints
+            const currentNodeType = this.getNodeType(currentPos.x, currentPos.y);
+            
+            // Check all four adjacent directions
+            const directions = [
+                { dx: 1, dy: 0 },   // Right
+                { dx: -1, dy: 0 },  // Left
+                { dx: 0, dy: 1 },   // Down
+                { dx: 0, dy: -1 }   // Up
+            ];
+            
+            for (const dir of directions) {
+                const newX = currentPos.x + dir.dx;
+                const newY = currentPos.y + dir.dy;
+                
+                // Check bounds
+                if (newY < 0 || newY >= nodes.length || 
+                    newX < 0 || newX >= nodes[newY].length) {
+                    continue;
+                }
+                
+                // Check if the ball can move in this direction from its current position
+                const canMoveInDirection = this.canBallMoveInDirectionFromCurrent(ballIndex, dir, currentNodeType);
+                if (!canMoveInDirection) {
+                    continue;
+                }
+                
+                // Check if node is accessible and unoccupied
+                const canMove = this.canBallMoveToNode(ballIndex, newX, newY);
+                const isOccupied = this.isNodeOccupied(newX, newY, ballIndex);
+                
+                if (canMove && !isOccupied) {
+                    connected.push({ x: newX, y: newY });
+                }
             }
             
-            // Check if node is accessible and unoccupied
-            const canMove = this.canBallMoveToNode(ballIndex, newX, newY);
-            const isOccupied = this.isNodeOccupied(newX, newY, ballIndex);
-            
-            if (canMove && !isOccupied) {
-                connected.push({ x: newX, y: newY });
-            }
+            return connected;
         }
-        
-        return connected;
-    }
     
     // Check if a ball can move in a specific direction from its current position
     canBallMoveInDirectionFromCurrent(ballIndex, direction, currentNodeType) {
@@ -5943,37 +5993,39 @@ class GameManager {
         this.recalculateAllConnectedNodes();
     }
 
-    // Find closest destination node from connected nodes
-    findClosestDestination(ballIndex, touchPos) {
-        const connected = this.connectedNodes[ballIndex];
-        if (!connected || connected.length === 0) return null;
-        
-        // Get current node position
-        const lastNode = this.lastNodePositions[ballIndex];
-        const lastNodeX = this.boardStartX + lastNode.x * this.gridSize;
-        const lastNodeY = this.boardStartY + lastNode.y * this.gridSize;
-        
-        // Calculate distance from touch to current node
-        const currentDistance = this.manhattanDistance(touchPos.x, touchPos.y, lastNodeX, lastNodeY);
-        
-        let closestNode = null;
-        let closestDistance = Infinity;
-        
-        for (const node of connected) {
-            const nodeX = this.boardStartX + node.x * this.gridSize;
-            const nodeY = this.boardStartY + node.y * this.gridSize;
-            
-            const distance = this.manhattanDistance(touchPos.x, touchPos.y, nodeX, nodeY);
-            
-            // Only consider nodes that are closer to touch than current position
-            if (distance < currentDistance && distance < closestDistance) {
-                closestDistance = distance;
-                closestNode = node;
+            // Find closest destination node from connected nodes
+        findClosestDestination(ballIndex, touchPos) {
+            const connected = this.connectedNodes[ballIndex];
+            if (!connected || connected.length === 0) {
+                return null;
             }
+            
+            // Get current node position
+            const lastNode = this.lastNodePositions[ballIndex];
+            const lastNodeX = this.boardStartX + lastNode.x * this.gridSize;
+            const lastNodeY = this.boardStartY + lastNode.y * this.gridSize;
+            
+            // Calculate distance from touch to current node
+            const currentDistance = this.manhattanDistance(touchPos.x, touchPos.y, lastNodeX, lastNodeY);
+            
+            let closestNode = null;
+            let closestDistance = Infinity;
+            
+            for (const node of connected) {
+                const nodeX = this.boardStartX + node.x * this.gridSize;
+                const nodeY = this.boardStartY + node.y * this.gridSize;
+                
+                const distance = this.manhattanDistance(touchPos.x, touchPos.y, nodeX, nodeY);
+                
+                // Only consider nodes that are closer to touch than current position
+                if (distance < currentDistance && distance < closestDistance) {
+                    closestDistance = distance;
+                    closestNode = node;
+                }
+            }
+            
+            return closestNode;
         }
-        
-        return closestNode;
-    }
 
     // Start transition animation for a ball
     startBallTransition(ballIndex, targetNode, customDuration = null) {
@@ -6180,33 +6232,34 @@ class GameManager {
     }
 
     // Enhanced touch move handling for clamped balls
-    handleClampedBallMovement(ballIndex, touchPos) {
-        if (!this.isBallClamped[ballIndex]) return;
-        
-        // Check if we need to start a transition
-        if (this.transitionInProgress[ballIndex]) {
-            return; // Already in transition, wait for completion
-        }
-        
-        const lastNode = this.lastNodePositions[ballIndex];
-        const lastNodeX = this.boardStartX + lastNode.x * this.gridSize;
-        const lastNodeY = this.boardStartY + lastNode.y * this.gridSize;
-        
-        // Calculate distance from touch to last node
-        const touchDist = this.manhattanDistance(touchPos.x, touchPos.y, lastNodeX, lastNodeY);
-        
-        // Check if touch is far enough to start transition
-        const threshold = this.gridSize * 0.65;
-        
-        if (touchDist > threshold) {
-            // Find closest destination from connected nodes
-            const closestDestination = this.findClosestDestination(ballIndex, touchPos);
+            handleClampedBallMovement(ballIndex, touchPos) {
+            if (!this.isBallClamped[ballIndex]) return;
             
-            if (closestDestination) {
-                this.startBallTransition(ballIndex, closestDestination);
+            // Check if we need to start a transition
+            if (this.transitionInProgress[ballIndex]) {
+                return; // Already in transition, wait for completion
+            }
+            
+            const lastNode = this.lastNodePositions[ballIndex];
+            const lastNodeX = this.boardStartX + lastNode.x * this.gridSize;
+            const lastNodeY = this.boardStartY + lastNode.y * this.gridSize;
+            
+            // Calculate distance from touch to last node
+            const touchDist = this.manhattanDistance(touchPos.x, touchPos.y, lastNodeX, lastNodeY);
+            
+            // Check if touch is far enough to start transition
+            // Reduced threshold to make ball movement more responsive
+            const threshold = this.gridSize * 0.35; // Was 0.65, now 0.35 for better responsiveness
+            
+            if (touchDist > threshold) {
+                // Find closest destination from connected nodes
+                const closestDestination = this.findClosestDestination(ballIndex, touchPos);
+                
+                if (closestDestination) {
+                    this.startBallTransition(ballIndex, closestDestination);
+                }
             }
         }
-    }
 
     /**
      * Calculate Euclidean distance between two points
@@ -7235,7 +7288,8 @@ class GameManager {
                 if (!ball.visitedNodes) {
                     ball.visitedNodes = [];
                 }
-                // Activate the sticker with the ball's color
+                // Activate the sticker immediately if ball starts on it
+                // This ensures the sticker is colored correctly from the start
                 this.activateSticker(startX, startY, ballIndex, ball.color);
             } else {
                 ball.hasTail = false;
