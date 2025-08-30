@@ -5132,6 +5132,27 @@ class GameManager {
                     let isOccupied = false;
                     let ballColor = 'white';
                     
+                    // Check for tail data first (immediate color detection)
+                    const gridX = Math.round((centerX - this.boardStartX) / this.gridSize);
+                    const gridY = Math.round((centerY - this.boardStartY) / this.gridSize);
+                    if (this.nodeTails[this.currentFace] && this.nodeTails[this.currentFace][`${gridY}_${gridX}`]) {
+                        const tailData = this.nodeTails[this.currentFace][`${gridY}_${gridX}`];
+                        const tailBall = this.balls[tailData.ballIndex];
+                        if (tailBall) {
+                            isOccupied = true;
+                            ballColor = tailBall.color;
+                        }
+                    }
+                    
+                    // If no tail data, check for occupying ball
+                    if (!isOccupied) {
+                        const occupyingBall = this.getSharedGoalOccupyingBall(centerX, centerY, this.currentFace);
+                        if (occupyingBall) {
+                            isOccupied = true;
+                            ballColor = occupyingBall.color;
+                        }
+                    }
+                    
                     if (anyBallTransitioning) {
                         // During transitions, use current state without updating
                         const currentState = this.getGoalState(goalKey);
@@ -5144,8 +5165,6 @@ class GameManager {
                                 ballColor = occupyingBall.color;
                             } else {
                                 // Check tail disc color
-                                const gridX = Math.round((centerX - this.boardStartX) / this.gridSize);
-                                const gridY = Math.round((centerY - this.boardStartY) / this.gridSize);
                                 if (this.nodeTails[this.currentFace] && this.nodeTails[this.currentFace][`${gridY}_${gridX}`]) {
                                     const tailData = this.nodeTails[this.currentFace][`${gridY}_${gridX}`];
                                     const tailBall = this.balls[tailData.ballIndex];
@@ -5156,32 +5175,11 @@ class GameManager {
                             }
                         }
                     } else {
-                        // Not transitioning - check occupation and update state
-                        isOccupied = this.isSharedGoalOccupied(centerX, centerY, this.currentFace);
-                        
-                        // Only update animation if state actually changed to prevent flickering
+                        // Not transitioning - update state if needed
                         const currentState = this.getGoalState(goalKey);
                         const targetState = isOccupied ? 'active' : 'rest';
                         if (currentState !== targetState) {
                             this.updateGoalAnimation(goalKey, isOccupied);
-                        }
-                        
-                        if (isOccupied) {
-                            const occupyingBall = this.getSharedGoalOccupyingBall(centerX, centerY, this.currentFace);
-                            if (occupyingBall) {
-                                ballColor = occupyingBall.color;
-                            } else {
-                                // Use tail disc color
-                                const gridX = Math.round((centerX - this.boardStartX) / this.gridSize);
-                                const gridY = Math.round((centerY - this.boardStartY) / this.gridSize);
-                                if (this.nodeTails[this.currentFace] && this.nodeTails[this.currentFace][`${gridY}_${gridX}`]) {
-                                    const tailData = this.nodeTails[this.currentFace][`${gridY}_${gridX}`];
-                                    const tailBall = this.balls[tailData.ballIndex];
-                                    if (tailBall) {
-                                        ballColor = tailBall.color;
-                                    }
-                                }
-                            }
                         }
                     }
                     
