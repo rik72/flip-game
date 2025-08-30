@@ -1802,6 +1802,13 @@ class GameManager {
         const currentBallFace = this.getBallCurrentFace(ball);
         const destinationFace = currentBallFace === 'front' ? 'rear' : 'front';
         
+        // DEBUG: Log coordinate calculations and ball info
+        console.log(`[DEBUG] isWellDestinationOccupied: wellGridX=${wellGridX}, wellGridY=${wellGridY}, ballIndex=${ballIndex}`);
+        console.log(`[DEBUG] Board dimensions: width=${boardGridWidth}, height=${nodes.length}`);
+        console.log(`[DEBUG] Transfer coordinates: transferX=${transferX}, transferY=${transferY}`);
+        console.log(`[DEBUG] Ball face: current=${currentBallFace}, destination=${destinationFace}`);
+        console.log(`[DEBUG] Ball position: x=${ball.x}, y=${ball.y}`);
+        
         // Check if the destination coordinates are occupied by a ball on the destination face
         const isOccupiedByBall = this.balls.some((otherBall, idx) => {
             if (idx === ballIndex) return false; // Don't check the ball being transferred
@@ -1815,28 +1822,73 @@ class GameManager {
             const otherGridY = Math.round((otherBall.y - this.boardStartY) / this.gridSize);
             
             // Check if the other ball is at the destination coordinates
-            return otherGridX === transferX && otherGridY === transferY;
+            const isAtDestination = otherGridX === transferX && otherGridY === transferY;
+            
+            // DEBUG: Log ball occupation check
+            if (otherBallFace === destinationFace) {
+                console.log(`[DEBUG] Checking ball ${idx}: face=${otherBallFace}, gridX=${otherGridX}, gridY=${otherGridY}, atDestination=${isAtDestination}`);
+            }
+            
+            return isAtDestination;
         });
+        
+        console.log(`[DEBUG] Destination occupied by ball: ${isOccupiedByBall}`);
         
         // Check if the destination coordinates are occupied by a tail disc on the destination face
         const destinationNodeKey = `${transferY}_${transferX}`;
         let destinationTailDiscData = this.nodeTails[destinationFace] && 
                                      this.nodeTails[destinationFace][destinationNodeKey];
         
+        console.log(`[DEBUG] Destination tail disc check: face=${destinationFace}, nodeKey=${destinationNodeKey}, hasTail=${!!destinationTailDiscData}`);
+        
         // BACKUP CHECK: Also check the other face in case of timing issues with face toggles
+        // BUT use the correct nodeKey for the other face (mirrored coordinates)
         if (!destinationTailDiscData) {
             const otherFace = destinationFace === 'front' ? 'rear' : 'front';
+            // Calculate the mirrored coordinates for the other face
+            const otherFaceTransferX = boardGridWidth - 1 - transferX;
+            const otherFaceTransferY = transferY;
+            const otherFaceNodeKey = `${otherFaceTransferY}_${otherFaceTransferX}`;
+            
             destinationTailDiscData = this.nodeTails[otherFace] && 
-                                    this.nodeTails[otherFace][destinationNodeKey];
+                                    this.nodeTails[otherFace][otherFaceNodeKey];
+            console.log(`[DEBUG] Backup tail disc check: face=${otherFace}, nodeKey=${otherFaceNodeKey}, hasTail=${!!destinationTailDiscData}`);
         }
         
         // If there's a tail disc at the destination, check if it belongs to the same ball (backtracking)
         if (destinationTailDiscData) {
+            console.log(`[DEBUG] Destination tail disc found: ballIndex=${destinationTailDiscData.ballIndex}, currentBallIndex=${ballIndex}`);
+            
             if (destinationTailDiscData.ballIndex === ballIndex) {
-                // Same ball - this is backtracking, allow the transfer
-                return isOccupiedByBall; // Only block if there's another ball
+                console.log(`[DEBUG] Same ball tail disc - checking if it's the last visited node`);
+                
+                // Same ball - check if this is the LAST visited node (for backtracking)
+                if (ball && ball.visitedNodes && ball.visitedNodes.length > 0) {
+                    const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
+                    const isLastVisitedNode = lastVisitedNode.x === transferX && 
+                                            lastVisitedNode.y === transferY && 
+                                            lastVisitedNode.face === destinationFace;
+                    
+                    console.log(`[DEBUG] Last visited node: x=${lastVisitedNode.x}, y=${lastVisitedNode.y}, face=${lastVisitedNode.face}`);
+                    console.log(`[DEBUG] Is last visited node: ${isLastVisitedNode}`);
+                    
+                    if (isLastVisitedNode) {
+                        // This is the last visited node - allow backtracking
+                        console.log(`[DEBUG] Allowing transfer - last visited node backtracking`);
+                        return isOccupiedByBall; // Only block if there's another ball
+                    } else {
+                        // This is a previous (non-last) visited node - block transfer to prevent tail corruption
+                        console.log(`[DEBUG] Blocking transfer - previous visited node (not last)`);
+                        return true;
+                    }
+                } else {
+                    // Ball has no visited nodes - this shouldn't happen with a tail disc, but block to be safe
+                    console.log(`[DEBUG] Blocking transfer - ball has no visited nodes`);
+                    return true;
+                }
             } else {
                 // Different ball - block the transfer
+                console.log(`[DEBUG] Blocking transfer - different ball's tail disc`);
                 return true;
             }
         }
@@ -1847,30 +1899,73 @@ class GameManager {
         let wellTailDiscData = this.nodeTails[currentBallFace] && 
                               this.nodeTails[currentBallFace][wellNodeKey];
         
+        console.log(`[DEBUG] Well node tail disc check: face=${currentBallFace}, nodeKey=${wellNodeKey}, hasTail=${!!wellTailDiscData}`);
+        
         // BACKUP CHECK: Also check the destination face in case of timing issues with face toggles
+        // BUT use the correct nodeKey for the destination face (mirrored coordinates)
         if (!wellTailDiscData) {
+            // Calculate the mirrored coordinates for the destination face
+            const destFaceWellX = boardGridWidth - 1 - wellGridX;
+            const destFaceWellY = wellGridY;
+            const destFaceWellNodeKey = `${destFaceWellY}_${destFaceWellX}`;
+            
             wellTailDiscData = this.nodeTails[destinationFace] && 
-                              this.nodeTails[destinationFace][wellNodeKey];
+                              this.nodeTails[destinationFace][destFaceWellNodeKey];
+            console.log(`[DEBUG] Backup well node tail disc check: face=${destinationFace}, nodeKey=${destFaceWellNodeKey}, hasTail=${!!wellTailDiscData}`);
         }
         
         if (wellTailDiscData && wellTailDiscData.ballIndex === ballIndex) {
-            // Same ball has a tail disc at the well node - this is also backtracking
-            return isOccupiedByBall; // Only block if there's another ball
+            console.log(`[DEBUG] Well node tail disc belongs to same ball - checking if it's the last visited node`);
+            
+            // Same ball has a tail disc at the well node - check if this is the LAST visited node (for backtracking)
+            if (ball && ball.visitedNodes && ball.visitedNodes.length > 0) {
+                const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
+                const isLastVisitedNode = lastVisitedNode.x === wellGridX && 
+                                        lastVisitedNode.y === wellGridY && 
+                                        lastVisitedNode.face === currentBallFace;
+                
+                console.log(`[DEBUG] Well node last visited check: wellGridX=${wellGridX}, wellGridY=${wellGridY}, currentFace=${currentBallFace}`);
+                console.log(`[DEBUG] Last visited node: x=${lastVisitedNode.x}, y=${lastVisitedNode.y}, face=${lastVisitedNode.face}`);
+                console.log(`[DEBUG] Is last visited node: ${isLastVisitedNode}`);
+                
+                if (isLastVisitedNode) {
+                    // This is the last visited node - allow backtracking
+                    console.log(`[DEBUG] Allowing transfer - well node is last visited node`);
+                    return isOccupiedByBall; // Only block if there's another ball
+                } else {
+                    // This is a previous (non-last) visited node - block transfer to prevent tail corruption
+                    console.log(`[DEBUG] Blocking transfer - well node is previous visited node (not last)`);
+                    return true;
+                }
+            } else {
+                // Ball has no visited nodes - this shouldn't happen with a tail disc, but block to be safe
+                console.log(`[DEBUG] Blocking transfer - ball has no visited nodes (well node case)`);
+                return true;
+            }
         }
         
-        // For balls without tails, check if they have visited the destination node before (backtracking)
+        // For balls without tails, check if the destination is their LAST visited node (backtracking)
         if (ball && ball.visitedNodes && ball.visitedNodes.length > 0) {
-            const hasVisitedDestination = ball.visitedNodes.some(node => 
-                node.x === transferX && node.y === transferY && node.face === destinationFace
-            );
-            if (hasVisitedDestination) {
-                // Ball has been to destination before - this is backtracking, allow the transfer
+            const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
+            const isLastVisitedNode = lastVisitedNode.x === transferX && 
+                                    lastVisitedNode.y === transferY && 
+                                    lastVisitedNode.face === destinationFace;
+            
+            console.log(`[DEBUG] Ball without tail check: hasTail=${ball.hasTail}, visitedNodes.length=${ball.visitedNodes.length}`);
+            console.log(`[DEBUG] Last visited node: x=${lastVisitedNode.x}, y=${lastVisitedNode.y}, face=${lastVisitedNode.face}`);
+            console.log(`[DEBUG] Is last visited node: ${isLastVisitedNode}`);
+            
+            if (isLastVisitedNode) {
+                // Destination is the last visited node - this is backtracking, allow the transfer
+                console.log(`[DEBUG] Allowing transfer - destination is last visited node (ball without tail)`);
                 return isOccupiedByBall; // Only block if there's another ball
             }
         }
         
         // Return true if a ball occupies the destination
-        return isOccupiedByBall;
+        const finalResult = isOccupiedByBall;
+        console.log(`[DEBUG] Final result: transfer ${finalResult ? 'BLOCKED' : 'ALLOWED'} (occupied by ball: ${isOccupiedByBall})`);
+        return finalResult;
     }
 
     // Get the node type at a specific grid position
