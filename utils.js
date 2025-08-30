@@ -115,13 +115,13 @@ class Utils {
 		const seed2 = (checksum >> 16) & 0xFFFF;
 		
 		// Generate dark colors (values between 16-64 for dark, 8-32 for darker)
-		const r1 = 20 + (seed1 % 50);
-		const g1 = 20 + ((seed1 >> 4) % 50);
-		const b1 = 20 + ((seed1 >> 8) % 50);
+		const r1 = 28 + (seed1 % 50);
+		const g1 = 28 + ((seed1 >> 4) % 50);
+		const b1 = 28 + ((seed1 >> 8) % 50);
 		
-		const r2 = 16 + (seed2 % 24);
-		const g2 = 16 + ((seed2 >> 4) % 24);
-		const b2 = 16 + ((seed2 >> 8) % 24);
+		const r2 = 24 + (seed2 % 24);
+		const g2 = 24 + ((seed2 >> 4) % 24);
+		const b2 = 24 + ((seed2 >> 8) % 24);
 		
 		// Convert to hex colors
 		const topColor = '#' + 

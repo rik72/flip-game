@@ -944,8 +944,6 @@ class LevelEditor {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
-        alert(`Level ${this.currentLevel} saved!`);
     }
     
     loadLevel() {
