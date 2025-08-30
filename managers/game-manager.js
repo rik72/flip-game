@@ -1502,6 +1502,111 @@ class GameManager {
         return this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.GOAL_OUTER_RADIUS_RATIO;
     }
 
+    /**
+     * Gets the ball occupying a shared goal node, if any
+     * @param {number} centerX - The X coordinate of the shared goal center
+     * @param {number} centerY - The Y coordinate of the shared goal center
+     * @param {string} face - The face ('front' or 'rear')
+     * @returns {Object|null} The occupying ball object or null if unoccupied
+     */
+    getSharedGoalOccupyingBall(centerX, centerY, face) {
+        // Check if any ball is at this position
+        for (let i = 0; i < this.balls.length; i++) {
+            const ball = this.balls[i];
+            const ballFace = this.getBallCurrentFace(ball);
+            
+            if (ballFace === face) {
+                // Check if ball is at this position (within a small tolerance)
+                const distance = Math.sqrt(
+                    Math.pow(ball.x - centerX, 2) + Math.pow(ball.y - centerY, 2)
+                );
+                
+                if (distance < this.gridSize * 0.5) { // Within half a grid cell
+                    return ball;
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Checks if a shared goal is occupied (by ball or tail disc)
+     * @param {number} centerX - The X coordinate of the shared goal center
+     * @param {number} centerY - The Y coordinate of the shared goal center
+     * @param {string} face - The face ('front' or 'rear')
+     * @returns {boolean} True if the shared goal is occupied
+     */
+    isSharedGoalOccupied(centerX, centerY, face) {
+        // Convert to grid coordinates
+        const gridX = Math.round((centerX - this.boardStartX) / this.gridSize);
+        const gridY = Math.round((centerY - this.boardStartY) / this.gridSize);
+        
+        // Check if any ball is at this position
+        const occupyingBall = this.getSharedGoalOccupyingBall(centerX, centerY, face);
+        if (occupyingBall) {
+            return true;
+        }
+        
+        // Check if there's a tail disc from any ball at this position
+        if (this.nodeTails[face] && this.nodeTails[face][`${gridY}_${gridX}`]) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Checks if all shared goals are occupied by exactly one ball each
+     * @returns {boolean} True if all shared goals are occupied
+     */
+    checkSharedGoalsOccupied() {
+        if (!this.board || !this.board.front) return true; // No board means no shared goals
+        
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return true;
+        
+        // Find all shared goal positions
+        const sharedGoalPositions = [];
+        for (let row = 0; row < nodes.length; row++) {
+            const rowArray = nodes[row];
+            for (let col = 0; col < rowArray.length; col++) {
+                const nodeType = rowArray[col];
+                if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
+                    const centerX = this.boardStartX + (col * this.gridSize);
+                    const centerY = this.boardStartY + (row * this.gridSize);
+                    sharedGoalPositions.push({ centerX, centerY, row, col });
+                }
+            }
+        }
+        
+        // If no shared goals, return true
+        if (sharedGoalPositions.length === 0) return true;
+        
+        // Check if each shared goal is occupied (by ball OR tail disc)
+        for (const goalPos of sharedGoalPositions) {
+            const isOccupied = this.isSharedGoalOccupied(goalPos.centerX, goalPos.centerY, this.currentFace);
+            if (!isOccupied) {
+                return false; // This shared goal is not occupied
+            }
+        }
+        
+        // Check that no ball occupies multiple shared goals (only count physical ball occupation)
+        const occupiedByBalls = new Set();
+        for (const goalPos of sharedGoalPositions) {
+            const occupyingBall = this.getSharedGoalOccupyingBall(goalPos.centerX, goalPos.centerY, this.currentFace);
+            if (occupyingBall) {
+                const ballIndex = this.balls.indexOf(occupyingBall);
+                if (occupiedByBalls.has(ballIndex)) {
+                    return false; // A ball occupies multiple shared goals
+                }
+                occupiedByBalls.add(ballIndex);
+            }
+        }
+        
+        return true;
+    }
+
     // Check if a goal position is occupied by a specific ball (by ball or tail disc)
     isGoalOccupied(goalX, goalY, face, ballIndex = -1) {
         // Check if the specific ball is at this goal position
@@ -2595,6 +2700,38 @@ class GameManager {
                 });
             }
         });
+        
+        // Initialize shared goal states
+        this.initializeSharedGoalStates();
+    }
+
+    /**
+     * Initialize shared goal states
+     */
+    initializeSharedGoalStates() {
+        if (!this.board || !this.board.front) return;
+        
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return;
+        
+        // Find all shared goal positions and initialize their states
+        for (let row = 0; row < nodes.length; row++) {
+            const rowArray = nodes[row];
+            for (let col = 0; col < rowArray.length; col++) {
+                const nodeType = rowArray[col];
+                if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
+                    const centerX = this.boardStartX + (col * this.gridSize);
+                    const centerY = this.boardStartY + (row * this.gridSize);
+                    
+                    // Check if this shared goal is occupied (by ball or tail disc)
+                    const isOccupied = this.isSharedGoalOccupied(centerX, centerY, this.currentFace);
+                    const goalKey = `shared_${centerX}_${centerY}_${this.currentFace}`;
+                    
+                    // Set initial state
+                    this.goalStates.set(goalKey, isOccupied ? 'active' : 'rest');
+                }
+            }
+        }
     }
 
     /**
@@ -2611,7 +2748,11 @@ class GameManager {
             return isAtGoal;
         });
         
-        if (allBallsAtGoal) {
+        // Check if all shared goals are occupied
+        const allSharedGoalsOccupied = this.checkSharedGoalsOccupied();
+        
+        // Both conditions must be met for level completion
+        if (allBallsAtGoal && allSharedGoalsOccupied) {
             this.levelCompleted();
         }
     }
@@ -2783,9 +2924,64 @@ class GameManager {
                 }
             });
         });
+        
+        // Create explosions for shared goals on the current face
+        this.createSharedGoalExplosions(explosionIndex);
     }
 
 
+
+    createSharedGoalExplosions(startIndex) {
+        if (!this.board || !this.board.front) return;
+        
+        const config = CONSTANTS.ANIMATION_CONFIG;
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return;
+        
+        let explosionIndex = startIndex;
+        
+        // Find all shared goal positions on the current face
+        for (let row = 0; row < nodes.length; row++) {
+            const rowArray = nodes[row];
+            for (let col = 0; col < rowArray.length; col++) {
+                const nodeType = rowArray[col];
+                if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
+                    const centerX = this.boardStartX + (col * this.gridSize);
+                    const centerY = this.boardStartY + (row * this.gridSize);
+                    
+                    // Check if this shared goal is occupied (by ball OR tail disc)
+                    const isOccupied = this.isSharedGoalOccupied(centerX, centerY, this.currentFace);
+                    
+                    if (isOccupied) {
+                        // Get the color for the explosion
+                        let ballColorHex = '#FFFFFF'; // Default white
+                        
+                        // First check if there's a ball occupying it
+                        const occupyingBall = this.getSharedGoalOccupyingBall(centerX, centerY, this.currentFace);
+                        if (occupyingBall) {
+                            ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[occupyingBall.color] || '#FFFFFF';
+                        } else {
+                            // Use tail disc color
+                            const gridX = Math.round((centerX - this.boardStartX) / this.gridSize);
+                            const gridY = Math.round((centerY - this.boardStartY) / this.gridSize);
+                            if (this.nodeTails[this.currentFace] && this.nodeTails[this.currentFace][`${gridY}_${gridX}`]) {
+                                const tailData = this.nodeTails[this.currentFace][`${gridY}_${gridX}`];
+                                const tailBall = this.balls[tailData.ballIndex];
+                                if (tailBall) {
+                                    ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[tailBall.color] || '#FFFFFF';
+                                }
+                            }
+                        }
+                        
+                        setTimeout(() => {
+                            this.createExplosionDisc(centerX, centerY, config, explosionIndex, ballColorHex);
+                        }, explosionIndex * config.EXPLOSION_DELAY);
+                        explosionIndex++;
+                    }
+                }
+            }
+        }
+    }
 
     createExplosionDisc(x, y, config, index, ballColorHex) {
         if (!this.canvas) return;
@@ -3443,6 +3639,9 @@ class GameManager {
         
         // Draw end goals
         this.renderEndGoals();
+        
+        // Draw shared goals
+        this.renderSharedGoals();
         
         // Draw trap open states (under balls)
         this.renderTrapOpenStates();
@@ -4909,6 +5108,97 @@ class GameManager {
         });
     }
 
+    // Render shared goals with animation
+    renderSharedGoals() {
+        if (!this.board || !this.board.front) return;
+        
+        const nodes = this.getCurrentNodes();
+        if (!nodes) return;
+        
+        // Check if any ball is currently transitioning
+        const anyBallTransitioning = this.transitionInProgress.some(inProgress => inProgress);
+        
+        // Find all shared goal positions
+        for (let row = 0; row < nodes.length; row++) {
+            const rowArray = nodes[row];
+            for (let col = 0; col < rowArray.length; col++) {
+                const nodeType = rowArray[col];
+                if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
+                    const centerX = this.boardStartX + (col * this.gridSize);
+                    const centerY = this.boardStartY + (row * this.gridSize);
+                    const goalKey = `shared_${centerX}_${centerY}_${this.currentFace}`;
+                    
+                    // Get occupation status and color
+                    let isOccupied = false;
+                    let ballColor = 'white';
+                    
+                    if (anyBallTransitioning) {
+                        // During transitions, use current state without updating
+                        const currentState = this.getGoalState(goalKey);
+                        isOccupied = currentState === 'active';
+                        
+                        if (isOccupied) {
+                            // Find which ball's color to use (from tail disc or last occupying ball)
+                            const occupyingBall = this.getSharedGoalOccupyingBall(centerX, centerY, this.currentFace);
+                            if (occupyingBall) {
+                                ballColor = occupyingBall.color;
+                            } else {
+                                // Check tail disc color
+                                const gridX = Math.round((centerX - this.boardStartX) / this.gridSize);
+                                const gridY = Math.round((centerY - this.boardStartY) / this.gridSize);
+                                if (this.nodeTails[this.currentFace] && this.nodeTails[this.currentFace][`${gridY}_${gridX}`]) {
+                                    const tailData = this.nodeTails[this.currentFace][`${gridY}_${gridX}`];
+                                    const tailBall = this.balls[tailData.ballIndex];
+                                    if (tailBall) {
+                                        ballColor = tailBall.color;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Not transitioning - check occupation and update state
+                        isOccupied = this.isSharedGoalOccupied(centerX, centerY, this.currentFace);
+                        
+                        // Only update animation if state actually changed to prevent flickering
+                        const currentState = this.getGoalState(goalKey);
+                        const targetState = isOccupied ? 'active' : 'rest';
+                        if (currentState !== targetState) {
+                            this.updateGoalAnimation(goalKey, isOccupied);
+                        }
+                        
+                        if (isOccupied) {
+                            const occupyingBall = this.getSharedGoalOccupyingBall(centerX, centerY, this.currentFace);
+                            if (occupyingBall) {
+                                ballColor = occupyingBall.color;
+                            } else {
+                                // Use tail disc color
+                                const gridX = Math.round((centerX - this.boardStartX) / this.gridSize);
+                                const gridY = Math.round((centerY - this.boardStartY) / this.gridSize);
+                                if (this.nodeTails[this.currentFace] && this.nodeTails[this.currentFace][`${gridY}_${gridX}`]) {
+                                    const tailData = this.nodeTails[this.currentFace][`${gridY}_${gridX}`];
+                                    const tailBall = this.balls[tailData.ballIndex];
+                                    if (tailBall) {
+                                        ballColor = tailBall.color;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Render the shared goal with 4-arc animation
+                    this.renderGoalWithArcs(centerX, centerY, ballColor, goalKey, isOccupied);
+                    
+                    // Render p0 path disc in center (like goal on p0 path)
+                    const pathDiscRadius = Math.max(CONSTANTS.RENDER_SIZE_CONFIG.PATH_NODE_MIN_SIZE, this.gridSize * CONSTANTS.RENDER_SIZE_CONFIG.PATH_NODE_RATIO);
+                    this.ctx.fillStyle = this.getPathColor(CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS);
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, pathDiscRadius, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                }
+            }
+        }
+    }
+
     // Render a goal with the new 4-arc animation system
     renderGoalWithArcs(centerX, centerY, ballColor, goalKey, isOccupied) {
         // Get ball color
@@ -5072,6 +5362,29 @@ class GameManager {
             return false;
         }
         
+        // Check if this node contains a tail disc from any ball (except for backtracking)
+        const currentFace = this.getBallCurrentFace(ball);
+        const nodeKey = `${gridY}_${gridX}`;
+        if (this.nodeTails[currentFace] && this.nodeTails[currentFace][nodeKey]) {
+            const tailData = this.nodeTails[currentFace][nodeKey];
+            
+            // Allow backtracking to the last visited node
+            if (ball && ball.hasTail && ball.visitedNodes && ball.visitedNodes.length > 0) {
+                const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
+                const isLastVisitedNode = lastVisitedNode.x === gridX && 
+                                        lastVisitedNode.y === gridY && 
+                                        lastVisitedNode.face === currentFace;
+                
+                if (isLastVisitedNode) {
+                    // Allow backtracking to the last visited node
+                } else {
+                    return false; // Block access to nodes with tail discs (except for backtracking)
+                }
+            } else {
+                return false; // Block access to nodes with tail discs
+            }
+        }
+        
         // For balls with tails, check if they're trying to move to a visited node
         if (ball && ball.hasTail && ball.visitedNodes && ball.visitedNodes.length > 0) {
             const currentFace = this.getBallCurrentFace(ball);
@@ -5157,6 +5470,11 @@ class GameManager {
             return true; // Allow free movement through switches
         }
         
+        // SHARED GOAL nodes can be accessed by any ball (free movement)
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
+            return true; // Allow free movement through shared goals
+        }
+        
         // Check if the ball can access this node type (ignoring directional constraints)
         const canAccessNodeType = this.canBallAccessNodeType(ballIndex, nodeType);
         if (!canAccessNodeType) {
@@ -5223,6 +5541,11 @@ class GameManager {
         
         // SWITCH nodes can be used by any ball
         if (nodeType.startsWith('s')) {
+            return true;
+        }
+        
+        // SHARED GOAL nodes can be used by any ball
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
             return true;
         }
         
@@ -5401,6 +5724,11 @@ class GameManager {
         
         // If the ball is on a switch node, it can move in any direction
         if (currentNodeType.startsWith('s')) {
+            return true;
+        }
+        
+        // If the ball is on a shared goal node, it can move in any direction
+        if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
             return true;
         }
         

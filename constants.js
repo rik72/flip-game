@@ -98,10 +98,10 @@ const CONSTANTS = {
 		TAIL_LINE_WIDTH_MULTIPLIER: 5.0, // Tail line width multiplier compared to normal lines (2.0 = 2x thicker)
 		
 		// Glow animation configuration
-		GLOW_SHADOW_MAX_OPACITY: 0.1, // Maximum opacity of the white glow shadow (0.0-1.0)
-		GLOW_SHADOW_MAX_RADIUS_RATIO: 1.6, // Maximum shadow radius as ratio of ball radius (0.8 = 80% of ball size)
-		GLOW_BRIGHTNESS_FACTOR: 0.4, // Brightness factor for glow color interpolation (0.0-1.0)
-		GLOW_CYCLE_DURATION: 2400, // Glow animation cycle duration in milliseconds
+		GLOW_SHADOW_MAX_OPACITY: 0.3, // Maximum opacity of the white glow shadow (0.0-1.0)
+		GLOW_SHADOW_MAX_RADIUS_RATIO: 1.8, // Maximum shadow radius as ratio of ball radius (0.8 = 80% of ball size)
+		GLOW_BRIGHTNESS_FACTOR: 0.6, // Brightness factor for glow color interpolation (0.0-1.0)
+		GLOW_CYCLE_DURATION: 3200, // Glow animation cycle duration in milliseconds
 		GLOW_STAGGER_DELAY: 800, // Delay between ball glow animations in milliseconds
 		
 	},
@@ -200,7 +200,9 @@ const CONSTANTS = {
 			SWITCH_LIGHTBLUE: 'sl',
 			SWITCH_YELLOW: 'sy',
 			SWITCH_PURPLE: 'sp',
-			SWITCH_ORANGE: 'so'
+			SWITCH_ORANGE: 'so',
+			// Shared goal node type
+			SHARED_GOAL: 'g0'
 		},
 		
 		// Node colors (only for square nodes, circles use their own colors)
@@ -236,7 +238,8 @@ const CONSTANTS = {
 			'sl': '#BBBBFF',  // Lightblue switch
 			'sy': '#FFFF00',  // Yellow switch
 			'sp': '#FF00FF',  // Purple switch
-			'so': '#FF6600'   // Orange switch
+			'so': '#FF6600',   // Orange switch
+			'g0': '#FFFFFF'   // Shared goal (white)
 		},
 		
 		// Ball colors mapping
