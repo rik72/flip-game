@@ -1810,7 +1810,7 @@ class GameManager {
         const destinationFace = currentBallFace === 'front' ? 'rear' : 'front';
         
         // Check if the destination coordinates are occupied by a ball on the destination face
-        return this.balls.some((otherBall, idx) => {
+        const isOccupiedByBall = this.balls.some((otherBall, idx) => {
             if (idx === ballIndex) return false; // Don't check the ball being transferred
             
             // Only check balls on the destination face
@@ -1824,6 +1824,25 @@ class GameManager {
             // Check if the other ball is at the destination coordinates
             return otherGridX === transferX && otherGridY === transferY;
         });
+        
+        // Check if the destination coordinates are occupied by a tail disc on the destination face
+        const nodeKey = `${transferY}_${transferX}`;
+        const tailDiscData = this.nodeTails[destinationFace] && 
+                           this.nodeTails[destinationFace][nodeKey];
+        
+        // If there's a tail disc, check if it belongs to the same ball (backtracking)
+        if (tailDiscData) {
+            if (tailDiscData.ballIndex === ballIndex) {
+                // Same ball - this is backtracking, allow the transfer
+                return isOccupiedByBall; // Only block if there's another ball
+            } else {
+                // Different ball - block the transfer
+                return true;
+            }
+        }
+        
+        // Return true if a ball occupies the destination
+        return isOccupiedByBall;
     }
 
     // Get the node type at a specific grid position
@@ -2079,6 +2098,32 @@ class GameManager {
                 
                 // Only proceed if the ball is actually moving to a different position
                 if (previousGridX !== newGridX || previousGridY !== newGridY || previousFace !== newFace) {
+                    
+                    // Debug logging
+                    console.log('=== BALL MOVEMENT DEBUG ===');
+                    console.log(`Ball ${this.selectedBallIndex} moving from (${previousGridX},${previousGridY}) on ${previousFace} to (${newGridX},${newGridY}) on ${newFace}`);
+                    console.log('Current ball position:', { x: ball.x, y: ball.y });
+                    console.log('Visited nodes:', ball.visitedNodes ? ball.visitedNodes.map(n => `(${n.x},${n.y}) on ${n.face}`) : 'none');
+                    
+                    // Log tail discs for current face
+                    const currentFaceTails = this.nodeTails[this.currentFace] || {};
+                    const tailDiscs = Object.keys(currentFaceTails).map(key => {
+                        const [row, col] = key.split('_').map(Number);
+                        const tailData = currentFaceTails[key];
+                        return `(${col},${row}) - ball ${tailData.ballIndex} - ${tailData.color}`;
+                    });
+                    console.log('Tail discs on current face:', tailDiscs.length > 0 ? tailDiscs : 'none');
+                    
+                    // Log tail discs for other face
+                    const otherFace = this.currentFace === 'front' ? 'rear' : 'front';
+                    const otherFaceTails = this.nodeTails[otherFace] || {};
+                    const otherTailDiscs = Object.keys(otherFaceTails).map(key => {
+                        const [row, col] = key.split('_').map(Number);
+                        const tailData = otherFaceTails[key];
+                        return `(${col},${row}) - ball ${tailData.ballIndex} - ${tailData.color}`;
+                    });
+                    console.log(`Tail discs on ${otherFace} face:`, otherTailDiscs.length > 0 ? otherTailDiscs : 'none');
+                    console.log('=== END DEBUG ===');
                 
                 // Check if the ball is returning to the last visited node (only allow backtracking to the most recent location)
                 const lastVisitedNode = ball.visitedNodes.length > 0 ? ball.visitedNodes[ball.visitedNodes.length - 1] : null;
@@ -2087,12 +2132,43 @@ class GameManager {
                     lastVisitedNode.y === newGridY && 
                     lastVisitedNode.face === newFace;
                 
-                if (isReturningToLastVisited) {
-                    // Remove the last visited node from visited nodes (ball is backtracking to the most recent location)
-                    const removedNode = ball.visitedNodes.pop(); // Remove the last visited node
-                    
-                    // Remove tail from the connection between previous and current node
-                    this.removeConnectionTail(previousGridX, previousGridY, newGridX, newGridY, this.selectedBallIndex);
+                // Check if the ball is moving away from a node with its own tail disc (backtracking from current position)
+                const currentNodeKey = `${previousGridY}_${previousGridX}`;
+                const hasOwnTailDisc = this.nodeTails[previousFace] && 
+                                     this.nodeTails[previousFace][currentNodeKey] &&
+                                     this.nodeTails[previousFace][currentNodeKey].ballIndex === this.selectedBallIndex;
+                
+                // Debug logging for backtracking detection
+                console.log('=== BACKTRACKING DETECTION ===');
+                console.log(`isReturningToLastVisited: ${isReturningToLastVisited}`);
+                console.log(`hasOwnTailDisc: ${hasOwnTailDisc}`);
+                if (lastVisitedNode) {
+                    console.log(`Last visited node: (${lastVisitedNode.x},${lastVisitedNode.y}) on ${lastVisitedNode.face}`);
+                }
+                if (hasOwnTailDisc) {
+                    const tailData = this.nodeTails[previousFace][currentNodeKey];
+                    console.log(`Own tail disc found at (${previousGridX},${previousGridY}) - ball ${tailData.ballIndex} - ${tailData.color}`);
+                }
+                console.log('=== END BACKTRACKING DETECTION ===');
+                
+                if (isReturningToLastVisited || hasOwnTailDisc) {
+                    if (isReturningToLastVisited) {
+                        // Remove the last visited node from visited nodes (ball is backtracking to the most recent location)
+                        const removedNode = ball.visitedNodes.pop(); // Remove the last visited node
+                        
+                        // Remove tail from the connection between previous and current node
+                        this.removeConnectionTail(previousGridX, previousGridY, newGridX, newGridY, this.selectedBallIndex);
+                        
+                        // Remove tail disc from the node the ball is moving to (backtracking)
+                        this.removeNodeTail(newGridX, newGridY, this.selectedBallIndex);
+                    } else {
+                        // Ball is moving away from a node with its own tail disc (backtracking from current position)
+                        // Remove tail disc from the node the ball is leaving
+                        this.removeNodeTail(previousGridX, previousGridY, this.selectedBallIndex);
+                        
+                        // Remove tail from the connection between previous and current node
+                        this.removeConnectionTail(previousGridX, previousGridY, newGridX, newGridY, this.selectedBallIndex);
+                    }
                     
                     // Check if ball has no more visited nodes and should lose tail property
                     if (ball.visitedNodes.length === 0) {
@@ -2107,6 +2183,9 @@ class GameManager {
                         face: previousFace
                     };
                     ball.visitedNodes.push(newNodeToAdd);
+                    
+                    // Remove tail disc from the node the ball is leaving (if it has its own tail disc)
+                    this.removeNodeTail(previousGridX, previousGridY, this.selectedBallIndex);
                                         
                     // Create tail on the node the ball just left
                     this.createNodeTail(previousGridX, previousGridY, this.selectedBallIndex, ball.color);
@@ -2148,6 +2227,34 @@ class GameManager {
                 ball.y = clampedY;
                 this.render();
             }
+            
+            // Log ball position after movement
+            console.log(`=== BALL POSITION AFTER MOVEMENT ===`);
+            console.log(`Ball ${this.selectedBallIndex} position:`, { x: ball.x, y: ball.y });
+            console.log(`Grid position: (${Math.round((ball.x - this.boardStartX) / this.gridSize)}, ${Math.round((ball.y - this.boardStartY) / this.gridSize)})`);
+            console.log(`Face: ${this.getBallCurrentFace(ball)}`);
+            console.log(`Visited nodes:`, ball.visitedNodes ? ball.visitedNodes.map(n => `(${n.x},${n.y}) on ${n.face}`) : 'none');
+            
+            // Log tail discs for current face
+            const currentFace = this.getBallCurrentFace(ball);
+            const currentFaceTails = this.nodeTails[currentFace] || {};
+            const tailDiscs = Object.keys(currentFaceTails).map(key => {
+                const [row, col] = key.split('_').map(Number);
+                const tailData = currentFaceTails[key];
+                return `(${col},${row}) - ball ${tailData.ballIndex} - ${tailData.color}`;
+            });
+            console.log(`Tail discs on ${currentFace} face:`, tailDiscs.length > 0 ? tailDiscs : 'none');
+            
+            // Log tail discs for other face
+            const otherFace = currentFace === 'front' ? 'rear' : 'front';
+            const otherFaceTails = this.nodeTails[otherFace] || {};
+            const otherTailDiscs = Object.keys(otherFaceTails).map(key => {
+                const [row, col] = key.split('_').map(Number);
+                const tailData = otherFaceTails[key];
+                return `(${col},${row}) - ball ${tailData.ballIndex} - ${tailData.color}`;
+            });
+            console.log(`Tail discs on ${otherFace} face:`, otherTailDiscs.length > 0 ? otherTailDiscs : 'none');
+            console.log(`=== END POSITION LOG ===`);
             
             // Play ball movement sound for significant movements
             if (this.soundManager && (Math.abs(ball.x - clampedX) > 5 || Math.abs(ball.y - clampedY) > 5)) {
@@ -2326,6 +2433,95 @@ class GameManager {
         const transferAbsX = this.boardStartX + (mappedX * this.gridSize);
         const transferAbsY = this.boardStartY + (mappedY * this.gridSize);
         
+        // Handle tail disc on the well node before transferring
+        const ballIndex = this.balls.indexOf(ball);
+        let tailDiscCreated = false; // Track whether a tail disc was created
+        if (ballIndex !== -1) {
+            
+            // Debug logging for well transfer
+            console.log('=== WELL TRANSFER DEBUG ===');
+            console.log(`Ball ${ballIndex} transferring through well at (${wellGridX},${wellGridY})`);
+            console.log(`From face: ${this.getBallCurrentFace(ball)}`);
+            console.log(`To coordinates: (${transferX},${transferY})`);
+            console.log('Ball position before transfer (grid):', { x: Math.round((ball.x - this.boardStartX) / this.gridSize), y: Math.round((ball.y - this.boardStartY) / this.gridSize) });
+            console.log('Visited nodes before transfer:', ball.visitedNodes ? ball.visitedNodes.map(n => `(${n.x},${n.y}) on ${n.face}`) : 'none');
+            
+            // Log tail discs before transfer
+            const currentFace = this.getBallCurrentFace(ball);
+            const currentFaceTails = this.nodeTails[currentFace] || {};
+            const tailDiscs = Object.keys(currentFaceTails).map(key => {
+                const [row, col] = key.split('_').map(Number);
+                const tailData = currentFaceTails[key];
+                return `(${col},${row}) - ball ${tailData.ballIndex} - ${tailData.color}`;
+            });
+            console.log(`Tail discs on ${currentFace} face before transfer:`, tailDiscs.length > 0 ? tailDiscs : 'none');
+            
+            const otherFace = currentFace === 'front' ? 'rear' : 'front';
+            const otherFaceTails = this.nodeTails[otherFace] || {};
+            const otherTailDiscs = Object.keys(otherFaceTails).map(key => {
+                const [row, col] = key.split('_').map(Number);
+                const tailData = otherFaceTails[key];
+                return `(${col},${row}) - ball ${tailData.ballIndex} - ${tailData.color}`;
+            });
+            console.log(`Tail discs on ${otherFace} face before transfer:`, otherTailDiscs.length > 0 ? otherTailDiscs : 'none');
+            const nodeKey = `${wellGridY}_${wellGridX}`;
+            
+            // Check if there's a tail disc on the well node
+            if (this.nodeTails[currentFace] && this.nodeTails[currentFace][nodeKey]) {
+                const tailData = this.nodeTails[currentFace][nodeKey];
+                
+                // If the tail disc belongs to the same ball, this is backtracking
+                if (tailData.ballIndex === ballIndex) {
+                    // Remove the tail disc from the well node (backtracking)
+                    this.removeNodeTail(wellGridX, wellGridY, ballIndex);
+                    
+                    // Also remove the tail disc from the destination node on the other face (backtracking)
+                    const destinationFace = currentFace === 'front' ? 'rear' : 'front';
+                    const destinationNodeKey = `${transferY}_${transferX}`;
+                    
+                    if (this.nodeTails[destinationFace] && this.nodeTails[destinationFace][destinationNodeKey]) {
+                        const destinationTailData = this.nodeTails[destinationFace][destinationNodeKey];
+                        if (destinationTailData.ballIndex === ballIndex) {
+                            // Remove the tail disc from the destination node (backtracking)
+                            this.removeNodeTail(transferX, transferY, ballIndex);
+                        }
+                    }
+                } else {
+                    // Tail disc belongs to a different ball - this should not happen
+                    // as the well transfer should have been blocked by isWellDestinationOccupied
+                    console.warn('Unexpected: Well transfer with tail disc from different ball');
+                }
+            } else {
+                // Check if there's a tail disc on the destination node that belongs to this ball (backtracking)
+                const destinationFace = currentFace === 'front' ? 'rear' : 'front';
+                const destinationNodeKey = `${transferY}_${transferX}`;
+                
+                                    if (this.nodeTails[destinationFace] && this.nodeTails[destinationFace][destinationNodeKey]) {
+                        const destinationTailData = this.nodeTails[destinationFace][destinationNodeKey];
+                        if (destinationTailData.ballIndex === ballIndex) {
+                            // This is backtracking - remove the tail disc from the destination node
+                            console.log(`Removing tail disc from destination node (${transferX},${transferY}) on ${destinationFace} (backtracking)`);
+                            
+                            // Temporarily set the current face to the destination face for removal
+                            const originalFace = this.currentFace;
+                            this.currentFace = destinationFace;
+                            this.removeNodeTail(transferX, transferY, ballIndex);
+                            this.currentFace = originalFace;
+                            
+                            // Don't create a new tail disc on the well node
+                                    } else {
+                    // Different ball's tail disc on destination - create tail disc on well (normal forward movement)
+                    this.createNodeTail(wellGridX, wellGridY, ballIndex, ball.color);
+                    tailDiscCreated = true;
+                }
+            } else {
+                // No tail disc on destination either - create one on well (normal forward movement)
+                this.createNodeTail(wellGridX, wellGridY, ballIndex, ball.color);
+                tailDiscCreated = true;
+            }
+            }
+        }
+        
         // Update ball position to the transfer location
         ball.x = transferAbsX;
         ball.y = transferAbsY;
@@ -2356,10 +2552,72 @@ class GameManager {
         this.toggleBoardFace();
         
         // Update the enhanced ball movement system after well transfer
-        const ballIndex = this.balls.indexOf(ball);
         if (ballIndex !== -1) {
+            // Add the well node to visited nodes if a tail disc was created (forward movement)
+            if (ball.hasTail && ball.visitedNodes) {
+                if (tailDiscCreated) {
+                    // This was forward movement - add well node to visited nodes
+                    // Use the original face (the face the ball was on when it left the well)
+                    const originalFace = this.getBallCurrentFace(ball) === 'front' ? 'rear' : 'front';
+                    const wellNode = {
+                        x: wellGridX,
+                        y: wellGridY,
+                        face: originalFace
+                    };
+                    ball.visitedNodes.push(wellNode);
+                    console.log(`Added well node (${wellGridX},${wellGridY}) on ${originalFace} to visited nodes (forward movement)`);
+                } else {
+                    console.log(`No tail disc created - this was backtracking, not adding to visited nodes`);
+                    
+                    // Remove the destination node from visited nodes (backtracking)
+                    if (ball.visitedNodes && ball.visitedNodes.length > 0) {
+                        const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
+                        const destinationFace = this.getBallCurrentFace(ball);
+                        
+                        console.log(`Checking for destination node removal:`);
+                        console.log(`Last visited node: (${lastVisitedNode.x},${lastVisitedNode.y}) on ${lastVisitedNode.face}`);
+                        console.log(`Destination node: (${transferX},${transferY}) on ${destinationFace}`);
+                        console.log(`Match: ${lastVisitedNode.x === transferX && lastVisitedNode.y === transferY && lastVisitedNode.face === destinationFace}`);
+                        
+                        // Check if the last visited node is the destination node we're backtracking to
+                        if (lastVisitedNode.x === transferX && lastVisitedNode.y === transferY && lastVisitedNode.face === destinationFace) {
+                            ball.visitedNodes.pop(); // Remove the destination node from visited nodes
+                            console.log(`Removed destination node (${transferX},${transferY}) on ${destinationFace} from visited nodes (backtracking)`);
+                        } else {
+                            console.log(`Destination node not found at end of visited nodes list - not removing`);
+                        }
+                    }
+                }
+            }
+            
             this.updateBallLastNode(ballIndex);
         }
+        
+        // Debug logging after well transfer
+        console.log('=== AFTER WELL TRANSFER ===');
+        console.log('Ball position after transfer (grid):', { x: Math.round((ball.x - this.boardStartX) / this.gridSize), y: Math.round((ball.y - this.boardStartY) / this.gridSize) });
+        console.log('Ball face after transfer:', this.getBallCurrentFace(ball));
+        console.log('Visited nodes after transfer:', ball.visitedNodes ? ball.visitedNodes.map(n => `(${n.x},${n.y}) on ${n.face}`) : 'none');
+        
+        // Log tail discs after transfer
+        const finalCurrentFace = this.getBallCurrentFace(ball);
+        const finalCurrentFaceTails = this.nodeTails[finalCurrentFace] || {};
+        const finalTailDiscs = Object.keys(finalCurrentFaceTails).map(key => {
+            const [row, col] = key.split('_').map(Number);
+            const tailData = finalCurrentFaceTails[key];
+            return `(${col},${row}) - ball ${tailData.ballIndex} - ${tailData.color}`;
+        });
+        console.log(`Tail discs on ${finalCurrentFace} face after transfer:`, finalTailDiscs.length > 0 ? finalTailDiscs : 'none');
+        
+        const finalOtherFace = finalCurrentFace === 'front' ? 'rear' : 'front';
+        const finalOtherFaceTails = this.nodeTails[finalOtherFace] || {};
+        const finalOtherTailDiscs = Object.keys(finalOtherFaceTails).map(key => {
+            const [row, col] = key.split('_').map(Number);
+            const tailData = finalOtherFaceTails[key];
+            return `(${col},${row}) - ball ${tailData.ballIndex} - ${tailData.color}`;
+        });
+        console.log(`Tail discs on ${finalOtherFace} face after transfer:`, finalOtherTailDiscs.length > 0 ? finalOtherTailDiscs : 'none');
+        console.log('=== END WELL TRANSFER DEBUG ===');
         
         // Re-render to show the changes
         this.render();
@@ -4931,9 +5189,12 @@ class GameManager {
             
             if (this.nodeTails[this.currentFace] && this.nodeTails[this.currentFace][nodeKey]) {
                 const tailData = this.nodeTails[this.currentFace][nodeKey];
-                // If there's a tail at this position, don't render the ball
+                // If there's a tail disc from a different ball at this position, don't render the ball
                 // The tail disc will be rendered instead
-                return;
+                if (tailData.ballIndex !== index) {
+                    return;
+                }
+                // If the tail disc belongs to this ball, continue rendering the ball on top
             }
             // Use ball color from ball data, fallback to white
             const colorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
@@ -6253,12 +6514,19 @@ class GameManager {
         const face = this.currentFace;
         const nodeKey = `${gridY}_${gridX}`;
         
+        console.log(`removeNodeTail called: (${gridX},${gridY}) on ${face} for ball ${ballIndex}`);
+        
         // Check if the tail exists and belongs to this ball
         if (this.nodeTails[face] && this.nodeTails[face][nodeKey]) {
             const tailData = this.nodeTails[face][nodeKey];
             if (tailData.ballIndex === ballIndex) {
                 delete this.nodeTails[face][nodeKey];
+                console.log(`Successfully removed tail disc from (${gridX},${gridY}) on ${face}`);
+            } else {
+                console.log(`Tail disc at (${gridX},${gridY}) on ${face} belongs to ball ${tailData.ballIndex}, not ${ballIndex}`);
             }
+        } else {
+            console.log(`No tail disc found at (${gridX},${gridY}) on ${face}`);
         }
     }
 
