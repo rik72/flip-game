@@ -28,7 +28,7 @@ const CONSTANTS = {
 	// Game configurations
 	GAME_CONFIG: {
 		// General configurations
-		ACTUAL_MAX_LEVEL: 13, // Actual final level of the game (auto-detected, see script/levels/update-max-level.js)
+		ACTUAL_MAX_LEVEL: 14, // Actual final level of the game (auto-detected, see script/levels/update-max-level.js)
 		// Development: Force loading specific level as first (set to null to disable)
 		FORCE_START_LEVEL: 1, // Set to level number (e.g., 4) to force start at that level
 		

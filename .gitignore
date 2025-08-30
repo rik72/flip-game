@@ -66,6 +66,11 @@ src/build-info.js
 # secrets
 appunti-deploy.txt
 
+#backups 
+*.bak
+*.backup
+*.backup.*
+
 # AI Configuration files (KEEP THESE)
 # These files are intentionally tracked for AI assistant compliance
 # .ai-context.md
