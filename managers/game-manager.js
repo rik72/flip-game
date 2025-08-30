@@ -5635,17 +5635,32 @@ class GameManager {
         if (this.nodeTails[currentFace] && this.nodeTails[currentFace][nodeKey]) {
             const tailData = this.nodeTails[currentFace][nodeKey];
             
-            // Allow backtracking to the last visited node
+            // Allow backtracking to visited nodes (with well node restrictions)
             if (ball && ball.hasTail && ball.visitedNodes && ball.visitedNodes.length > 0) {
-                const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
-                const isLastVisitedNode = lastVisitedNode.x === gridX && 
-                                        lastVisitedNode.y === gridY && 
-                                        lastVisitedNode.face === currentFace;
+                // Check if this is a visited node
+                const targetNode = { x: gridX, y: gridY, face: currentFace };
+                const visitedNodeIndex = ball.visitedNodes.findIndex(node => 
+                    node.x === targetNode.x && node.y === targetNode.y && node.face === targetNode.face
+                );
                 
-                if (isLastVisitedNode) {
-                    // Allow backtracking to the last visited node
+                if (visitedNodeIndex !== -1) {
+                    // This is a visited node - check if backtracking is allowed
+                    // The rule: all visited nodes AFTER this one must NOT be well nodes
+                    for (let i = visitedNodeIndex + 1; i < ball.visitedNodes.length; i++) {
+                        const laterNode = ball.visitedNodes[i];
+                        const laterNodeType = this.getNodeTypeAtFace(laterNode.x, laterNode.y, laterNode.face);
+                        
+                        if (laterNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+                            // Play error sound when backtracking is blocked
+                            if (this.soundManager && this.soundManager.isSoundEnabled) {
+                                this.soundManager.playSound('error');
+                            }
+                            return false; // Block backtracking - a later visited node is a well
+                        }
+                    }
+                    // All later visited nodes are not wells - allow backtracking
                 } else {
-                    return false; // Block access to nodes with tail discs (except for backtracking)
+                    return false; // Block access to nodes with tail discs (not a visited node)
                 }
             } else {
                 return false; // Block access to nodes with tail discs
@@ -5658,20 +5673,26 @@ class GameManager {
             const targetNode = { x: gridX, y: gridY, face: currentFace };
             
             // Check if this is a visited node
-            const isVisitedNode = ball.visitedNodes.some(node => 
+            const visitedNodeIndex = ball.visitedNodes.findIndex(node => 
                 node.x === targetNode.x && node.y === targetNode.y && node.face === targetNode.face
             );
             
-            if (isVisitedNode) {
-                // Only allow moving to the last visited node (for backtracking)
-                const lastVisitedNode = ball.visitedNodes[ball.visitedNodes.length - 1];
-                const isLastVisitedNode = lastVisitedNode.x === targetNode.x && 
-                                        lastVisitedNode.y === targetNode.y && 
-                                        lastVisitedNode.face === targetNode.face;
-                
-                if (!isLastVisitedNode) {
-                    return false; // Block access to any visited node except the last one
+            if (visitedNodeIndex !== -1) {
+                // This is a visited node - check if backtracking is allowed
+                // The rule: all visited nodes AFTER this one must NOT be well nodes
+                for (let i = visitedNodeIndex + 1; i < ball.visitedNodes.length; i++) {
+                    const laterNode = ball.visitedNodes[i];
+                    const laterNodeType = this.getNodeTypeAtFace(laterNode.x, laterNode.y, laterNode.face);
+                    
+                    if (laterNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+                        // Play error sound when backtracking is blocked
+                        if (this.soundManager && this.soundManager.isSoundEnabled) {
+                            this.soundManager.playSound('error');
+                        }
+                        return false; // Block backtracking - a later visited node is a well
+                    }
                 }
+                // All later visited nodes are not wells - allow backtracking
             }
         }
         
@@ -6279,10 +6300,14 @@ class GameManager {
                 this.handleClampedBallMovement(ballIndex, this.touchPosition);
             }, 10);
         }
+        
+
     }
 
+
+
     // Enhanced touch move handling for clamped balls
-            handleClampedBallMovement(ballIndex, touchPos) {
+    handleClampedBallMovement(ballIndex, touchPos) {
             if (!this.isBallClamped[ballIndex]) return;
             
             // Check if we need to start a transition
@@ -7203,6 +7228,20 @@ class GameManager {
 
         if (targetNodeIndex === -1) {
             return;
+        }
+
+        // Check if backtracking is allowed: all visited nodes AFTER the target must NOT be well nodes
+        for (let i = targetNodeIndex + 1; i < ball.visitedNodes.length; i++) {
+            const laterNode = ball.visitedNodes[i];
+            const laterNodeType = this.getNodeTypeAtFace(laterNode.x, laterNode.y, laterNode.face);
+            
+            if (laterNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
+                // Play error sound when backtracking is blocked
+                if (this.soundManager && this.soundManager.isSoundEnabled) {
+                    this.soundManager.playSound('error');
+                }
+                return; // Block backtracking - a later visited node is a well
+            }
         }
 
         // Create backtracking sequence from last visited node to target node (inclusive)
