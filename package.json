@@ -22,7 +22,11 @@
     "analyze": "webpack-bundle-analyzer dist/bundle.js",
     "clean": "rm -rf dist",
     "rebuild": "npm run clean && npm run concat:prod && npm run build",
-    "test:hashing": "node scripts/test-level-hashing.js"
+    "test:hashing": "node scripts/test-level-hashing.js",
+    "dev:check": "node scripts/dev-cache-buster.js check",
+    "dev:list": "node scripts/dev-cache-buster.js list",
+    "dev:validate": "node scripts/dev-cache-buster.js validate",
+    "dev:test": "node scripts/dev-cache-buster.js test"
   },
   "keywords": [
     "flipgame",

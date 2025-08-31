@@ -13,6 +13,7 @@ class SoundManager {
     constructor() {
         this.sounds = {};
         this.backgroundMusic = null;
+        this.audioContext = null;
         this.isSoundEnabled = CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED;
         this.isMusicEnabled = CONSTANTS.AUDIO_CONFIG.MUSIC_ENABLED;
         this.soundFxVolume = CONSTANTS.AUDIO_CONFIG.SOUND_FX_VOLUME || 0.7;
@@ -26,6 +27,9 @@ class SoundManager {
      * Initialize the sound manager
      */
     init() {
+        // Initialize audio context for mobile compatibility
+        this.initAudioContext();
+        
         // Only load sounds if audio is enabled and sound effects are enabled
         if (CONSTANTS.AUDIO_CONFIG.ENABLED && CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED) {
             this.loadSounds();
@@ -35,6 +39,35 @@ class SoundManager {
             this.loadBackgroundMusic();
         }
         this.loadSettings();
+    }
+
+    /**
+     * Initialize audio context for mobile compatibility
+     */
+    initAudioContext() {
+        try {
+            // Create audio context for mobile audio handling
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // For mobile devices, we need to resume the audio context on user interaction
+            const resumeAudioContext = () => {
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+                // Remove event listeners after first interaction
+                document.removeEventListener('touchstart', resumeAudioContext);
+                document.removeEventListener('mousedown', resumeAudioContext);
+                document.removeEventListener('keydown', resumeAudioContext);
+            };
+            
+            // Add event listeners for user interaction
+            document.addEventListener('touchstart', resumeAudioContext, { once: true });
+            document.addEventListener('mousedown', resumeAudioContext, { once: true });
+            document.addEventListener('keydown', resumeAudioContext, { once: true });
+            
+        } catch (error) {
+            console.warn('Failed to initialize audio context:', error);
+        }
     }
 
     /**
@@ -171,7 +204,14 @@ class SoundManager {
         
         // Simple fallback using Web Audio API
         try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Use existing audio context or create new one
+            const audioContext = this.audioContext || new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Resume audio context if suspended (mobile requirement)
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
@@ -265,6 +305,11 @@ class SoundManager {
         if (!this.isMusicEnabled || !this.backgroundMusic) return;
         
         try {
+            // For mobile devices, ensure audio context is resumed
+            if (this.audioContext && this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+            
             this.backgroundMusic.play().catch(error => {
                 console.warn('Failed to play background music:', error);
                 // Don't show error for autoplay policy - this is expected
@@ -301,8 +346,24 @@ class SoundManager {
      */
     resumeBackgroundMusic() {
         if (this.isMusicEnabled && this.backgroundMusic) {
+            // Ensure audio context is resumed for mobile
+            if (this.audioContext && this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+            
             this.backgroundMusic.play().catch(error => {
                 console.warn('Failed to resume background music:', error);
+            });
+        }
+    }
+
+    /**
+     * Ensure audio context is resumed (for mobile compatibility)
+     */
+    resumeAudioContext() {
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            this.audioContext.resume().catch(error => {
+                console.warn('Failed to resume audio context:', error);
             });
         }
     }
@@ -474,8 +535,16 @@ class SoundManager {
             this.backgroundMusic.src = '';
         }
         
+        // Clean up audio context
+        if (this.audioContext) {
+            this.audioContext.close().catch(error => {
+                console.warn('Failed to close audio context:', error);
+            });
+        }
+        
         // Clear references
         this.sounds = {};
         this.backgroundMusic = null;
+        this.audioContext = null;
     }
 } 

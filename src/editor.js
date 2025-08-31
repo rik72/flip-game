@@ -942,6 +942,58 @@ class LevelEditor {
         return false;
     }
     
+    // Helper function to check if a position is within the board bounds
+    isPositionValid(col, row) {
+        // Convert negative coordinates (rear face) to positive for bounds checking
+        const absCol = col < 0 ? -col : col;
+        const absRow = row < 0 ? -row : row;
+        
+        return absCol >= 0 && absCol < this.gridWidth && absRow >= 0 && absRow < this.gridHeight;
+    }
+    
+    // Helper function to filter balls and remove invalid positions
+    filterBallsForSaving() {
+        return this.balls.map(ball => {
+            const filteredBall = { ...ball };
+            
+            // Filter start position
+            if (!this.isPositionValid(ball.start[0], ball.start[1])) {
+                console.warn(`Removing invalid start position [${ball.start[0]}, ${ball.start[1]}] for ball, resetting to [0, 0]`);
+                filteredBall.start = [0, 0];
+            }
+            
+            // Filter end positions
+            if (ball.end && Array.isArray(ball.end)) {
+                // Handle both legacy single end position and new multiple end positions format
+                if (ball.end.length > 0 && Array.isArray(ball.end[0])) {
+                    // Multiple end positions format: [[col, row], [col, row], ...]
+                    filteredBall.end = ball.end.filter(endPos => {
+                        if (this.isPositionValid(endPos[0], endPos[1])) {
+                            return true;
+                        } else {
+                            console.warn(`Removing invalid end position [${endPos[0]}, ${endPos[1]}] for ball`);
+                            return false;
+                        }
+                    });
+                    
+                    // Ensure at least one valid end position remains
+                    if (filteredBall.end.length === 0) {
+                        console.warn(`No valid end positions found for ball, adding default position [${this.gridWidth - 1}, ${this.gridHeight - 1}]`);
+                        filteredBall.end = [[this.gridWidth - 1, this.gridHeight - 1]];
+                    }
+                } else if (ball.end.length === 2 && typeof ball.end[0] === 'number') {
+                    // Legacy single end position format: [col, row]
+                    if (!this.isPositionValid(ball.end[0], ball.end[1])) {
+                        console.warn(`Removing invalid end position [${ball.end[0]}, ${ball.end[1]}] for ball, resetting to [${this.gridWidth - 1}, ${this.gridHeight - 1}]`);
+                        filteredBall.end = [this.gridWidth - 1, this.gridHeight - 1];
+                    }
+                }
+            }
+            
+            return filteredBall;
+        });
+    }
+    
     saveLevel() {
         // Convert board data to space-separated format for consistency with existing levels
         const boardForSaving = {
@@ -971,10 +1023,13 @@ class LevelEditor {
             }
         }
         
+        // Filter balls to remove invalid positions
+        const filteredBalls = this.filterBallsForSaving();
+        
         const levelData = {
             level: this.currentLevel,
             board: boardForSaving,
-            balls: this.balls
+            balls: filteredBalls
         };
         
         const blob = new Blob([JSON.stringify(levelData, null, 2)], { type: 'application/json' });
@@ -1111,10 +1166,13 @@ class LevelEditor {
             }
         }
         
+        // Filter balls to remove invalid positions
+        const filteredBalls = this.filterBallsForSaving();
+        
         const levelData = {
             level: this.currentLevel,
             board: boardForSaving,
-            balls: this.balls
+            balls: filteredBalls
         };
         
         // Save to localStorage for testing

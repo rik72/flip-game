@@ -255,11 +255,18 @@ class StorageManager {
                 // Production mode: use hashed filename
                 filename = this.generateLevelFilename(levelNumber, hashSeed);
             } else {
-                // Development mode: use original filename
+                // Development mode: use original filename with cache busting
                 filename = `level_${levelNumber}.json`;
             }
             
-            const response = await fetch(`levels/${filename}`);
+            // Add cache busting parameter in development mode
+            let url = `levels/${filename}`;
+            if (!hashSeed || hashSeed.trim() === '') {
+                // Development mode: add timestamp to prevent caching
+                url += `?t=${Date.now()}`;
+            }
+            
+            const response = await fetch(url);
             if (!response.ok) {
                 console.warn(`Level ${levelNumber} file not found: ${filename}`);
                 return null;

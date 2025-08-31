@@ -906,6 +906,7 @@ class GameManager {
             
             // Start background music on first user interaction
             if (this.soundManager && !this.soundManager.musicStarted) {
+                this.soundManager.resumeAudioContext(); // Ensure audio context is resumed for mobile
                 this.soundManager.playBackgroundMusic();
                 this.soundManager.musicStarted = true;
             }
@@ -1153,6 +1154,7 @@ class GameManager {
             
             // Start background music on first user interaction
             if (this.soundManager && !this.soundManager.musicStarted) {
+                this.soundManager.resumeAudioContext(); // Ensure audio context is resumed for mobile
                 this.soundManager.playBackgroundMusic();
                 this.soundManager.musicStarted = true;
             }
