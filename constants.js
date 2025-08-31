@@ -147,12 +147,11 @@ const CONSTANTS = {
 		
 		// Trap animation configuration
 		TRAP_ANIMATION_DURATION: 150, // milliseconds for trap X-to-+ rotation animation (increased for better visibility)
-		TRAP_DARKENING_FACTOR: 0.4, // Factor to darken trap colors (same as other elements)
-		TRAP_DARKER_SHADE_FACTOR: 0.3, // Factor for very dark cross under squares (darker than default darkenColor)
+		TRAP_DARKENING_FACTOR: 0.2, // Factor to darken trap colors (same as other elements)
 		
 		// Switch animation configuration
 		SWITCH_ANIMATION_DURATION: 400, // milliseconds for switch open-to-closed animation
-		SWITCH_DARKENING_FACTOR: 0.4, // Factor to darken switch colors when open
+		SWITCH_DARKENING_FACTOR: 0.2, // Factor to darken switch colors when open
 		
 		// Easing functions
 		EASING: {
@@ -247,6 +246,7 @@ const CONSTANTS = {
 
 			'w0': '#FFFFFF',  // Well
 			'$0': '#FFFFFF',  // Sticker
+			'g0': '#FFFFFF',  // Shared goal
 
 			'xr': '#EE1111',  // Red trap
 			'xg': '#11EE11',  // Green trap
@@ -261,7 +261,6 @@ const CONSTANTS = {
 			'sy': '#FFFF00',  // Yellow switch
 			'sp': '#FF00FF',  // Purple switch
 			'so': '#FF6600',  // Orange switch
-			'g0': '#FFFFFF',  // Shared goal (white)
 
 			'tr': '#EE1111',  // Red teleport
 			'tg': '#11EE11',  // Green teleport
@@ -292,7 +291,7 @@ const CONSTANTS = {
 		
 		// Visual color adjustment factors for different elements
 		STICKER_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for sticker nodes (0.5 = 50% darker)
-		GOAL_DARKENING_FACTOR: 0.4, // Factor to darken ball colors for inactive goals (0.5 = 50% darker)
+		GOAL_DARKENING_FACTOR: 0.2, // Factor to darken ball colors for inactive goals (0.5 = 50% darker)
 		TAIL_BRIGHTENING_FACTOR: 0.4, // Factor to brighten ball colors for tail effects (0.3 = 30% brighter)
 		EXPLOSION_BRIGHTENING_FACTOR: 0.7 // Factor to brighten ball colors for goal explosion effects (0.7 = 70% brighter)
 	},

@@ -1,17 +1,42 @@
 {
-    "level": 3,
-    "board": {
-        "front": [
-            "__ __ __ __ __",
-            "__ p0 p0 p0 __",
-            "__ __ __ __ __"
-        ]
-    },
-    "balls": [
-        {
-            "start": [1, 1],
-            "end": [3, 1],
-            "color": "red"
-        }
+  "level": 3,
+  "board": {
+    "front": [
+      "p1 p1 p1 p1 p1 p1",
+      "p2 p2 p2 p2 p2 p1",
+      "p2 p1 p1 p1 p2 p1",
+      "p2 p1 p2 p1 p2 p1",
+      "p2 p1 p2 p2 p2 p1",
+      "p2 p1 p1 p1 p1 p1",
+      "p2 p2 p2 p2 p2 p2"
     ]
+  },
+  "balls": [
+    {
+      "start": [
+        0,
+        0
+      ],
+      "end": [
+        [
+          3,
+          3
+        ]
+      ],
+      "color": "orange"
+    },
+    {
+      "start": [
+        5,
+        6
+      ],
+      "end": [
+        [
+          2,
+          3
+        ]
+      ],
+      "color": "blue"
+    }
+  ]
 }

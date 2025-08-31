@@ -184,6 +184,11 @@ class GameManager {
     getGoalCurrentFace(ball) {
         if (!this.board || !this.board.front) return 'front';
         
+        // If ball has no end positions, return front as default
+        if (!ball.originalEnd || !Array.isArray(ball.originalEnd) || ball.originalEnd.length !== 2) {
+            return 'front';
+        }
+        
         const isRearGoal = ball.originalEnd[0] < 0 || ball.originalEnd[1] < 0;
         return isRearGoal ? 'rear' : 'front';
     }
@@ -1717,19 +1722,21 @@ class GameManager {
         const endPositions = ball.endPositionsAbsolute || [];
         
         if (endPositions.length === 0) {
-            // Fallback to legacy single end position
-            if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
-            const endX = ball.endPosition.x;
-            const endY = ball.endPosition.y;
-            
-            // Convert to grid coordinates for occupation check
-            const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
-            const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
-            
-            // Check if goal is occupied and update animation
-            const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace, ballIndex);
-            const goalKey = `${endX}_${endY}_${this.currentFace}`;
-            this.updateGoalAnimation(goalKey, isOccupied);
+            // Check if there's a legacy single end position
+            if (ball.endPosition && this.getGoalCurrentFace(ball) === this.currentFace) {
+                const endX = ball.endPosition.x;
+                const endY = ball.endPosition.y;
+                
+                // Convert to grid coordinates for occupation check
+                const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+                const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+                
+                // Check if goal is occupied and update animation
+                const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace, ballIndex);
+                const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                this.updateGoalAnimation(goalKey, isOccupied);
+            }
+            // If no end positions, don't update any goal states
             return;
         }
         
@@ -2917,26 +2924,31 @@ class GameManager {
                 
                 // Handle multiple end positions - convert to array format
                 let endPositions = [];
-                if (Array.isArray(ballData.end[0])) {
-                    // New format: end is array of arrays [[x1,y1], [x2,y2], ...]
-                    endPositions = ballData.end;
-                } else {
-                    // Legacy format: end is single [x,y] array
-                    endPositions = [ballData.end];
-                }
+                let endPositionsAbsolute = [];
                 
-                // Convert end positions to absolute coordinates
-                const endPositionsAbsolute = endPositions.map(endPos => {
-                    const endX = endPos[0] < 0 ? -endPos[0] : endPos[0];
-                    const endY = endPos[1] < 0 ? -endPos[1] : endPos[1];
-                    return {
-                        x: this.boardStartX + (endX * this.gridSize),
-                        y: this.boardStartY + (endY * this.gridSize),
-                        gridX: endX,
-                        gridY: endY,
-                        face: endPos[0] < 0 || endPos[1] < 0 ? 'rear' : 'front'
-                    };
-                });
+                // Check if ball has end positions (they are now optional)
+                if (ballData.end && ballData.end.length > 0) {
+                    if (Array.isArray(ballData.end[0])) {
+                        // New format: end is array of arrays [[x1,y1], [x2,y2], ...]
+                        endPositions = ballData.end;
+                    } else {
+                        // Legacy format: end is single [x,y] array
+                        endPositions = [ballData.end];
+                    }
+                    
+                    // Convert end positions to absolute coordinates
+                    endPositionsAbsolute = endPositions.map(endPos => {
+                        const endX = endPos[0] < 0 ? -endPos[0] : endPos[0];
+                        const endY = endPos[1] < 0 ? -endPos[1] : endPos[1];
+                        return {
+                            x: this.boardStartX + (endX * this.gridSize),
+                            y: this.boardStartY + (endY * this.gridSize),
+                            gridX: endX,
+                            gridY: endY,
+                            face: endPos[0] < 0 || endPos[1] < 0 ? 'rear' : 'front'
+                        };
+                    });
+                }
                 
                 const ball = {
                     x: this.boardStartX + (startX * this.gridSize),
@@ -2955,10 +2967,7 @@ class GameManager {
                     // Track which face the ball is currently on
                     currentFace: ballData.start[0] < 0 || ballData.start[1] < 0 ? 'rear' : 'front',
                     // Legacy: keep single endPosition for backward compatibility
-                    endPosition: endPositionsAbsolute[0] || {
-                        x: this.boardStartX + (4 * this.gridSize),
-                        y: this.boardStartY + (4 * this.gridSize)
-                    },
+                    endPosition: endPositionsAbsolute[0] || null,
                     // Tail system property
                     hasTail: false,
                     // Visited nodes tracking for tail system
@@ -3032,19 +3041,21 @@ class GameManager {
             const endPositions = ball.endPositionsAbsolute || [];
             
             if (endPositions.length === 0) {
-                // Fallback to legacy single end position
-                if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
-                const endX = ball.endPosition.x;
-                const endY = ball.endPosition.y;
-                const goalKey = `${endX}_${endY}_${this.currentFace}`;
-                
-                // Convert to grid coordinates for occupation check
-                const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
-                const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
-                const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace);
-                
-                // Set initial state
-                this.goalStates.set(goalKey, isOccupied ? 'active' : 'rest');
+                // Check if there's a legacy single end position
+                if (ball.endPosition && this.getGoalCurrentFace(ball) === this.currentFace) {
+                    const endX = ball.endPosition.x;
+                    const endY = ball.endPosition.y;
+                    const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                    
+                    // Convert to grid coordinates for occupation check
+                    const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+                    const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+                    const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace);
+                    
+                    // Set initial state
+                    this.goalStates.set(goalKey, isOccupied ? 'active' : 'rest');
+                }
+                // If no end positions, don't initialize any goal states for this ball
             } else {
                 // Handle multiple end positions
                 endPositions.forEach(endPos => {
@@ -3104,7 +3115,14 @@ class GameManager {
      * @returns {void}
      */
     checkWinCondition() {
-        if (!this.canvas || this.balls.length === 0) return;
+        if (!this.canvas) return;
+        
+        // If there are no balls, level is automatically completed (no ball-specific goals)
+        if (this.balls.length === 0) {
+            console.log('Level completed! (No ball-specific goals)');
+            this.levelCompleted();
+            return;
+        }
         
         // Check if all balls satisfy their win conditions
         const allBallsAtGoal = this.balls.every((ball, ballIndex) => {
@@ -3173,19 +3191,26 @@ class GameManager {
         // Get all end positions for this ball
         const endPositions = ball.endPositionsAbsolute || [];
         
+        // If ball has no end positions, it automatically satisfies its win condition
         if (endPositions.length === 0) {
-            // Fallback to legacy single end position
-            const goalGridX = ball.originalEnd[0];
-            const goalGridY = ball.originalEnd[1];
-            const goalGridXConverted = goalGridX < 0 ? -goalGridX : goalGridX;
-            const goalGridYConverted = goalGridY < 0 ? -goalGridY : goalGridY;
-            const goalFace = goalGridX < 0 || goalGridY < 0 ? 'rear' : 'front';
-            
-            console.log(`Ball ${ballIndex} goal: (${goalGridXConverted}, ${goalGridYConverted}) on ${goalFace} face`);
-            
-            return ballGridX === goalGridXConverted && 
-                   ballGridY === goalGridYConverted && 
-                   ballFace === goalFace;
+            // Check if there's a legacy single end position
+            if (ball.originalEnd && Array.isArray(ball.originalEnd) && ball.originalEnd.length === 2) {
+                const goalGridX = ball.originalEnd[0];
+                const goalGridY = ball.originalEnd[1];
+                const goalGridXConverted = goalGridX < 0 ? -goalGridX : goalGridX;
+                const goalGridYConverted = goalGridY < 0 ? -goalGridY : goalGridY;
+                const goalFace = goalGridX < 0 || goalGridY < 0 ? 'rear' : 'front';
+                
+                console.log(`Ball ${ballIndex} goal: (${goalGridXConverted}, ${goalGridYConverted}) on ${goalFace} face`);
+                
+                return ballGridX === goalGridXConverted && 
+                       ballGridY === goalGridYConverted && 
+                       ballFace === goalFace;
+            } else {
+                // No end positions defined - ball automatically satisfies win condition
+                console.log(`Ball ${ballIndex} has no end positions - automatically satisfied`);
+                return true;
+            }
         }
         
         // Check if ball is at one of its end positions
@@ -3289,13 +3314,14 @@ class GameManager {
             const ballColorHex = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#FFFFFF';
             
             if (endPositions.length === 0) {
-                // Fallback to legacy single end position
-                if (this.getGoalCurrentFace(ball) === this.currentFace) {
+                // Check if there's a legacy single end position
+                if (ball.endPosition && this.getGoalCurrentFace(ball) === this.currentFace) {
                     setTimeout(() => {
                         this.createExplosionDisc(ball.endPosition.x, ball.endPosition.y, config, explosionIndex, ballColorHex);
                     }, explosionIndex * config.EXPLOSION_DELAY);
                     explosionIndex++;
                 }
+                // If no end positions, don't create explosions for this ball
                 return;
             }
             
@@ -5339,9 +5365,9 @@ class GameManager {
                 // Get all end positions for this ball
                 const endPositions = ball.endPositionsAbsolute || [];
                 
-                if (endPositions.length === 0) {
-                    // Fallback to legacy single end position
-                    if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
+                            if (endPositions.length === 0) {
+                // Check if there's a legacy single end position
+                if (ball.endPosition && this.getGoalCurrentFace(ball) === this.currentFace) {
                     const endX = ball.endPosition.x;
                     const endY = ball.endPosition.y;
                     
@@ -5349,8 +5375,10 @@ class GameManager {
                     const goalKey = `${endX}_${endY}_${this.currentFace}`;
                     const currentState = this.getGoalState(goalKey);
                     this.renderGoalWithArcs(endX, endY, ball.color, goalKey, currentState === 'active');
-                    return;
                 }
+                // If no end positions, don't render anything
+                return;
+            }
                 
                 // Render all end positions for this ball
                 endPositions.forEach(endPos => {
@@ -5374,22 +5402,24 @@ class GameManager {
             const endPositions = ball.endPositionsAbsolute || [];
             
             if (endPositions.length === 0) {
-                // Fallback to legacy single end position
-                if (this.getGoalCurrentFace(ball) !== this.currentFace) return;
-                const endX = ball.endPosition.x;
-                const endY = ball.endPosition.y;
-                
-                // Convert to grid coordinates for occupation check
-                const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
-                const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
-                
-                // Check if goal is occupied and update animation
-                const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace, index);
-                const goalKey = `${endX}_${endY}_${this.currentFace}`;
-                this.updateGoalAnimation(goalKey, isOccupied);
-                
-                // Render the goal with 4-arc animation
-                this.renderGoalWithArcs(endX, endY, ball.color, goalKey, isOccupied);
+                // Check if there's a legacy single end position
+                if (ball.endPosition && this.getGoalCurrentFace(ball) === this.currentFace) {
+                    const endX = ball.endPosition.x;
+                    const endY = ball.endPosition.y;
+                    
+                    // Convert to grid coordinates for occupation check
+                    const goalGridX = Math.round((endX - this.boardStartX) / this.gridSize);
+                    const goalGridY = Math.round((endY - this.boardStartY) / this.gridSize);
+                    
+                    // Check if goal is occupied and update animation
+                    const isOccupied = this.isGoalOccupied(goalGridX, goalGridY, this.currentFace, index);
+                    const goalKey = `${endX}_${endY}_${this.currentFace}`;
+                    this.updateGoalAnimation(goalKey, isOccupied);
+                    
+                    // Render the goal with 4-arc animation
+                    this.renderGoalWithArcs(endX, endY, ball.color, goalKey, isOccupied);
+                }
+                // If no end positions, don't render anything
                 return;
             }
             

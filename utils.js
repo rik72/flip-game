@@ -20,20 +20,27 @@ class Utils {
 	// Game-specific validation methods
 	static validateLevelData(levelData) {
 		try {
-			if (!levelData) {
+			// Check if levelData exists and has required structure
+			if (!levelData || typeof levelData !== 'object') {
 				throw new Error(CONSTANTS.MESSAGES.LEVEL_DATA_REQUIRED);
 			}
 			
-			if (!levelData.board || !levelData.board.front || !Array.isArray(levelData.board.front)) {
+			// Check if board exists and has front face
+			if (!levelData.board || !levelData.board.front) {
 				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 			}
 			
-			// Check if front array is not empty
+			// Validate board structure
+			if (!Array.isArray(levelData.board.front)) {
+				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+			}
+			
+			// Check if front board has at least one row
 			if (levelData.board.front.length === 0) {
 				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 			}
 			
-			// Check if all rows in front have the same length
+			// Check if all rows have the same length
 			const firstRowLength = levelData.board.front[0].length;
 			for (let i = 1; i < levelData.board.front.length; i++) {
 				if (levelData.board.front[i].length !== firstRowLength) {
@@ -60,18 +67,18 @@ class Utils {
 				}
 			}
 			
-			// Check if level has balls with start and end positions
-			if (!levelData.balls || !Array.isArray(levelData.balls) || levelData.balls.length === 0) {
-				throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
-			}
-			
-			// Validate each ball has start and end positions
-			for (const ball of levelData.balls) {
-				if (!ball.start || !Array.isArray(ball.start) || ball.start.length !== 2) {
+			// Check if level has balls (balls are optional now)
+			if (levelData.balls) {
+				if (!Array.isArray(levelData.balls)) {
 					throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
 				}
-				if (!ball.end || !Array.isArray(ball.end) || ball.end.length !== 2) {
-					throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+				
+				// Validate each ball has start position (end positions are optional)
+				for (const ball of levelData.balls) {
+					if (!ball.start || !Array.isArray(ball.start) || ball.start.length !== 2) {
+						throw new Error(CONSTANTS.MESSAGES.INVALID_LEVEL);
+					}
+					// End positions are now optional - no validation required
 				}
 			}
 			

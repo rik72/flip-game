@@ -435,7 +435,14 @@ class LevelEditor {
             }
             
             // Check end positions (handle both legacy single and new multiple)
-            let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+            let endPositions = [];
+            if (ball.end && ball.end.length > 0) {
+                if (Array.isArray(ball.end[0])) {
+                    endPositions = ball.end;
+                } else {
+                    endPositions = [ball.end];
+                }
+            }
             
             endPositions.forEach((endPos, endIndex) => {
                 const endRow = endPos[1] < 0 ? -endPos[1] : endPos[1];
@@ -508,7 +515,7 @@ class LevelEditor {
         
         const ball = {
             start: availablePositions.start,
-            end: [availablePositions.end], // Array of end positions
+            end: [], // Start with no end positions (no ball-specific goals)
             color: availableColor
         };
         
@@ -551,16 +558,22 @@ class LevelEditor {
             occupiedPositions.add(startKey);
             
             // Add end positions (handle both legacy single and new multiple)
-            let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+            let endPositions = [];
+            if (ball.end && ball.end.length > 0) {
+                if (Array.isArray(ball.end[0])) {
+                    endPositions = ball.end;
+                } else {
+                    endPositions = [ball.end];
+                }
+            }
             endPositions.forEach(endPos => {
                 const endKey = `${endPos[0]},${endPos[1]}`;
                 occupiedPositions.add(endKey);
             });
         });
         
-        // Try to find available start and end positions
+        // Try to find available start position (no end position needed since balls start without goals)
         let startPos = [0, 0];
-        let endPos = [this.gridWidth - 1, this.gridHeight - 1];
         
         // Try different start positions
         const startCandidates = [
@@ -582,26 +595,6 @@ class LevelEditor {
             }
         }
         
-        // Try different end positions (opposite to start when possible)
-        const endCandidates = [
-            [this.gridWidth - 1, this.gridHeight - 1], // Bottom-right
-            [0, this.gridHeight - 1], // Bottom-left
-            [this.gridWidth - 1, 0], // Top-right
-            [0, 0], // Top-left
-            [Math.floor(this.gridWidth / 2), this.gridHeight - 1], // Bottom-center
-            [this.gridWidth - 1, Math.floor(this.gridHeight / 2)], // Right-center
-            [0, Math.floor(this.gridHeight / 2)], // Left-center
-            [Math.floor(this.gridWidth / 2), 0] // Top-center
-        ];
-        
-        for (const candidate of endCandidates) {
-            const key = `${candidate[0]},${candidate[1]}`;
-            if (!occupiedPositions.has(key)) {
-                endPos = candidate;
-                break;
-            }
-        }
-        
         // If we still can't find available positions, try any free position
         if (occupiedPositions.has(`${startPos[0]},${startPos[1]}`)) {
             // Find any available position for start
@@ -619,23 +612,7 @@ class LevelEditor {
             }
         }
         
-        if (occupiedPositions.has(`${endPos[0]},${endPos[1]}`)) {
-            // Find any available position for end
-            for (let row = this.gridHeight - 1; row >= 0; row--) {
-                for (let col = this.gridWidth - 1; col >= 0; col--) {
-                    const key = `${col},${row}`;
-                    if (!occupiedPositions.has(key)) {
-                        endPos = [col, row];
-                        break;
-                    }
-                }
-                if (!occupiedPositions.has(`${endPos[0]},${endPos[1]}`)) {
-                    break;
-                }
-            }
-        }
-        
-        return { start: startPos, end: endPos };
+        return { start: startPos };
     }
     
     updateBallsList() {
@@ -645,6 +622,19 @@ class LevelEditor {
         this.balls.forEach((ball, index) => {
             const ballItem = document.createElement('div');
             ballItem.className = 'ball-item';
+            
+            // Count end positions for this ball
+            let endPositions = [];
+            if (ball.end && ball.end.length > 0) {
+                // Check if ball.end is already an array of arrays (new format) or a single position (legacy format)
+                if (Array.isArray(ball.end[0])) {
+                    endPositions = ball.end;
+                } else {
+                    endPositions = [ball.end];
+                }
+            }
+            const goalCount = endPositions.length;
+            const goalText = goalCount === 0 ? 'No goals' : goalCount === 1 ? '1 goal' : `${goalCount} goals`;
             
             ballItem.innerHTML = `
                 <div class="ball-color" style="background-color: ${CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#fff'}" onclick="editor.editBall(${index})" title="Click to change color"></div>
@@ -657,7 +647,7 @@ class LevelEditor {
                     </button>
                 </div>
                 <div class="ball-info" style="font-size: 14px; font-weight: bold; color: ${CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ball.color] || '#fff'}">
-                    ${index + 1}
+                    ${index + 1}<br><small style="font-size: 10px; opacity: 0.7;">${goalText}</small>
                 </div>
                 <div class="ball-actions">
                     <button class="btn btn-sm btn-danger" onclick="editor.removeBall(${index})">×</button>
@@ -880,7 +870,10 @@ class LevelEditor {
                 this.updateNodeToolsState(false);
             } else {
                 // Handle multiple end positions - toggle behavior
-                if (!Array.isArray(ball.end[0])) {
+                // Ensure ball.end is in array format (array of arrays)
+                if (!ball.end || ball.end.length === 0) {
+                    ball.end = [];
+                } else if (!Array.isArray(ball.end[0])) {
                     // Convert legacy single end position to array format
                     ball.end = [ball.end];
                 }
@@ -894,10 +887,8 @@ class LevelEditor {
                     // Remove the existing end position
                     ball.end.splice(existingIndex, 1);
                     
-                    // Ensure at least one end position remains
-                    if (ball.end.length === 0) {
-                        ball.end = [[coordCol, coordRow]]; // Keep the current position
-                    }
+                    // Allow removing all end positions (no ball-specific goals)
+                    // No need to ensure at least one end position remains
                 } else {
                     // Add new end position
                     ball.end.push([coordCol, coordRow]);
@@ -928,7 +919,17 @@ class LevelEditor {
         // Check if any ball's end position is in the rear face
         for (const ball of this.balls) {
             // Handle both legacy single end position and new multiple end positions
-            let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+            let endPositions = [];
+            if (ball.end && ball.end.length > 0) {
+                if (Array.isArray(ball.end[0])) {
+                    endPositions = ball.end;
+                } else {
+                    endPositions = [ball.end];
+                }
+            }
+            
+            // Skip balls without end positions
+            if (endPositions.length === 0) continue;
             
             for (const endPos of endPositions) {
                 // Use consistent coordinate system: front = [col, row], rear = [-col, -row]
@@ -1052,6 +1053,10 @@ class LevelEditor {
                 if (levelData.balls) {
                     // Convert legacy single end positions to array format
                     this.balls = levelData.balls.map(ball => {
+                        // Handle empty end positions
+                        if (!ball.end || ball.end.length === 0) {
+                            return { ...ball, end: [] };
+                        }
                         // Check if end is already in array format
                         if (Array.isArray(ball.end[0])) {
                             return ball; // Already in new format
@@ -1200,7 +1205,14 @@ class LevelEditor {
                 }
                 
                 // Adjust end positions (handle both legacy single and new multiple)
-                let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+                let endPositions = [];
+                if (ball.end && ball.end.length > 0) {
+                    if (Array.isArray(ball.end[0])) {
+                        endPositions = ball.end;
+                    } else {
+                        endPositions = [ball.end];
+                    }
+                }
                 
                 endPositions.forEach(endPos => {
                     if (removedFirst) {
@@ -1306,7 +1318,14 @@ class LevelEditor {
                 }
                 
                 // Adjust end positions (handle both legacy single and new multiple)
-                let endPositions = Array.isArray(ball.end[0]) ? ball.end : [ball.end];
+                let endPositions = [];
+                if (ball.end && ball.end.length > 0) {
+                    if (Array.isArray(ball.end[0])) {
+                        endPositions = ball.end;
+                    } else {
+                        endPositions = [ball.end];
+                    }
+                }
                 
                 endPositions.forEach(endPos => {
                     if (removedFirst) {
