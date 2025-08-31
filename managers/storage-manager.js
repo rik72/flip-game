@@ -192,15 +192,76 @@ class StorageManager {
     }
 
     /**
+     * Improved hash function for generating level filenames
+     * @param {string} input - Input string to hash
+     * @returns {string} - 6-character hash [a-z0-9]
+     */
+    simpleHash(input) {
+        // Use a more sophisticated hash algorithm for better distribution
+        let hash1 = 0x811c9dc5; // FNV-1a hash prime
+        let hash2 = 0x1505;     // FNV-1a hash offset basis
+        
+        for (let i = 0; i < input.length; i++) {
+            const char = input.charCodeAt(i);
+            hash1 = (hash1 ^ char) * 0x01000193; // FNV-1a multiplication
+            hash2 = (hash2 ^ char) * 0x01000193;
+            hash1 = hash1 >>> 0; // Keep as 32-bit unsigned
+            hash2 = hash2 >>> 0;
+        }
+        
+        // Combine both hashes for better distribution
+        const combinedHash = (hash1 << 16) | (hash2 & 0xffff);
+        const positiveHash = Math.abs(combinedHash);
+        
+        // Use a larger character set and better distribution
+        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        
+        // Generate each character using different parts of the hash
+        for (let i = 0; i < 6; i++) {
+            // Use different bit positions for each character
+            const shift = (i * 5) % 32;
+            const charIndex = (positiveHash >> shift) & 0x1f; // 5 bits = 0-31
+            result += chars[charIndex % chars.length];
+        }
+        
+        return result;
+    }
+
+    /**
+     * Generate hashed filename for a level
+     * @param {number} levelNumber - Level number
+     * @param {string} hashSeed - Hash seed
+     * @returns {string} - Hashed filename
+     */
+    generateLevelFilename(levelNumber, hashSeed) {
+        const content = `${levelNumber}_${hashSeed}`;
+        const hash = this.simpleHash(content);
+        return `level_${levelNumber}_${hash}.json`;
+    }
+
+    /**
      * Carica i dati di un livello specifico da file JSON
      * @param {number} levelNumber - Numero del livello
      * @returns {Promise<object|null>} - Dati del livello o null
      */
     async loadLevelData(levelNumber) {
         try {
-            const response = await fetch(`levels/level_${levelNumber}.json`);
+            // Check if we have a hash seed (production mode)
+            const hashSeed = CONSTANTS.GAME_CONFIG.LEVEL_HASH_SEED;
+            let filename;
+            
+            if (hashSeed && hashSeed.trim() !== '') {
+                // Production mode: use hashed filename
+                filename = this.generateLevelFilename(levelNumber, hashSeed);
+            } else {
+                // Development mode: use original filename
+                filename = `level_${levelNumber}.json`;
+            }
+            
+            const response = await fetch(`levels/${filename}`);
             if (!response.ok) {
-                console.warn(`Level ${levelNumber} file not found`);
+                console.warn(`Level ${levelNumber} file not found: ${filename}`);
                 return null;
             }
             const levelData = await response.json();

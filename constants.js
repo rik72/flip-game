@@ -29,6 +29,7 @@ const CONSTANTS = {
 	GAME_CONFIG: {
 		// General configurations
 		ACTUAL_MAX_LEVEL: 15, // Actual final level of the game (auto-detected, see script/levels/update-max-level.js)
+		LEVEL_HASH_SEED: 'et5qou', // Hash seed for level filename generation (empty = development mode)
 		// Development: Force loading specific level as first (set to null to disable)
 		FORCE_START_LEVEL: 1, // Set to level number (e.g., 4) to force start at that level
 		

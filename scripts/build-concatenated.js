@@ -8,6 +8,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// Import level hashing functionality
+const { generateHashSeed, processLevelFiles, updateConstantsWithHashSeed } = require('./level-hasher');
+
 // File order for the main game bundle
 const GAME_FILES = [
     'constants.js',
@@ -130,6 +133,26 @@ function main() {
     // Auto-detect and update max level
     const maxLevel = detectMaxLevel();
     updateConstantsWithMaxLevel(maxLevel);
+    
+    // Process level files with hashing (only in production builds)
+    const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--production');
+    if (isProduction) {
+        console.log('🔧 Production build detected - processing level files with hashing...\n');
+        
+        const projectRoot = path.resolve(__dirname, '..');
+        const sourceLevelsDir = path.join(projectRoot, 'levels');
+        const distLevelsDir = path.join(projectRoot, 'dist', 'levels');
+        const constantsPath = path.join(projectRoot, 'constants.js');
+        
+        // Generate hash seed and process level files
+        const hashSeed = generateHashSeed(sourceLevelsDir);
+        processLevelFiles(sourceLevelsDir, distLevelsDir, hashSeed);
+        updateConstantsWithHashSeed(constantsPath, hashSeed);
+        
+        console.log('✅ Level hashing completed\n');
+    } else {
+        console.log('ℹ️  Development build - skipping level hashing\n');
+    }
     
     // Ensure src directory exists
     const srcDir = path.resolve(__dirname, '..', 'src');

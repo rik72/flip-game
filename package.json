@@ -10,7 +10,8 @@
     "start": "npm run check-compliance && npm run serve",
     "update-max-level": "node scripts/update-max-level.js",
     "concat": "npm run update-max-level && node scripts/build-concatenated.js",
-    "prebuild": "npm run concat",
+    "concat:prod": "npm run update-max-level && node scripts/build-concatenated.js --production",
+    "prebuild": "npm run concat:prod",
     "prebuild:dev": "npm run concat",
     "predev": "npm run concat",
     "build": "webpack --mode=production",
@@ -20,7 +21,8 @@
     "watch": "webpack --mode=development --watch",
     "analyze": "webpack-bundle-analyzer dist/bundle.js",
     "clean": "rm -rf dist",
-    "rebuild": "npm run clean && npm run concat && npm run build"
+    "rebuild": "npm run clean && npm run concat:prod && npm run build",
+    "test:hashing": "node scripts/test-level-hashing.js"
   },
   "keywords": [
     "flipgame",

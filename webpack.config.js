@@ -87,7 +87,8 @@ module.exports = (env, argv) => {
           { from: 'assets/js', to: 'assets/js' },
           { from: 'assets/fonts', to: 'assets/fonts' },
           { from: 'assets/sounds', to: 'assets/sounds' },
-          { from: 'levels', to: 'levels' },
+          // Use hashed level files in production, original files in development
+          { from: isProduction ? 'dist/levels' : 'levels', to: 'levels' },
           { from: 'favicon.svg', to: 'favicon.svg' },
           { from: 'editor_favicon.svg', to: 'editor_favicon.svg' }
         ]
