@@ -2605,6 +2605,8 @@ class GameManager {
         ball.wellAnimationScale = undefined;
         ball.wellAnimationOpacity = undefined;
         
+
+        
         // Update the ball's original start coordinates and current face based on transfer
         // If currently on front face, transfer to rear (negative coordinates)
         // If currently on rear face, transfer to front (positive coordinates)
@@ -2622,6 +2624,42 @@ class GameManager {
         
         // Flip the board as if user clicked the flip button
         this.toggleBoardFace();
+        
+        // Check if the destination node is a sticker and activate it (after board flip)
+        // Calculate the destination face based on the original face and transfer direction
+        const destinationFace = currentBallFace === 'front' ? 'rear' : 'front';
+        console.log(`Well transfer: currentBallFace=${currentBallFace}, calculated destinationFace=${destinationFace}`);
+        const destinationNodeType = this.getNodeTypeAtFace(transferX, transferY, destinationFace);
+        console.log(`Well transfer: destination node type = ${destinationNodeType}, transferX=${transferX}, transferY=${transferY}, destinationFace=${destinationFace}`);
+        if (destinationNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER && ballIndex !== -1) {
+            console.log(`Well transfer: Found sticker at destination, checking activation...`);
+            // Check if this sticker is already activated by this ball
+            const nodeKey = `${transferY}_${transferX}`;
+            const isAlreadyActivated = this.activatedStickers[destinationFace] && 
+                                     this.activatedStickers[destinationFace][nodeKey] && 
+                                     this.activatedStickers[destinationFace][nodeKey].ballIndex === ballIndex;
+            
+            console.log(`Well transfer: Sticker already activated = ${isAlreadyActivated}`);
+            if (!isAlreadyActivated) {
+                console.log(`Well transfer: Activating sticker at (${transferX}, ${transferY}) with ball ${ballIndex} color ${ball.color}`);
+                
+                // Give the ball a tail if it doesn't have one already
+                if (!ball.hasTail) {
+                    ball.hasTail = true;
+                    // Initialize visited nodes if not already done
+                    if (!ball.visitedNodes) {
+                        ball.visitedNodes = [];
+                    }
+                    console.log(`Well transfer: Ball ${ballIndex} now has tail`);
+                }
+                
+                // Activate the sticker with the ball's color on the correct face
+                const originalFace = this.currentFace;
+                this.currentFace = destinationFace;
+                this.activateSticker(transferX, transferY, ballIndex, ball.color);
+                this.currentFace = originalFace;
+            }
+        }
         
         // Update the enhanced ball movement system after well transfer
         if (ballIndex !== -1) {
@@ -6540,6 +6578,8 @@ class GameManager {
         const face = this.currentFace;
         const nodeKey = `${gridY}_${gridX}`;
         
+        console.log(`activateSticker called: gridX=${gridX}, gridY=${gridY}, ballIndex=${ballIndex}, ballColor=${ballColor}, face=${face}, nodeKey=${nodeKey}`);
+        
         // Initialize face if it doesn't exist
         if (!this.activatedStickers[face]) {
             this.activatedStickers[face] = {};
@@ -6550,6 +6590,8 @@ class GameManager {
             ballIndex: ballIndex,
             color: ballColor
         };
+        
+        console.log(`Sticker activated: ${JSON.stringify(this.activatedStickers[face][nodeKey])}`);
     }
 
     // Check if a ball entered a trap and activate it
