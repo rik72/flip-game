@@ -65,22 +65,7 @@ class LevelEditor {
             });
         });
         
-        // Collapse event listeners for icon rotation
-        document.getElementById('nodeTypesCollapse').addEventListener('shown.bs.collapse', () => {
-            document.getElementById('nodeTypesIcon').style.transform = 'rotate(180deg)';
-        });
-        
-        document.getElementById('nodeTypesCollapse').addEventListener('hidden.bs.collapse', () => {
-            document.getElementById('nodeTypesIcon').style.transform = 'rotate(0deg)';
-        });
-        
-        document.getElementById('ballsCollapse').addEventListener('shown.bs.collapse', () => {
-            document.getElementById('ballsIcon').style.transform = 'rotate(180deg)';
-        });
-        
-        document.getElementById('ballsCollapse').addEventListener('hidden.bs.collapse', () => {
-            document.getElementById('ballsIcon').style.transform = 'rotate(0deg)';
-        });
+
     }
     
     generateGrid() {

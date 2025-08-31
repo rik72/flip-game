@@ -53,147 +53,25 @@
     </style>
 
     <div class="editor-container">
-        <!-- Toolbar -->
+        <!-- Left Toolbar -->
         <div class="toolbar">
             <div class="editor-title">
                 <h3><img src="editor_favicon.svg" alt="Flip Editor" width="24" height="24">Flip Editor</h3>
             </div>
             
-            <div class="toolbar-section">
-                <div class="toolbar-title" data-bs-toggle="collapse" data-bs-target="#nodeTypesCollapse" aria-expanded="false" aria-controls="nodeTypesCollapse" style="cursor: pointer;">
-                    <i class="bi bi-chevron-down" id="nodeTypesIcon"></i> Node Types
-                </div>
-                <div class="collapse" id="nodeTypesCollapse">
-                    <div class="node-tool" data-type="__">
-                        <div class="node-preview"></div>
-                        <div class="node-label">Empty</div>
-                    </div>
-                    <div class="node-tool" data-type="p0">
-                        <div class="node-preview">p0</div>
-                        <div class="node-label">Path (All Balls)</div>
-                    </div>
-                    <div class="node-tool" data-type="p1">
-                        <div class="node-preview">p1</div>
-                        <div class="node-label">Path (Ball 1)</div>
-                    </div>
-                    <div class="node-tool" data-type="p2">
-                        <div class="node-preview">p2</div>
-                        <div class="node-label">Path (Ball 2)</div>
-                    </div>
-                    <div class="node-tool" data-type="v0">
-                        <div class="node-preview">v0</div>
-                        <div class="node-label">Vertical Path (All Balls)</div>
-                    </div>
-                    <div class="node-tool" data-type="v1">
-                        <div class="node-preview">v1</div>
-                        <div class="node-label">Vertical Path (Ball 1)</div>
-                    </div>
-                    <div class="node-tool" data-type="v2">
-                        <div class="node-preview">v2</div>
-                        <div class="node-label">Vertical Path (Ball 2)</div>
-                    </div>
-                    <div class="node-tool" data-type="h0">
-                        <div class="node-preview">h0</div>
-                        <div class="node-label">Horizontal Path (All Balls)</div>
-                    </div>
-                    <div class="node-tool" data-type="h1">
-                        <div class="node-preview">h1</div>
-                        <div class="node-label">Horizontal Path (Ball 1)</div>
-                    </div>
-                    <div class="node-tool" data-type="h2">
-                        <div class="node-preview">h2</div>
-                        <div class="node-label">Horizontal Path (Ball 2)</div>
-                    </div>
-                    <div class="node-tool" data-type="w0">
-                        <div class="node-preview">w0</div>
-                        <div class="node-label">Well</div>
-                    </div>
-                    <div class="node-tool" data-type="t0">
-                        <div class="node-preview">t0</div>
-                        <div class="node-label">Teleport</div>
-                    </div>
-                    <div class="node-tool" data-type="sr">
-                        <div class="node-preview">sr</div>
-                        <div class="node-label">Switch (Red)</div>
-                    </div>
-                    <div class="node-tool" data-type="sg">
-                        <div class="node-preview">sg</div>
-                        <div class="node-label">Switch (Green)</div>
-                    </div>
-                    <div class="node-tool" data-type="sb">
-                        <div class="node-preview">sb</div>
-                        <div class="node-label">Switch (Blue)</div>
-                    </div>
-                    <div class="node-tool" data-type="sl">
-                        <div class="node-preview">sl</div>
-                        <div class="node-label">Switch (Light Blue)</div>
-                    </div>
-                    <div class="node-tool" data-type="sy">
-                        <div class="node-preview">sy</div>
-                        <div class="node-label">Switch (Yellow)</div>
-                    </div>
-                    <div class="node-tool" data-type="sp">
-                        <div class="node-preview">sp</div>
-                        <div class="node-label">Switch (Purple)</div>
-                    </div>
-                    <div class="node-tool" data-type="so">
-                        <div class="node-preview">so</div>
-                        <div class="node-label">Switch (Orange)</div>
-                    </div>
-                    <div class="node-tool" data-type="g0">
-                        <div class="node-preview">g0</div>
-                        <div class="node-label">Shared Goal</div>
-                    </div>
-                    <div class="node-tool" data-type="$0">
-                        <div class="node-preview">$0</div>
-                        <div class="node-label">Sticker</div>
-                    </div>
-                    <div class="node-tool" data-type="xr">
-                        <div class="node-preview">xr</div>
-                        <div class="node-label">Trap (Red)</div>
-                    </div>
-                    <div class="node-tool" data-type="xg">
-                        <div class="node-preview">xg</div>
-                        <div class="node-label">Trap (Green)</div>
-                    </div>
-                    <div class="node-tool" data-type="xb">
-                        <div class="node-preview">xb</div>
-                        <div class="node-label">Trap (Blue)</div>
-                    </div>
-                    <div class="node-tool" data-type="xl">
-                        <div class="node-preview">xl</div>
-                        <div class="node-label">Trap (Light Blue)</div>
-                    </div>
-                    <div class="node-tool" data-type="xy">
-                        <div class="node-preview">xy</div>
-                        <div class="node-label">Trap (Yellow)</div>
-                    </div>
-                    <div class="node-tool" data-type="xp">
-                        <div class="node-preview">xp</div>
-                        <div class="node-label">Trap (Purple)</div>
-                    </div>
-                    <div class="node-tool" data-type="xo">
-                        <div class="node-preview">xo</div>
-                        <div class="node-label">Trap (Orange)</div>
-                    </div>
-                </div>
-            </div>
-            
             <div class="balls-section">
-                <div class="toolbar-title" data-bs-toggle="collapse" data-bs-target="#ballsCollapse" aria-expanded="false" aria-controls="ballsCollapse" style="cursor: pointer;">
-                    <i class="bi bi-chevron-down" id="ballsIcon"></i> Balls
+                <div class="toolbar-title">
+                    <i class="bi bi-circle-fill"></i> Balls
                 </div>
-                <div class="collapse" id="ballsCollapse">
-                    <div id="ballsList">
-                        <!-- Balls will be added here dynamically -->
-                    </div>
-                    <button class="btn btn-sm btn-primary" onclick="addBall()"><i class="bi bi-plus-circle"></i> Add Ball</button>
+                <div id="ballsList">
+                    <!-- Balls will be added here dynamically -->
                 </div>
+                <button class="btn btn-sm btn-primary" onclick="addBall()"><i class="bi bi-plus-circle"></i> Add Ball</button>
             </div>
             
             <div class="controls-section">
                 <div class="toolbar-title">
-                    Controls
+                    <i class="bi bi-gear-fill"></i> Controls
                 </div>
                 <div class="control-group">
                     <label class="control-label">Level Number</label>
@@ -212,7 +90,18 @@
         
         <!-- Main Area -->
         <div class="main-area">
-            
+
+            <div class="grid-size-section">
+                <div class="control-group">
+                    <label class="control-label">Board Size</label>
+                    <div class="grid-size-controls">
+                        <input type="number" id="gridWidth" class="form-control size-input" value="6" min="1" max="8">
+                        <span style="color: #fff;">×</span>
+                        <input type="number" id="gridHeight" class="form-control size-input" value="6" min="1" max="16">
+                    </div>
+                </div>
+            </div>
+
             <div class="board-container">
                 <div class="face-editor">
                     <div class="face-title">Front Face</div>
@@ -229,19 +118,192 @@
                 </div>
             </div>
             
-            <div class="grid-size-section">
-                <div class="control-group">
-                    <label class="control-label">Board Size</label>
-                    <div class="grid-size-controls">
-                        <input type="number" id="gridWidth" class="form-control size-input" value="6" min="1" max="8">
-                        <span style="color: #fff;">×</span>
-                        <input type="number" id="gridHeight" class="form-control size-input" value="6" min="1" max="16">
-                    </div>
+            <div class="clear-board-section">
+                <button class="mx-2 btn btn-danger" onclick="clearBoard()"><i class="bi bi-stars"></i> Clear</button>
+                <button class="mx-2 btn btn-warning" onclick="shrinkHorizontally()"><i class="bi bi-arrows-collapse-vertical"></i> Shrink Horizontally</button>
+                <button class="mx-2 btn btn-warning" onclick="shrinkVertically()"><i class="bi bi-arrows-collapse"></i> Shrink Vertically</button>
+            </div>
+        </div>
+        
+        <!-- Right Sidemenu -->
+        <div class="right-sidemenu">            
+            <div class="toolbar-title">
+                <i class="bi bi-puzzle-fill"></i> Node Types
+            </div>
+            <div class="toolbar-section">
+
+                <div class="node-tool" data-type="__">
+                    <div class="node-preview"></div>
+                    <div class="node-label">Empty</div>
                 </div>
-                <div class="clear-board-section">
-                    <button class="mx-2 btn btn-danger" onclick="clearBoard()"><i class="bi bi-stars"></i> Clear</button>
-                    <button class="mx-2 btn btn-warning" onclick="shrinkHorizontally()"><i class="bi bi-arrows-collapse-vertical"></i> Shrink Horizontally</button>
-                    <button class="mx-2 btn btn-warning" onclick="shrinkVertically()"><i class="bi bi-arrows-collapse"></i> Shrink Vertically</button>
+                <div class="node-tool" data-type="w0">
+                    <div class="node-preview">w0</div>
+                    <div class="node-label">Well</div>
+                </div>
+                <div class="node-tool" data-type="$0">
+                    <div class="node-preview">$0</div>
+                    <div class="node-label">Sticker</div>
+                </div>
+                <div class="node-tool" data-type="g0">
+                    <div class="node-preview">g0</div>
+                    <div class="node-label">Shared Goal</div>
+                </div>
+
+                <div style="grid-column: 1 / -1; height: 10px;"></div>
+
+                <div class="node-tool" data-type="p0">
+                    <div class="node-preview">p0</div>
+                    <div class="node-label">Path</div>
+                </div>
+                <div class="node-tool" data-type="p1">
+                    <div class="node-preview">p1</div>
+                    <div class="node-label">Path</div>
+                </div>
+                <div class="node-tool" data-type="p2">
+                    <div class="node-preview">p2</div>
+                    <div class="node-label">Path</div>
+                </div>
+                <div class="node-tool" data-type="p3">
+                    <div class="node-preview">p3</div>
+                    <div class="node-label">Path</div>
+                </div>
+
+                <div class="node-tool" data-type="v0">
+                    <div class="node-preview">v0</div>
+                    <div class="node-label">Vertical Path</div>
+                </div>
+                <div class="node-tool" data-type="v1">
+                    <div class="node-preview">v1</div>
+                    <div class="node-label">Vertical Path</div>
+                </div>
+                <div class="node-tool" data-type="v2">
+                    <div class="node-preview">v2</div>
+                    <div class="node-label">Vertical Path</div>
+                </div>
+                <div class="node-tool" data-type="v3">
+                    <div class="node-preview">v3</div>
+                    <div class="node-label">Vertical Path</div>
+                </div>
+
+                <div class="node-tool" data-type="h0">
+                    <div class="node-preview">h0</div>
+                    <div class="node-label">Horizontal Path</div>
+                </div>
+                <div class="node-tool" data-type="h1">
+                    <div class="node-preview">h1</div>
+                    <div class="node-label">Horizontal Path</div>
+                </div>
+                <div class="node-tool" data-type="h2">
+                    <div class="node-preview">h2</div>
+                    <div class="node-label">Horizontal Path</div>
+                </div>
+                <div class="node-tool" data-type="h3">
+                    <div class="node-preview">h3</div>
+                    <div class="node-label">Horizontal Path</div>
+                </div>
+
+                <div style="grid-column: 1 / -1; height: 10px;"></div>
+
+                <div class="node-tool" data-type="sr">
+                    <div class="node-preview">sr</div>
+                    <div class="node-label">Switch</div>
+                </div>
+                <div class="node-tool" data-type="xr">
+                    <div class="node-preview">xr</div>
+                    <div class="node-label">Trap</div>
+                </div>
+                <div class="node-tool" data-type="tr">
+                    <div class="node-preview">tr</div>
+                    <div class="node-label">Teleport</div>
+                </div>
+                <div class="node-tool" data-type="cr">
+                    <div class="node-preview">cr</div>
+                    <div class="node-label">Collectible</div>
+                </div>
+
+                <div class="node-tool" data-type="sg">
+                    <div class="node-preview">sg</div>
+                    <div class="node-label">Switch</div>
+                </div>
+                <div class="node-tool" data-type="xg">
+                    <div class="node-preview">xg</div>
+                    <div class="node-label">Trap</div>
+                </div>
+                <div class="node-tool" data-type="tg">
+                    <div class="node-preview">tg</div>
+                    <div class="node-label">Teleport</div>
+                </div>
+                <div class="node-tool" data-type="cg">
+                    <div class="node-preview">cg</div>
+                    <div class="node-label">Collectible</div>
+                </div>
+
+                <div class="node-tool" data-type="sb">
+                    <div class="node-preview">sb</div>
+                    <div class="node-label">Switch</div>
+                </div>
+                <div class="node-tool" data-type="xb">
+                    <div class="node-preview">xb</div>
+                    <div class="node-label">Trap</div>
+                </div>
+                <div class="node-tool" data-type="tb">
+                    <div class="node-preview">tb</div>
+                    <div class="node-label">Teleport</div>
+                </div>
+                <div class="node-tool" data-type="cb">
+                    <div class="node-preview">cb</div>
+                    <div class="node-label">Collectible</div>
+                </div>
+
+                <div class="node-tool" data-type="sy">
+                    <div class="node-preview">sy</div>
+                    <div class="node-label">Switch</div>
+                </div>
+                <div class="node-tool" data-type="xy">
+                    <div class="node-preview">xy</div>
+                    <div class="node-label">Trap</div>
+                </div>
+                <div class="node-tool" data-type="ty">
+                    <div class="node-preview">ty</div>
+                    <div class="node-label">Teleport</div>
+                </div>
+                <div class="node-tool" data-type="cp">
+                    <div class="node-preview">cp</div>
+                    <div class="node-label">Collectible</div>
+                </div>
+
+                <div class="node-tool" data-type="sp">
+                    <div class="node-preview">sp</div>
+                    <div class="node-label">Switch</div>
+                </div>
+                <div class="node-tool" data-type="xp">
+                    <div class="node-preview">xp</div>
+                    <div class="node-label">Trap</div>
+                </div>
+                <div class="node-tool" data-type="tp">
+                    <div class="node-preview">tp</div>
+                    <div class="node-label">Teleport</div>
+                </div>
+                <div class="node-tool" data-type="cp">
+                    <div class="node-preview">cp</div>
+                    <div class="node-label">Collectible</div>
+                </div>
+
+                <div class="node-tool" data-type="so">
+                    <div class="node-preview">so</div>
+                    <div class="node-label">Switch</div>
+                </div>
+                <div class="node-tool" data-type="xo">
+                    <div class="node-preview">xo</div>
+                    <div class="node-label">Trap</div>
+                </div>
+                <div class="node-tool" data-type="to">
+                    <div class="node-preview">to</div>
+                    <div class="node-label">Teleport</div>
+                </div>
+                <div class="node-tool" data-type="co">
+                    <div class="node-preview">co</div>
+                    <div class="node-label">Collectible</div>
                 </div>
             </div>
         </div>

@@ -90,7 +90,6 @@ The project uses vanilla JavaScript with no build process required. Key files:
 
 - **Empty**: Free movement space
 - **Path**: Permitted movement corridors
-- **Wall**: Blocked areas
 - **Teleport**: Instant movement between points
 - **Switch**: Interactive elements that change board state
 - **Collectible**: Optional items that enhance gameplay
@@ -143,7 +142,6 @@ Levels are defined in the `GameManager` (grid-based). Balls and goal rings scale
 #### Node Types (String-based)
 - `.` - Empty space
 - `#` - Path (movement allowed)
-- `X` - Wall (blocked)
 - `T` - Teleport
 - `S` - Switch
 - `C` - Collectible

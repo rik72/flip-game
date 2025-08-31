@@ -1549,44 +1549,65 @@ class GameManager {
     checkSharedGoalsOccupied() {
         if (!this.board || !this.board.front) return true; // No board means no shared goals
         
-        const nodes = this.getCurrentNodes();
-        if (!nodes) return true;
+        // Check shared goals on both faces
+        const faces = ['front', 'rear'];
         
-        // Find all shared goal positions
-        const sharedGoalPositions = [];
-        for (let row = 0; row < nodes.length; row++) {
-            const rowArray = nodes[row];
-            for (let col = 0; col < rowArray.length; col++) {
-                const nodeType = rowArray[col];
-                if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
-                    const centerX = this.boardStartX + (col * this.gridSize);
-                    const centerY = this.boardStartY + (row * this.gridSize);
-                    sharedGoalPositions.push({ centerX, centerY, row, col });
+        for (const face of faces) {
+            const nodes = face === 'front' ? this.board.front : this.board.rear;
+            if (!nodes) continue;
+            
+            // Find all shared goal positions on this face
+            const sharedGoalPositions = [];
+            for (let row = 0; row < nodes.length; row++) {
+                const rowArray = nodes[row];
+                for (let col = 0; col < rowArray.length; col++) {
+                    const nodeType = rowArray[col];
+                    if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
+                        const centerX = this.boardStartX + (col * this.gridSize);
+                        const centerY = this.boardStartY + (row * this.gridSize);
+                        sharedGoalPositions.push({ centerX, centerY, row, col, face });
+                    }
+                }
+            }
+            
+            console.log(`Found ${sharedGoalPositions.length} shared goals on ${face} face`);
+            
+            // If no shared goals on this face, continue to next face
+            if (sharedGoalPositions.length === 0) continue;
+            
+            // Check if each shared goal is occupied (by ball OR tail disc)
+            for (const goalPos of sharedGoalPositions) {
+                const isOccupied = this.isSharedGoalOccupied(goalPos.centerX, goalPos.centerY, face);
+                console.log(`Shared goal at (${goalPos.row}, ${goalPos.col}) on ${face} face occupied: ${isOccupied}`);
+                if (!isOccupied) {
+                    return false; // This shared goal is not occupied
                 }
             }
         }
         
-        // If no shared goals, return true
-        if (sharedGoalPositions.length === 0) return true;
-        
-        // Check if each shared goal is occupied (by ball OR tail disc)
-        for (const goalPos of sharedGoalPositions) {
-            const isOccupied = this.isSharedGoalOccupied(goalPos.centerX, goalPos.centerY, this.currentFace);
-            if (!isOccupied) {
-                return false; // This shared goal is not occupied
-            }
-        }
-        
-        // Check that no ball occupies multiple shared goals (only count physical ball occupation)
+        // Check that no ball occupies multiple shared goals across all faces (only count physical ball occupation)
         const occupiedByBalls = new Set();
-        for (const goalPos of sharedGoalPositions) {
-            const occupyingBall = this.getSharedGoalOccupyingBall(goalPos.centerX, goalPos.centerY, this.currentFace);
-            if (occupyingBall) {
-                const ballIndex = this.balls.indexOf(occupyingBall);
-                if (occupiedByBalls.has(ballIndex)) {
-                    return false; // A ball occupies multiple shared goals
+        for (const face of faces) {
+            const nodes = face === 'front' ? this.board.front : this.board.rear;
+            if (!nodes) continue;
+            
+            for (let row = 0; row < nodes.length; row++) {
+                const rowArray = nodes[row];
+                for (let col = 0; col < rowArray.length; col++) {
+                    const nodeType = rowArray[col];
+                    if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
+                        const centerX = this.boardStartX + (col * this.gridSize);
+                        const centerY = this.boardStartY + (row * this.gridSize);
+                        const occupyingBall = this.getSharedGoalOccupyingBall(centerX, centerY, face);
+                        if (occupyingBall) {
+                            const ballIndex = this.balls.indexOf(occupyingBall);
+                            if (occupiedByBalls.has(ballIndex)) {
+                                return false; // A ball occupies multiple shared goals
+                            }
+                            occupiedByBalls.add(ballIndex);
+                        }
+                    }
                 }
-                occupiedByBalls.add(ballIndex);
             }
         }
         
@@ -3050,14 +3071,17 @@ class GameManager {
         // Check if all balls satisfy their win conditions
         const allBallsAtGoal = this.balls.every((ball, ballIndex) => {
             const isAtGoal = this.isBallAtGoal(ball, ballIndex);
+            console.log(`Ball ${ballIndex} (${ball.color}) at goal: ${isAtGoal}`);
             return isAtGoal;
         });
         
         // Check if all shared goals are occupied
         const allSharedGoalsOccupied = this.checkSharedGoalsOccupied();
+        console.log(`All balls at goal: ${allBallsAtGoal}, All shared goals occupied: ${allSharedGoalsOccupied}`);
         
         // Both conditions must be met for level completion
         if (allBallsAtGoal && allSharedGoalsOccupied) {
+            console.log('Level completed!');
             this.levelCompleted();
         }
     }
@@ -3106,6 +3130,8 @@ class GameManager {
         const ballGridY = Math.round((ball.y - this.boardStartY) / this.gridSize);
         const ballFace = this.getBallCurrentFace(ball);
         
+        console.log(`Ball ${ballIndex} (${ball.color}) at grid (${ballGridX}, ${ballGridY}) on ${ballFace} face`);
+        
         // Get all end positions for this ball
         const endPositions = ball.endPositionsAbsolute || [];
         
@@ -3116,6 +3142,8 @@ class GameManager {
             const goalGridXConverted = goalGridX < 0 ? -goalGridX : goalGridX;
             const goalGridYConverted = goalGridY < 0 ? -goalGridY : goalGridY;
             const goalFace = goalGridX < 0 || goalGridY < 0 ? 'rear' : 'front';
+            
+            console.log(`Ball ${ballIndex} goal: (${goalGridXConverted}, ${goalGridYConverted}) on ${goalFace} face`);
             
             return ballGridX === goalGridXConverted && 
                    ballGridY === goalGridYConverted && 
@@ -3129,20 +3157,8 @@ class GameManager {
                    ballFace === endPos.face;
         });
         
-        if (!ballAtEndPosition) {
-            return false; // Ball is not at any end position
-        }
-        
-        // Check if all other end positions have tail discs from this ball
-        const allOtherEndPositionsHaveTail = endPositions.every(endPos => {
-            // Skip the end position where the ball currently is
-            if (ballGridX === endPos.gridX && 
-                ballGridY === endPos.gridY && 
-                ballFace === endPos.face) {
-                return true; // This is the position where the ball is, so it's "satisfied"
-            }
-            
-            // Check if this end position has a tail disc from this ball
+        // Check if all end positions have tail discs from this ball
+        const allEndPositionsHaveTail = endPositions.every(endPos => {
             const nodeKey = `${endPos.gridY}_${endPos.gridX}`;
             const face = endPos.face;
             
@@ -3151,7 +3167,33 @@ class GameManager {
                    this.nodeTails[face][nodeKey].ballIndex === ballIndex;
         });
         
-        return allOtherEndPositionsHaveTail;
+        // Ball satisfies win condition if EITHER:
+        // 1. It's physically at one end position AND has tail discs at all other positions, OR
+        // 2. It has tail discs at ALL end positions
+        if (ballAtEndPosition) {
+            // Ball is at one end position - check if all other positions have tail discs
+            const allOtherEndPositionsHaveTail = endPositions.every(endPos => {
+                // Skip the end position where the ball currently is
+                if (ballGridX === endPos.gridX && 
+                    ballGridY === endPos.gridY && 
+                    ballFace === endPos.face) {
+                    return true; // This is the position where the ball is, so it's "satisfied"
+                }
+                
+                // Check if this end position has a tail disc from this ball
+                const nodeKey = `${endPos.gridY}_${endPos.gridX}`;
+                const face = endPos.face;
+                
+                return this.nodeTails[face] && 
+                       this.nodeTails[face][nodeKey] && 
+                       this.nodeTails[face][nodeKey].ballIndex === ballIndex;
+            });
+            
+            return allOtherEndPositionsHaveTail;
+        } else {
+            // Ball is not at any end position - check if ALL positions have tail discs
+            return allEndPositionsHaveTail;
+        }
     }
 
 
@@ -4418,14 +4460,10 @@ class GameManager {
                     
                     // Render path nodes as circles (including new v# and h# nodes)
                     if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS ||
-                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1 ||
-                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2 ||
                         nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS ||
-                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_1 ||
-                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_2 ||
                         nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS ||
-                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1 ||
-                        nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2) {
+                        // Check for ball-specific path nodes (p1, p2, p3, v1, v2, v3, h1, h2, h3, etc.)
+                        (nodeType.length === 2 && (nodeType[0] === 'p' || nodeType[0] === 'v' || nodeType[0] === 'h') && nodeType[1] !== '0')) {
                         
                         const centerX = this.boardStartX + (col * this.gridSize);
                         const centerY = this.boardStartY + (row * this.gridSize);
@@ -4552,7 +4590,7 @@ class GameManager {
                     const nodeType = rowArray[col];
                     
                     // Render TRAP nodes in open state (four squares)
-                    if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+                    if (nodeType.startsWith('x')) {
                         const centerX = this.boardStartX + (col * this.gridSize);
                         const centerY = this.boardStartY + (row * this.gridSize);
                         
@@ -4682,7 +4720,7 @@ class GameManager {
                     const nodeType = rowArray[col];
                     
                     // Render TRAP nodes in closed state (X/+ shape)
-                    if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+                    if (nodeType.startsWith('x')) {
                         const centerX = this.boardStartX + (col * this.gridSize);
                         const centerY = this.boardStartY + (row * this.gridSize);
                         
@@ -4814,7 +4852,7 @@ class GameManager {
                     const nodeType = rowArray[col];
                     
                     // Render SWITCH nodes as four squares arranged diagonally
-                    if (nodeType.startsWith('s') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SWITCH) {
+                    if (nodeType.startsWith('s')) {
         
                         const centerX = this.boardStartX + (col * this.gridSize);
                         const centerY = this.boardStartY + (row * this.gridSize);
@@ -4918,7 +4956,7 @@ class GameManager {
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2 ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
                     nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER ||
-                    (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) ||
+                    (nodeType.startsWith('x')) ||
                     (nodeType.startsWith('s'))) {
                     
                     const centerX = this.boardStartX + (col * this.gridSize);
@@ -4960,23 +4998,22 @@ class GameManager {
         // Both nodes must be path nodes (not empty), WELL nodes, or TRAP nodes
         const pathTypes = [
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS,
-            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1,
-            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_ALL_BALLS,
-            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_1,
-            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_2,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_ALL_BALLS,
-            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1,
-            CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL,
             CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER
         ];
         
+        // Add all ball-specific path types dynamically (p1, p2, p3, v1, v2, v3, h1, h2, h3, etc.)
+        for (let i = 1; i <= CONSTANTS.GAME_CONFIG.MAX_BALLS; i++) {
+            pathTypes.push(`p${i}`, `v${i}`, `h${i}`);
+        }
+        
         // Add trap nodes to path types
-        if (nodeType1.startsWith('x') && nodeType1 !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+        if (nodeType1.startsWith('x')) {
             pathTypes.push(nodeType1);
         }
-        if (nodeType2.startsWith('x') && nodeType2 !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+        if (nodeType2.startsWith('x')) {
             pathTypes.push(nodeType2);
         }
         
@@ -5071,53 +5108,17 @@ class GameManager {
 
     // Get the color for a specific path type
     getPathColor(nodeType) {
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_1) {
-            // Use the color of the first ball (ball 0) from the level data
-            if (this.balls && this.balls.length > 0) {
-                const ballColor = this.balls[0].color;
-                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#FF0000';
+        // Check if this is a ball-specific path node (p1, p2, p3, v1, v2, v3, h1, h2, h3)
+        if (nodeType.length === 2 && (nodeType[0] === 'p' || nodeType[0] === 'v' || nodeType[0] === 'h') && nodeType[1] !== '0') {
+            const ballIndex = parseInt(nodeType[1]) - 1; // Convert '1' to 0, '2' to 1, '3' to 2, etc.
+            
+            if (this.balls && this.balls.length > ballIndex) {
+                const ballColor = this.balls[ballIndex].color;
+                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#666666';
             }
-            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Fallback to red
-        }
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_1) {
-            // Use the color of the first ball (ball 0) from the level data
-            if (this.balls && this.balls.length > 0) {
-                const ballColor = this.balls[0].color;
-                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#FF0000';
-            }
-            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Fallback to red
-        }
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_1) {
-            // Use the color of the first ball (ball 0) from the level data
-            if (this.balls && this.balls.length > 0) {
-                const ballColor = this.balls[0].color;
-                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#FF0000';
-            }
-            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.red; // Fallback to red
-        }
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_BALL_2) {
-            // Use the color of the second ball (ball 1) from the level data
-            if (this.balls && this.balls.length > 1) {
-                const ballColor = this.balls[1].color;
-                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#0000FF';
-            }
-            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Fallback to blue
-        }
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.VERTICAL_BALL_2) {
-            // Use the color of the second ball (ball 1) from the level data
-            if (this.balls && this.balls.length > 1) {
-                const ballColor = this.balls[1].color;
-                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#0000FF';
-            }
-            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Fallback to blue
-        }
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.HORIZONTAL_BALL_2) {
-            // Use the color of the second ball (ball 1) from the level data
-            if (this.balls && this.balls.length > 1) {
-                const ballColor = this.balls[1].color;
-                return CONSTANTS.LEVEL_CONFIG.BALL_COLORS[ballColor] || '#0000FF';
-            }
-            return CONSTANTS.LEVEL_CONFIG.BALL_COLORS.blue; // Fallback to blue
+            // Fallback colors for each ball index - use available ball colors from constants
+            const availableColors = Object.values(CONSTANTS.LEVEL_CONFIG.BALL_COLORS);
+            return availableColors[ballIndex] || '#666666';
         }
         
         // For general path types (p0, v0, h0), use default gray
@@ -5705,23 +5706,15 @@ class GameManager {
         }
         
         // TRAP nodes can be accessed by any ball, but check if already closed
-        if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
-            const currentFace = this.getBallCurrentFace(ball);
-            const nodeKey = `${gridY}_${gridX}`;
-            const isClosed = this.closedTraps[currentFace] && 
-                           this.closedTraps[currentFace][nodeKey];
-            
-            // Check if there's an active switch of the same color
-            const trapColor = nodeType.charAt(1);
-            const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+        if (nodeType.startsWith('x')) {
+            const trapState = this.getTrapState(ball, gridX, gridY);
             
             // If there's an active switch of the same color, the trap should be open
-            if (hasActiveSwitch) {
-
+            if (trapState.hasActiveSwitch) {
                 return true; // Allow access to traps when there's an active switch of the same color
             }
             
-            if (isClosed) {
+            if (trapState.isClosed) {
                 return false; // Block access to closed traps
             }
             return true; // Allow access to open traps
@@ -5753,9 +5746,7 @@ class GameManager {
     
     // Check if a ball can access a specific node type (ignoring directional constraints)
     canBallAccessNodeType(ballIndex, nodeType) {
-
-        
-        // Path for all balls ('0') can be used by any ball
+        // Path for all balls ('p0') can be used by any ball
         if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.PATH_ALL_BALLS) {
             return true;
         }
@@ -5788,32 +5779,14 @@ class GameManager {
             return true;
         }
         
-        // STICKER nodes can be used by any ball
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
-    
+        // For sticker nodes, well nodes, trap nodes, switch nodes, and shared goal nodes, any ball can access them
+        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER ||
+            nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
+            nodeType.startsWith('x') ||
+            nodeType.startsWith('s') ||
+            nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
             return true;
         }
-        
-        // WELL nodes can be used by any ball
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
-            return true;
-        }
-        
-        // TRAP nodes can be used by any ball
-        if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
-            return true;
-        }
-        
-        // SWITCH nodes can be used by any ball
-        if (nodeType.startsWith('s')) {
-            return true;
-        }
-        
-        // SHARED GOAL nodes can be used by any ball
-        if (nodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
-            return true;
-        }
-        
 
         return false;
     }
@@ -5844,6 +5817,38 @@ class GameManager {
         return true;
     }
     
+    // Helper method to get trap state information
+    getTrapState(ball, gridX, gridY) {
+        const face = this.getBallCurrentFace(ball);
+        const nodeKey = `${gridY}_${gridX}`;
+        const isClosed = this.closedTraps[face] && 
+                       this.closedTraps[face][nodeKey];
+        const trapColor = this.getNodeTypeAt(gridX, gridY).charAt(1);
+        const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+        
+        return {
+            face,
+            nodeKey,
+            isClosed,
+            trapColor,
+            hasActiveSwitch
+        };
+    }
+
+    // Helper method to get switch state information
+    getSwitchState(ball, gridX, gridY) {
+        const face = this.getBallCurrentFace(ball);
+        const nodeKey = `${gridY}_${gridX}`;
+        const isClosed = this.closedSwitches[face] && 
+                       this.closedSwitches[face][nodeKey];
+        
+        return {
+            face,
+            nodeKey,
+            isClosed
+        };
+    }
+
     // Check if a ball can access a well (without causing infinite recursion)
     canBallAccessWell(ballIndex, wellGridX, wellGridY) {
         const ball = this.balls[ballIndex];
@@ -5965,11 +5970,6 @@ class GameManager {
     
     // Check if a ball can move in a specific direction from its current position
     canBallMoveInDirectionFromCurrent(ballIndex, direction, currentNodeType) {
-        // If the ball is on a regular path node (p#), it can move in any direction
-        if (currentNodeType.startsWith('p')) {
-            return true;
-        }
-        
         // If the ball is on a vertical node (v#), it can only move vertically
         if (currentNodeType.startsWith('v')) {
             return direction.dx === 0 && Math.abs(direction.dy) === 1;
@@ -5980,48 +5980,30 @@ class GameManager {
             return direction.dy === 0 && Math.abs(direction.dx) === 1;
         }
         
-        // If the ball is on a sticker node, it can move in any direction
-        if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
-            return true;
-        }
-        
-        // If the ball is on a well node, it can move in any direction
-        if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL) {
-            return true;
-        }
-        
-        // If the ball is on a switch node, it can move in any direction
-        if (currentNodeType.startsWith('s')) {
-            return true;
-        }
-        
-        // If the ball is on a shared goal node, it can move in any direction
-        if (currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
-            return true;
-        }
-        
         // If the ball is on a trap node, check if it's open (allow movement) or closed (block movement)
-        if (currentNodeType.startsWith('x') && currentNodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
-            const currentFace = this.getBallCurrentFace(this.balls[ballIndex]);
-            const nodeKey = `${this.getBallGridPosition(ballIndex).y}_${this.getBallGridPosition(ballIndex).x}`;
-            const isClosed = this.closedTraps[currentFace] && 
-                           this.closedTraps[currentFace][nodeKey];
-            
-            // Check if there's an active switch of the same color
-            const trapColor = currentNodeType.charAt(1);
-            const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+        if (currentNodeType.startsWith('x')) {
+            const ballGridPos = this.getBallGridPosition(ballIndex);
+            const trapState = this.getTrapState(this.balls[ballIndex], ballGridPos.x, ballGridPos.y);
             
             // If there's an active switch of the same color, allow movement regardless of trap state
-            if (hasActiveSwitch) {
-
+            if (trapState.hasActiveSwitch) {
                 return true;
             }
             
             // Allow movement only if trap is open (not closed)
-            return !isClosed;
+            return !trapState.isClosed;
         }
         
-        // For other node types (wall, etc.), no movement allowed
+        // For path nodes (p#), sticker nodes, well nodes, switch nodes (s#), and shared goal nodes, allow movement in any direction
+        if (currentNodeType.startsWith('p') || 
+            currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER ||
+            currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WELL ||
+            currentNodeType.startsWith('s') ||
+            currentNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.SHARED_GOAL) {
+            return true;
+        }
+        
+        // For other node types no movement allowed
         return false;
     }
 
@@ -6581,39 +6563,23 @@ class GameManager {
         
         // Get node type at ball's position
         const nodeType = this.getNodeTypeAt(ballGridX, ballGridY);
-
         
-        // Check if ball is on a trap node
-        if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
-            const face = this.getBallCurrentFace(ball);
-            const nodeKey = `${ballGridY}_${ballGridX}`;
-            
-            // Check if trap is already closed
-            const isClosed = this.closedTraps[face] && 
-                           this.closedTraps[face][nodeKey];
-            
-
-            
-            // Check if there's an active switch of the same color
-            const trapColor = nodeType.charAt(1); // Get the color character (r, g, b, l, y, p, o)
-            const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
-            
-            if (!isClosed && !hasActiveSwitch) {
-                // Only activate the trap if it's not already closed AND there's no active switch of the same color
-
-                this.activateTrap(ballGridX, ballGridY, ballIndex);
-            } else if (hasActiveSwitch) {
-
-                // Ensure the trap is not in closedTraps when there's an active switch
-                if (this.closedTraps[face] && this.closedTraps[face][nodeKey]) {
-                    delete this.closedTraps[face][nodeKey];
-
-                }
-                // Ensure the ball is not marked as trapped when there's an active switch
-                if (ball.isTrapped) {
-                    ball.isTrapped = false;
-
-                }
+        // Only proceed if ball is on a trap node
+        if (!nodeType.startsWith('x')) return;
+        
+        const trapState = this.getTrapState(ball, ballGridX, ballGridY);
+        
+        if (!trapState.isClosed && !trapState.hasActiveSwitch) {
+            // Only activate the trap if it's not already closed AND there's no active switch of the same color
+            this.activateTrap(ballGridX, ballGridY, ballIndex);
+        } else if (trapState.hasActiveSwitch) {
+            // Ensure the trap is not in closedTraps when there's an active switch
+            if (this.closedTraps[trapState.face] && this.closedTraps[trapState.face][trapState.nodeKey]) {
+                delete this.closedTraps[trapState.face][trapState.nodeKey];
+            }
+            // Ensure the ball is not marked as trapped when there's an active switch
+            if (ball.isTrapped) {
+                ball.isTrapped = false;
             }
         }
     }
@@ -6629,24 +6595,15 @@ class GameManager {
         
         // Get node type at ball's position
         const nodeType = this.getNodeTypeAt(ballGridX, ballGridY);
-
         
-        // Check if ball is on a switch node (colored switches only)
-        if (nodeType.startsWith('s')) {
-            const face = this.getBallCurrentFace(ball);
-            const nodeKey = `${ballGridY}_${ballGridX}`;
-            
-            // Check if switch is already closed
-            const isClosed = this.closedSwitches[face] && 
-                           this.closedSwitches[face][nodeKey];
-            
-
-            
-            if (!isClosed) {
-                // Activate the switch
-
-                this.activateSwitch(ballGridX, ballGridY, ballIndex, face);
-            }
+        // Only proceed if ball is on a switch node
+        if (!nodeType.startsWith('s')) return;
+        
+        const switchState = this.getSwitchState(ball, ballGridX, ballGridY);
+        
+        if (!switchState.isClosed) {
+            // Activate the switch
+            this.activateSwitch(ballGridX, ballGridY, ballIndex, switchState.face);
         }
     }
 
@@ -6707,24 +6664,21 @@ class GameManager {
                     const [row, col] = nodeKey.split('_').map(Number);
                     const nodeType = this.getNodeTypeAt(col, row);
                     
-                    // Check if this is a trap node and if the ball is no longer on it
-                    if (nodeType.startsWith('x') && nodeType !== CONSTANTS.LEVEL_CONFIG.NODE_TYPES.WALL) {
+                                        // Check if this is a trap node and if the ball is no longer on it
+                    if (nodeType.startsWith('x')) {
                         const ballFace = this.getBallCurrentFace(ball);
                         const ballOnTrap = (ballFace === face && ballGridX === col && ballGridY === row);
                         
                         if (!ballOnTrap) {
                             // Ball left the trap, check if we should close it
-                            const trapColor = nodeType.charAt(1);
-                            const hasActiveSwitch = this.hasActiveSwitchOfColor(trapColor);
+                            const trapState = this.getTrapState(ball, col, row);
                             
-                            if (!hasActiveSwitch) {
+                            if (!trapState.hasActiveSwitch) {
                                 // No active switch, close the trap
-        
                                 // Note: We don't actually close the trap here, just log it
                                 // The trap should remain closed until a switch opens it
                             } else {
                                 // Active switch exists, trap should remain open
-        
                             }
                         }
                     }

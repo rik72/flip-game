@@ -34,7 +34,7 @@ const CONSTANTS = {
 		
         // Ball configurations
         BALL_RADIUS: 15,
-        MAX_BALLS: 2, // Maximum number of balls allowed in a level
+        MAX_BALLS: 3, // Maximum number of balls allowed in a level
 	},
 
 	// Rendering size configurations
@@ -170,37 +170,60 @@ const CONSTANTS = {
 		
 		// Node types (2-character codes)
 		NODE_TYPES: {
+            // Empty node type
 			EMPTY: '__',
+
+            // Path node types
 			PATH_ALL_BALLS: 'p0',
 			PATH_BALL_1: 'p1',
 			PATH_BALL_2: 'p2',
+			PATH_BALL_3: 'p3',
 			VERTICAL_ALL_BALLS: 'v0',
 			VERTICAL_BALL_1: 'v1',
 			VERTICAL_BALL_2: 'v2',
+			VERTICAL_BALL_3: 'v3',
 			HORIZONTAL_ALL_BALLS: 'h0',
 			HORIZONTAL_BALL_1: 'h1',
 			HORIZONTAL_BALL_2: 'h2',
+			HORIZONTAL_BALL_3: 'h3',
+
+            // Well node type
             WELL: 'w0',
-			WALL: 'x0',
-			TELEPORT: 't0',
-			COLLECTIBLE: 'c0',
+
+            // Sticker node type
 			STICKER: '$0',
+
 			// Trap node types (color variants)
 			TRAP_RED: 'xr',
 			TRAP_GREEN: 'xg',
 			TRAP_BLUE: 'xb',
-			TRAP_LIGHTBLUE: 'xl',
 			TRAP_YELLOW: 'xy',
 			TRAP_PURPLE: 'xp',
 			TRAP_ORANGE: 'xo',
+
 			// Switch node types (color variants)
 			SWITCH_RED: 'sr',
 			SWITCH_GREEN: 'sg',
 			SWITCH_BLUE: 'sb',
-			SWITCH_LIGHTBLUE: 'sl',
 			SWITCH_YELLOW: 'sy',
 			SWITCH_PURPLE: 'sp',
 			SWITCH_ORANGE: 'so',
+
+			// Teleport node types (color variants)
+			TELEPORT_RED: 'tr',
+			TELEPORT_GREEN: 'tg',
+			TELEPORT_BLUE: 'tb',
+			TELEPORT_YELLOW: 'ty',
+			TELEPORT_PURPLE: 'tp',
+			TELEPORT_ORANGE: 'to',
+
+			// Collectible node types (color variants)
+			COLLECTIBLE_RED: 'cr',
+			COLLECTIBLE_GREEN: 'cg',
+			COLLECTIBLE_BLUE: 'cb',
+			COLLECTIBLE_YELLOW: 'cy',
+			COLLECTIBLE_PURPLE: 'cp',
+			COLLECTIBLE_ORANGE: 'co',
 			// Shared goal node type
 			SHARED_GOAL: 'g0'
 		},
@@ -208,38 +231,51 @@ const CONSTANTS = {
 		// Node colors (only for square nodes, circles use their own colors)
 		NODE_COLORS: {
 			'__': '#000000',  // Empty
+            
 			'p0': '#999999',  // Path for all balls
 			'p1': '#801111',  // Path for ball 1
 			'p2': '#111180',  // Path for ball 2
+			'p3': '#118011',  // Path for ball 3
 			'v0': '#999999',  // Vertical path for all balls
 			'v1': '#801111',  // Vertical path for ball 1
 			'v2': '#111180',  // Vertical path for ball 2
+			'v3': '#118011',  // Vertical path for ball 3
 			'h0': '#999999',  // Horizontal path for all balls
 			'h1': '#801111',  // Horizontal path for ball 1
 			'h2': '#111180',  // Horizontal path for ball 2
-			// TO DO
+			'h3': '#118011',  // Horizontal path for ball 3
+
 			'w0': '#FFFFFF',  // Well
-			'x0': '#FF0000',  // Wall
-			't0': '#8000FF',  // Teleport
-			'c0': '#FF00FF',  // Collectible
-			'$0': '#FFFFFF',   // Sticker (orange)
-			// Trap node colors (will be darkened versions of ball colors)
+			'$0': '#FFFFFF',  // Sticker
+
 			'xr': '#EE1111',  // Red trap
 			'xg': '#11EE11',  // Green trap
 			'xb': '#1111EE',  // Blue trap
-			'xl': '#BBBBFF',  // Lightblue trap
 			'xy': '#FFFF00',  // Yellow trap
 			'xp': '#FF00FF',  // Purple trap
 			'xo': '#FF6600',  // Orange trap
-			// Switch node colors (same as trap colors)
+
 			'sr': '#EE1111',  // Red switch
 			'sg': '#11EE11',  // Green switch
 			'sb': '#1111EE',  // Blue switch
-			'sl': '#BBBBFF',  // Lightblue switch
 			'sy': '#FFFF00',  // Yellow switch
 			'sp': '#FF00FF',  // Purple switch
-			'so': '#FF6600',   // Orange switch
-			'g0': '#FFFFFF'   // Shared goal (white)
+			'so': '#FF6600',  // Orange switch
+			'g0': '#FFFFFF',  // Shared goal (white)
+
+			'tr': '#EE1111',  // Red teleport
+			'tg': '#11EE11',  // Green teleport
+			'tb': '#1111EE',  // Blue teleport
+			'ty': '#FFFF00',  // Yellow teleport
+			'tp': '#FF00FF',  // Purple teleport
+			'to': '#FF6600',  // Orange teleport
+
+			'cr': '#EE1111',  // Red collectible
+			'cg': '#11EE11',  // Green collectible
+			'cb': '#1111EE',  // Blue collectible
+			'cy': '#FFFF00',  // Yellow collectible
+			'cp': '#FF00FF',  // Purple collectible
+			'co': '#FF6600',  // Orange collectible
 		},
 		
 		// Ball colors mapping
@@ -247,7 +283,6 @@ const CONSTANTS = {
 			'red': '#EE1111',
 			'green': '#11EE11',
 			'blue': '#2222FF',
-			'lightblue': '#BBBBFF',
 			'gray': '#666666',
 			'yellow': '#FFFF00',
 			'purple': '#FF00FF',
