@@ -29,7 +29,7 @@ const CONSTANTS = {
 	GAME_CONFIG: {
 		// General configurations
 		ACTUAL_MAX_LEVEL: 15, // Actual final level of the game (auto-detected, see script/levels/update-max-level.js)
-		LEVEL_HASH_SEED: 'et5qou', // Hash seed for level filename generation (empty = development mode)
+		LEVEL_HASH_SEED: '4orrhz', // Hash seed for level filename generation (empty = development mode)
 		// Development: Force loading specific level as first (set to null to disable)
 		FORCE_START_LEVEL: 1, // Set to level number (e.g., 4) to force start at that level
 		
@@ -306,8 +306,11 @@ const CONSTANTS = {
 
 	// Audio configurations
 	AUDIO_CONFIG: {
-		ENABLED: false,
-		VOLUME: 0.7,
+		ENABLED: true,
+		MUSIC_ENABLED: true,
+		SOUND_FX_ENABLED: false,
+		MUSIC_VOLUME: 0.3,
+		SOUND_FX_VOLUME: 0.7,
 	},
 
 	// Background gradient configurations

@@ -13,10 +13,10 @@ class SoundManager {
     constructor() {
         this.sounds = {};
         this.backgroundMusic = null;
-        this.isSoundEnabled = CONSTANTS.AUDIO_CONFIG.ENABLED;
-        this.isMusicEnabled = CONSTANTS.AUDIO_CONFIG.ENABLED;
-        this.volume = CONSTANTS.AUDIO_CONFIG.VOLUME || 0.7;
-        this.musicVolume = 0.5;
+        this.isSoundEnabled = CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED;
+        this.isMusicEnabled = CONSTANTS.AUDIO_CONFIG.MUSIC_ENABLED;
+        this.soundFxVolume = CONSTANTS.AUDIO_CONFIG.SOUND_FX_VOLUME || 0.7;
+        this.musicVolume = CONSTANTS.AUDIO_CONFIG.MUSIC_VOLUME || 0.5;
         this.musicStarted = false; // Track if music has been started by user interaction
         
         this.init();
@@ -26,9 +26,13 @@ class SoundManager {
      * Initialize the sound manager
      */
     init() {
-        // Only load sounds if audio is enabled
-        if (CONSTANTS.AUDIO_CONFIG.ENABLED) {
+        // Only load sounds if audio is enabled and sound effects are enabled
+        if (CONSTANTS.AUDIO_CONFIG.ENABLED && CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED) {
             this.loadSounds();
+        }
+        // Always load background music if audio is enabled and music is enabled
+        if (CONSTANTS.AUDIO_CONFIG.ENABLED && CONSTANTS.AUDIO_CONFIG.MUSIC_ENABLED) {
+            this.loadBackgroundMusic();
         }
         this.loadSettings();
     }
@@ -37,8 +41,8 @@ class SoundManager {
      * Load all sound effects
      */
     loadSounds() {
-        // Early return if audio is disabled
-        if (!CONSTANTS.AUDIO_CONFIG.ENABLED) {
+        // Early return if audio is disabled or sound effects are disabled
+        if (!CONSTANTS.AUDIO_CONFIG.ENABLED || !CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED) {
             return;
         }
         
@@ -74,9 +78,19 @@ class SoundManager {
         
         // Switch sounds
         this.sounds.switchActivate = this.createAudio('button-click.mp3', 0.6); // Use button click sound for switch activation
+    }
+
+    /**
+     * Load background music
+     */
+    loadBackgroundMusic() {
+        // Early return if audio is disabled or music is disabled
+        if (!CONSTANTS.AUDIO_CONFIG.ENABLED || !CONSTANTS.AUDIO_CONFIG.MUSIC_ENABLED) {
+            return;
+        }
         
         // Background music
-        this.backgroundMusic = this.createAudio('background-music.mp3', this.musicVolume);
+        this.backgroundMusic = this.createAudio('191021-japan-electronica-155533.mp3', this.musicVolume);
         this.backgroundMusic.loop = true;
     }
 
@@ -152,8 +166,8 @@ class SoundManager {
      * @param {string} soundName - The name of the sound to play
      */
     playGeneratedSound(soundName) {
-        // Check if audio is globally disabled
-        if (!CONSTANTS.AUDIO_CONFIG.ENABLED) return;
+        // Check if audio is globally disabled or sound effects are disabled
+        if (!CONSTANTS.AUDIO_CONFIG.ENABLED || !CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED) return;
         
         // Simple fallback using Web Audio API
         try {
@@ -319,17 +333,17 @@ class SoundManager {
     }
 
     /**
-     * Set master volume
+     * Set sound effects volume
      * @param {number} volume - Volume level (0-1)
      */
-    setVolume(volume) {
-        this.volume = Math.max(0, Math.min(1, volume));
+    setSoundFxVolume(volume) {
+        this.soundFxVolume = Math.max(0, Math.min(1, volume));
         
         // Only update audio elements if audio is enabled and sounds exist
         if (CONSTANTS.AUDIO_CONFIG.ENABLED && this.sounds) {
             Object.values(this.sounds).forEach(sound => {
                 if (sound !== this.backgroundMusic) {
-                    sound.volume = this.volume;
+                    sound.volume = this.soundFxVolume;
                 }
             });
         }
@@ -360,14 +374,14 @@ class SoundManager {
             const settings = localStorage.getItem('audioSettings');
             if (settings) {
                 const audioSettings = JSON.parse(settings);
-                this.isSoundEnabled = audioSettings.soundEnabled !== undefined ? audioSettings.soundEnabled : true;
-                this.isMusicEnabled = audioSettings.musicEnabled !== undefined ? audioSettings.musicEnabled : true;
-                this.volume = audioSettings.volume !== undefined ? audioSettings.volume : 0.7;
-                this.musicVolume = audioSettings.musicVolume !== undefined ? audioSettings.musicVolume : 0.5;
+                this.isSoundEnabled = audioSettings.soundEnabled !== undefined ? audioSettings.soundEnabled : CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED;
+                this.isMusicEnabled = audioSettings.musicEnabled !== undefined ? audioSettings.musicEnabled : CONSTANTS.AUDIO_CONFIG.MUSIC_ENABLED;
+                this.soundFxVolume = audioSettings.soundFxVolume !== undefined ? audioSettings.soundFxVolume : CONSTANTS.AUDIO_CONFIG.SOUND_FX_VOLUME;
+                this.musicVolume = audioSettings.musicVolume !== undefined ? audioSettings.musicVolume : CONSTANTS.AUDIO_CONFIG.MUSIC_VOLUME;
                 
                 // Only apply settings to audio elements if audio is enabled
                 if (CONSTANTS.AUDIO_CONFIG.ENABLED) {
-                    this.setVolume(this.volume);
+                    this.setSoundFxVolume(this.soundFxVolume);
                     this.setMusicVolume(this.musicVolume);
                 }
             }
@@ -384,7 +398,7 @@ class SoundManager {
             const settings = {
                 soundEnabled: this.isSoundEnabled,
                 musicEnabled: this.isMusicEnabled,
-                volume: this.volume,
+                soundFxVolume: this.soundFxVolume,
                 musicVolume: this.musicVolume
             };
             localStorage.setItem('audioSettings', JSON.stringify(settings));
@@ -401,7 +415,7 @@ class SoundManager {
         return {
             soundEnabled: this.isSoundEnabled,
             musicEnabled: this.isMusicEnabled,
-            volume: this.volume,
+            soundFxVolume: this.soundFxVolume,
             musicVolume: this.musicVolume
         };
     }
@@ -410,14 +424,14 @@ class SoundManager {
      * Reset audio settings to defaults
      */
     resetSettings() {
-        this.isSoundEnabled = true;
-        this.isMusicEnabled = true;
-        this.volume = 0.7;
-        this.musicVolume = 0.5;
+        this.isSoundEnabled = CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED;
+        this.isMusicEnabled = CONSTANTS.AUDIO_CONFIG.MUSIC_ENABLED;
+        this.soundFxVolume = CONSTANTS.AUDIO_CONFIG.SOUND_FX_VOLUME;
+        this.musicVolume = CONSTANTS.AUDIO_CONFIG.MUSIC_VOLUME;
         
         // Only apply settings to audio elements if audio is enabled
         if (CONSTANTS.AUDIO_CONFIG.ENABLED) {
-            this.setVolume(this.volume);
+            this.setSoundFxVolume(this.soundFxVolume);
             this.setMusicVolume(this.musicVolume);
         }
         this.saveSettings();
@@ -427,8 +441,8 @@ class SoundManager {
      * Preload all audio files
      */
     preloadAll() {
-        // Only preload if audio is enabled and sounds exist
-        if (!CONSTANTS.AUDIO_CONFIG.ENABLED || !this.sounds) {
+        // Only preload if audio is enabled, sound effects are enabled, and sounds exist
+        if (!CONSTANTS.AUDIO_CONFIG.ENABLED || !CONSTANTS.AUDIO_CONFIG.SOUND_FX_ENABLED || !this.sounds) {
             return;
         }
         
