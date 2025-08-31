@@ -274,10 +274,20 @@ class LevelEditor {
         }
         
         // Apply color based on node type
-        const colors = CONSTANTS.LEVEL_CONFIG.NODE_COLORS;
-        if (colors[nodeType]) {
-            nodeDiv.style.backgroundColor = colors[nodeType];
-            nodeDiv.style.color = this.getContrastColor(colors[nodeType]);
+        let color = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
+        
+        // For ball-specific nodes (p1, p2, p3), use the ball's color if available
+        if (nodeType === 'p1' && this.balls[0]) {
+            color = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[this.balls[0].color];
+        } else if (nodeType === 'p2' && this.balls[1]) {
+            color = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[this.balls[1].color];
+        } else if (nodeType === 'p3' && this.balls[2]) {
+            color = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[this.balls[2].color];
+        }
+        
+        if (color) {
+            nodeDiv.style.backgroundColor = color;
+            nodeDiv.style.color = this.getContrastColor(color);
         }
         
         cell.appendChild(nodeDiv);
@@ -314,8 +324,21 @@ class LevelEditor {
         }
         
         // Get the color for the other face's node type
-        const colors = CONSTANTS.LEVEL_CONFIG.NODE_COLORS;
-        const borderColor = otherNodeType === '__' ? '#222' : (colors[otherNodeType] || '#777');
+        let borderColor = '#222';
+        if (otherNodeType !== '__') {
+            let color = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[otherNodeType];
+            
+            // For ball-specific nodes (p1, p2, p3), use the ball's color if available
+            if (otherNodeType === 'p1' && this.balls[0]) {
+                color = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[this.balls[0].color];
+            } else if (otherNodeType === 'p2' && this.balls[1]) {
+                color = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[this.balls[1].color];
+            } else if (otherNodeType === 'p3' && this.balls[2]) {
+                color = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[this.balls[2].color];
+            }
+            
+            borderColor = color || '#777';
+        }
         
         // Apply the border color
         cell.style.borderColor = borderColor;
@@ -355,6 +378,35 @@ class LevelEditor {
                 const color = CONSTANTS.LEVEL_CONFIG.NODE_COLORS[nodeType];
                 preview.style.backgroundColor = color;
                 preview.style.color = this.getContrastColor(color);
+            }
+        });
+        
+        // Update ball-specific node colors based on current balls
+        this.updateBallSpecificNodeColors();
+    }
+    
+    updateBallSpecificNodeColors() {
+        // Update colors for p1, p2, p3 nodes based on ball colors
+        const ballSpecificNodes = ['p1', 'p2', 'p3'];
+        
+        ballSpecificNodes.forEach((nodeType, index) => {
+            const ballIndex = index; // p1 = ball 0, p2 = ball 1, p3 = ball 2
+            const tool = document.querySelector(`.node-tool[data-type="${nodeType}"]`);
+            
+            if (tool) {
+                const preview = tool.querySelector('.node-preview');
+                if (preview) {
+                    if (this.balls[ballIndex]) {
+                        // Use the ball's color
+                        const ballColor = CONSTANTS.LEVEL_CONFIG.BALL_COLORS[this.balls[ballIndex].color];
+                        preview.style.backgroundColor = ballColor;
+                        preview.style.color = this.getContrastColor(ballColor);
+                    } else {
+                        // No ball at this index, use default gray color
+                        preview.style.backgroundColor = '#999999';
+                        preview.style.color = this.getContrastColor('#999999');
+                    }
+                }
             }
         });
     }
@@ -418,6 +470,7 @@ class LevelEditor {
         this.updateBallsList();
         this.updateGridVisuals();
         this.updateAllBorderColors();
+        this.updateToolbarColors(); // Update ball-specific node colors
     }
     
     updateGridVisuals() {
@@ -462,6 +515,7 @@ class LevelEditor {
         this.balls.push(ball);
         this.updateBallsList();
         this.updateGridVisuals();
+        this.updateToolbarColors(); // Update ball-specific node colors
     }
     
     findAvailableColor() {
@@ -672,6 +726,7 @@ class LevelEditor {
             ball.color = select.value;
             this.updateBallsList();
             this.updateGridVisuals();
+            this.updateToolbarColors(); // Update ball-specific node colors
             document.body.removeChild(dialog);
         });
         
@@ -737,6 +792,7 @@ class LevelEditor {
         this.updateBallsList();
         this.updateGridVisuals();
         this.updateAddBallButton();
+        this.updateToolbarColors(); // Update ball-specific node colors
     }
     
 
@@ -1012,6 +1068,7 @@ class LevelEditor {
                 this.generateGrid();
                 this.updateGridVisuals();
                 this.updateBallsList();
+                this.updateToolbarColors(); // Update ball-specific node colors
                 
             } catch (error) {
                 alert('Error loading level: ' + error.message);
