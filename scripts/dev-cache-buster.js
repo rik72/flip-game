@@ -150,6 +150,40 @@ function generateTestUrl(levelNumber) {
 }
 
 /**
+ * Reset the level hash seed to empty for development mode
+ */
+function resetLevelHashSeed() {
+    try {
+        const constantsPath = path.join(__dirname, '..', 'constants.js');
+        let constantsContent = fs.readFileSync(constantsPath, 'utf8');
+        
+        // Check current state
+        const currentMatch = constantsContent.match(/LEVEL_HASH_SEED:\s*['"`]([^'"`]*)['"`]/);
+        if (currentMatch && currentMatch[1] === '') {
+            logInfo('Level hash seed is already empty (development mode)');
+            return true;
+        }
+        
+        // Replace the hash seed with empty string
+        const newContent = constantsContent.replace(
+            /LEVEL_HASH_SEED:\s*['"`][^'"`]*['"`]/,
+            "LEVEL_HASH_SEED: ''"
+        );
+        
+        // Write back to file
+        fs.writeFileSync(constantsPath, newContent, 'utf8');
+        
+        logSuccess('Level hash seed reset to empty (development mode)');
+        logInfo('You may need to restart your development server for changes to take effect');
+        
+        return true;
+    } catch (error) {
+        logError(`Failed to reset level hash seed: ${error.message}`);
+        return false;
+    }
+}
+
+/**
  * Show usage instructions
  */
 function showUsage() {
@@ -160,17 +194,20 @@ function showUsage() {
     log('  node scripts/dev-cache-buster.js list      - List all level files');
     log('  node scripts/dev-cache-buster.js validate <level> - Validate specific level');
     log('  node scripts/dev-cache-buster.js test <level>     - Generate test URL for level');
+    log('  node scripts/dev-cache-buster.js reset     - Reset level hash seed to empty (dev mode)');
     log('  node scripts/dev-cache-buster.js help      - Show this help');
     log('');
     log('Examples:', 'yellow');
     log('  node scripts/dev-cache-buster.js validate 5');
     log('  node scripts/dev-cache-buster.js test 3');
+    log('  node scripts/dev-cache-buster.js reset');
     log('');
     log('Tips for development:', 'green');
     log('  1. Use ?level=X URL parameter to test specific levels');
     log('  2. Add &t=timestamp to force cache refresh');
     log('  3. Use browser dev tools to disable cache');
     log('  4. Hard refresh (Ctrl+F5 / Cmd+Shift+R) to clear cache');
+    log('  5. Use reset command if you accidentally set production hash seed');
 }
 
 // Main execution
@@ -207,6 +244,10 @@ function main() {
             generateTestUrl(levelToTest);
             break;
             
+        case 'reset':
+            resetLevelHashSeed();
+            break;
+            
         case 'help':
         case '--help':
         case '-h':
@@ -225,5 +266,6 @@ module.exports = {
     checkDevelopmentMode,
     listLevelFiles,
     validateLevelFile,
-    generateTestUrl
+    generateTestUrl,
+    resetLevelHashSeed
 }; 

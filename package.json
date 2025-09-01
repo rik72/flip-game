@@ -15,7 +15,8 @@
     "prebuild:dev": "npm run concat",
     "predev": "npm run concat",
     "build": "webpack --mode=production",
-    "build:dev": "webpack --mode=development",
+    "build:dev": "webpack --mode=development && node scripts/post-build-cleanup.js",
+    "postbuild": "node scripts/post-build-cleanup.js",
     "dev": "npm run concat && webpack-dev-server --mode=development --open",
     "dev:watch": "node scripts/watch-and-concat.js & npm run dev",
     "watch": "webpack --mode=development --watch",
@@ -26,7 +27,8 @@
     "dev:check": "node scripts/dev-cache-buster.js check",
     "dev:list": "node scripts/dev-cache-buster.js list",
     "dev:validate": "node scripts/dev-cache-buster.js validate",
-    "dev:test": "node scripts/dev-cache-buster.js test"
+    "dev:test": "node scripts/dev-cache-buster.js test",
+    "dev:reset": "node scripts/dev-cache-buster.js reset"
   },
   "keywords": [
     "flipgame",
