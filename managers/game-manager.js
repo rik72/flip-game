@@ -2991,6 +2991,8 @@ class GameManager {
                 
 
                 
+
+                
                 // Note: Sticker detection and activation is now handled in initializeTailSystem()
                 
                 this.balls.push(ball);
@@ -6606,24 +6608,21 @@ class GameManager {
     }
 
     // Activate a sticker with a ball's color
-    activateSticker(gridX, gridY, ballIndex, ballColor) {
-        const face = this.currentFace;
+    activateSticker(gridX, gridY, ballIndex, ballColor, face = null) {
+        // Use provided face or fall back to current face
+        const targetFace = face || this.currentFace;
         const nodeKey = `${gridY}_${gridX}`;
         
-        console.log(`activateSticker called: gridX=${gridX}, gridY=${gridY}, ballIndex=${ballIndex}, ballColor=${ballColor}, face=${face}, nodeKey=${nodeKey}`);
-        
         // Initialize face if it doesn't exist
-        if (!this.activatedStickers[face]) {
-            this.activatedStickers[face] = {};
+        if (!this.activatedStickers[targetFace]) {
+            this.activatedStickers[targetFace] = {};
         }
         
         // Set activated sticker data
-        this.activatedStickers[face][nodeKey] = {
+        this.activatedStickers[targetFace][nodeKey] = {
             ballIndex: ballIndex,
             color: ballColor
         };
-        
-        console.log(`Sticker activated: ${JSON.stringify(this.activatedStickers[face][nodeKey])}`);
     }
 
     // Check if a ball entered a trap and activate it
@@ -7372,16 +7371,22 @@ class GameManager {
             const startY = ball.originalStart[1] < 0 ? -ball.originalStart[1] : ball.originalStart[1];
             
             // Check if ball starts on a sticker node
-            const startNodeType = this.getNodeTypeAt(startX, startY);
+            // Use getNodeTypeAtFace to check the correct face for the ball
+            const startNodeType = this.getNodeTypeAtFace(startX, startY, ball.currentFace);
+            
             if (startNodeType === CONSTANTS.LEVEL_CONFIG.NODE_TYPES.STICKER) {
                 ball.hasTail = true;
+                
                 // Initialize visited nodes for balls with tail
                 if (!ball.visitedNodes) {
                     ball.visitedNodes = [];
                 }
+                
                 // Activate the sticker immediately if ball starts on it
                 // This ensures the sticker is colored correctly from the start
-                this.activateSticker(startX, startY, ballIndex, ball.color);
+                // Use the ball's currentFace instead of this.currentFace
+                const ballFace = ball.currentFace;
+                this.activateSticker(startX, startY, ballIndex, ball.color, ballFace);
             } else {
                 ball.hasTail = false;
                 // Initialize visited nodes as empty array for all balls
